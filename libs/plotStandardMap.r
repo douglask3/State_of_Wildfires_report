@@ -8,8 +8,8 @@ library(mapplots)
 
 library(rgdal)
 
-SA_ste <- readOGR(dsn = "data/South_America", layer = "South_America")
-rivers <- readOGR(dsn = "data/majorrivers_0_0", layer = "MajorRivers")
+#SA_ste <- readOGR(dsn = "data/South_America", layer = "South_America")
+#rivers <- readOGR(dsn = "data/majorrivers_0_0", layer = "MajorRivers")
 
 StandardLegend <- function(cols, limits, dat, rightx = 0.95, extend_max = TRUE, oneSideLabels = TRUE, add = FALSE, ...) {
     if (add)        
@@ -26,8 +26,11 @@ lineBox <- function(x, y, ...)
     lines(c(x[1], x[2], x[2], x[1], x[1]), c(y[1], y[1], y[2], y[2], y[1]),...)
 
 plotStandardMap <- function(r, cols, limits, e = NULL, add_legend = FALSE,
-                            limits_error = c(0.5, 0.500000001),
-                            title2 = '', title3 = '', xlim = c(-85, -36), ylim = c(-56, 10),...) {
+                            limits_error = c(0.1, 0.100000001),
+                            title2 = '', title3 = '', xlim = c(-180, 180), ylim = c(-60, 90),
+                            ...,  speedy = TRUE) {
+    
+
     if (nlayers(r) == 2) {
         e = r[[2]]
         r = r[[1]]
@@ -47,33 +50,59 @@ plotStandardMap <- function(r, cols, limits, e = NULL, add_legend = FALSE,
             r = mean(r)
         }
     } 
+    if (!speedy) {
+        r[r>9E9] = NaN
+        if (!is.null(e)) e[is.na(r)] = NaN
+        mask = raster('data/seamask.nc')
     
-    r[r>9E9] = NaN
-    if (!is.null(e)) e[is.na(r)] = NaN
+        r[mask != 2] = NaN
+        if(!is.null(e)) e[mask != 2] = NaN
+    }
+    #plot(xlim, ylim, xlab = '', ylab = '', axes = FALSE, type ='n')
     
-    plot(xlim, ylim, xlab = '', ylab = '', axes = FALSE, type ='n')
-    grid()
-    plot_raster_from_raster(r, e = e,coast.lwd = NULL,
+    plot_raster_from_raster(r, e = e,coast.lwd = 1,
                             cols = cols, limits = limits, add_legend = FALSE,
-                            quick = TRUE, ePatternRes = 5, ePatternThick = 0.67,
-                            limits_error = limits_error, add = TRUE, ...)
+                            quick = TRUE, ePatternRes = 67, ePatternThick = 0.5,
+                            limits_error = limits_error, add = FALSE, ...)
     
-    #plot(rivers, col = c(rep("#FFFFFF00", 9), "black", rep("#FFFFFF00", 88)), add = TRUE, lwd = 2.5)
-    #plot(rivers, col = c(rep("#FFFFFF00", 9), "white", rep("#FFFFFF00", 88)), add = TRUE, lwd = 0.5)
-    lines(SA_ste)
-    lines(rivers, col = "white", lwd = 0.67)
-    lines(SA_ste, lty = 2)
-    #lineBox(-c(71.25, 63.75), -c(11.25,  6.25))     
-    #lineBox(-c(61.25, 53.75), -c(11.25,  6.25))   
-    #lineBox(-c(48.25, 43.25), -c( 8.75,  1.25))
-    #lineBox(-c(66.25, 58.75), -c(18.75, 13.75))
+    if (!speedy) for (i in 1:4) addCoastlineAndIce2map()
     
-    polygon(c(-62.5, -35, -35, -62.5), c(-56, -56, -50, -50), border = NA, col = "white")
-    mtext(title3, adj = 0.1, line = 0.0)
-    mtext(title2, side = 2, line = -0.75)
     if (add_legend) {
         add_raster_legend2(cols, limits, dat = r,
                            transpose = FALSE, srt = 0, oneSideLabels= FALSE,
                            plot_loc = c(0.35, 0.99, 0.09, 0.12),  ylabposScling=0.8, ...)
     }
+    grid()
 }
+
+addCoastlineAndIce2map <- function() {
+    add_icemask()
+    
+    mask = raster('data/seamask.nc')
+    mask = mask>1
+    
+    plot_raster_from_raster(mask+1, add = TRUE, 
+                             cols = c("white", "transparent"),readyCut = TRUE,
+                             limits =  NULL, quick = TRUE, interior = FALSE, 
+                             coast.lwd = NULL, add_legend = FALSE)
+    #
+    #contour(mask, add = TRUE, drawlabels = FALSE, lwd = 0.5)  
+
+    ployBox <- function(x, y)
+        polygon(c(x[1], x[2], x[2], x[1]), c(y[1], y[1], y[2], y[2]), col = "white", border = "white")
+        
+    ployBox(c(-180, -90), c(-60, 0))
+    ployBox(c(-180, -120), c(-60, 25))
+    ployBox(c(-50, -19), c(10, 25))
+    ployBox(c(-50, -13.5), c(27.5, 34))
+    ployBox(c(115, 125), c(-8, -7))
+    ployBox(c(104, 111), c(2.5, 8))
+    ployBox(c(122, 128), c(2.5, 5)) 
+}
+
+add_icemask <- function() {
+	icemask = raster('data/icemask.nc')
+	plot_raster_from_raster(icemask, add = TRUE, cols = c('#FFFFFFFF', 'grey'), y_range = c(-60, 90),
+						    limits = c(-0.5, 0.5), add_legend = FALSE, interior = FALSE, coast.lwd = 0.67)#, coast.lwd = NULL)
+}
+
