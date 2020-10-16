@@ -26,9 +26,9 @@ lineBox <- function(x, y, ...)
     lines(c(x[1], x[2], x[2], x[1], x[1]), c(y[1], y[1], y[2], y[2], y[1]),...)
 
 plotStandardMap <- function(r, cols, limits, e = NULL, add_legend = FALSE,
-                            limits_error = c(0.1, 0.100000001),
+                            limits_error = c(0.2, 0.200000001),
                             title2 = '', title3 = '', xlim = c(-180, 180), ylim = c(-60, 90),
-                            ...,  speedy = TRUE) {
+                            ...,  speedy = T) {
     
 
     if (nlayers(r) == 2) {
