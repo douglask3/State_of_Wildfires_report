@@ -7,9 +7,9 @@ source("libs/sd.raster.r")
 source("libs/filename.noPath.r")
 graphics.off()
 
-dir = 'outputs/sampled_posterior_ConFire_ISIMIP_solutions/attempt2/'
+dir = 'outputs/sampled_posterior_ConFire_ISIMIP_solutions/attempt3/'
 
-models = c("GFDL-ESM2M", "HADGEM2-ES", "IPSL-CM5A-LR", "MIROC5")
+models = c("GFDL-ESM2M", "HADGEM2-ES",  "MIROC5", "IPSL-CM5A-LR")
 
 periods = c("historic", "RCP2.6", "RCP6.0")
 
@@ -23,7 +23,7 @@ dcols = rev(c('#a50026','#d73027','#f46d43','#fdae61','#fee090','#ffffbf','#e0f3
 
 sc = 12 * 100
 
-obs = mean(brick("data/ISIMIP_data/burnt_area_GFED4sObs.nc"))
+obs = mean(brick("data/ISIMIP_data2/burnt_area_GFED4sObs.nc"))
 
 
 logit <- function(r) {
@@ -121,7 +121,7 @@ plotFun <- function(fname, anomolise = FALSE) {
             
             plotStandardMap(PN, cols = PNcols, limits = 0.5+1:((length(PNlims)+1)^2-1), 
                             readyCut = TRUE, speedy = FALSE)
-            mtext(lab, side = 2, line = -2)
+            mtext(lab, side = 2, line = -8)
             if (addLegend) {
                 par(mar = c(3, 13, 1, 11))
                 plot(c(0, 1), c(0, 1), axes = FALSE, xlab = '', ylab ='', xaxs = 'i', yaxs = 'i')
@@ -145,7 +145,7 @@ plotFun <- function(fname, anomolise = FALSE) {
     if (length(dat0) > 1) dat0 = mean(layer.apply(dat0, function(i) i[[2]])) else dat0 = dat0[[1]]
     
     plotStandardMap(dat0 * sc, cols = cols, limits = limits, speedy = FALSE)
-    mtext(side = 2, "Historic", line = -1)
+    mtext(side = 2, "Historic", line = -8)
     legendFun( cols,  limits, dat0[[1]])
     mapply(triangulaise, datP, c(F, T), c("RCP2.6", "RCP6.0"))
     dev.off()
@@ -160,7 +160,6 @@ limits =  c(0, 0.1, 0.5, 1, 5, 10, 50)
 dlimits = c(-10, -5, -1, -0.5, -0.1, -0.05, -0.01, 0.01, 0.05, 0.1, 0.5, 1, 5, 10)
 
 plotFun("BA", TRUE)
-
 
 plotCOntrols <- function(control) {
     variable <<- paste0("standard_",control)
@@ -180,14 +179,15 @@ plotCOntrols <- function(control) {
     sc <<- 100 * 4 * 12
     #limits <<- c(0, 1, 2, 5, 10, 20, 50, 100, 150)/10
     #limits <<- c(-100, -50, -20, -10, -5, -2, -1, 1, 2, 5, 10, 20, 50, 100)/10
+    if (control == "moisture") variable <<- "unknown"
     plotFun(variable)    
 }
 
 cols = c('#ffffe5','#f7fcb9','#d9f0a3','#addd8e','#78c679','#41ab5d','#238443','#006837','#004529')
 dcols = c('#40004b','#762a83','#9970ab','#c2a5cf','#e7d4e8','#f7f7f7','#d9f0d3','#a6dba0','#5aae61','#1b7837','#00441b')
 
-Pcols = "#110011"
-Ncols = "#001111"
+Ncols = "#110011"
+Pcols = "#001111"
 
 plotCOntrols("fuel")
 
