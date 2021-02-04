@@ -8,8 +8,8 @@ library(mapplots)
 
 library(rgdal)
 
-SA_ste <- readOGR(dsn = "data/South_America", layer = "South_America")
-rivers <- readOGR(dsn = "data/majorrivers_0_0", layer = "MajorRivers")
+#SA_ste <- readOGR(dsn = "data/South_America", layer = "South_America")
+#rivers <- readOGR(dsn = "data/majorrivers_0_0", layer = "MajorRivers")
 
 StandardLegend <- function(cols, limits, dat, rightx = 0.95, extend_max = TRUE, oneSideLabels = TRUE, add = FALSE, ...) {
     if (add)        
