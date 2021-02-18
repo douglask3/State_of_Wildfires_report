@@ -43,7 +43,7 @@ OpenPlotMap <- function(model, period, cols, limits, dcols = NULL, dlimits = NUL
                     anomolise = NULL, pnew = TRUE) {
     file = paste(dir, model, period, "fullPost.nc", sep = '/')
     file = paste(dir, model, period, "model_summary.nc", sep = '/')
-    dat = brick(file, varname = variable)[[c(1, 50, 99)]]
+    dat = brick(file, varname = variable)[[c(16, 50, 84)]]
     
     if (!is.null(anomolise)) 
         if (is.null(dat0)) datP = obs else {        
@@ -68,7 +68,7 @@ legendFun <- function(cols, limits, dat, ...)
                            plot_loc = c(0.1, 0.9, 0.73, 0.8), ylabposScling=0.8,
                            add = FALSE, ...)
 
-plotFun <- function(fname, anomolise = FALSE, signify = TRUE) {
+plotFun <- function(fname, anomolise = FALSE, signify = TRUE, controlT = TRUE) {
     print(fname)
     print(variable)
     print("---")
@@ -94,12 +94,17 @@ plotFun <- function(fname, anomolise = FALSE, signify = TRUE) {
     dev.off.gitWatermark()
     if (signify) {
         signifM <- function(mid) {
+            if (controlT) FUN <- function(x) x else FUN = logit
             dx = 0.01
             sce = 0.68
             xs = seq(-23, 23, dx)
-            h = logit(dat0[[mid]])[[2]]
+            h = FUN(dat0[[mid]])[[2]]
             mask = !(h==h[1] & is.na(obsL))
-            error = sd((h -obsL)[], na.rm = TRUE)*sce
+            if (controlT) {
+                error = dat0[[mid]][[3]]-dat0[[mid]][[1]] 
+            } else {
+                error = sd((h -obsL)[], na.rm = TRUE)*sce
+            }
             h[!mask] = NaN          
             out = h
             #h = addLayer(h - error*1.5, h + error*1.5)
@@ -108,7 +113,7 @@ plotFun <- function(fname, anomolise = FALSE, signify = TRUE) {
                 temp_file = paste("temp/pvs", mid,  pid, sce,anomolise,fname,'.nc', sep = '-') 
                 print(temp_file) 
                 if (file.exists(temp_file)) return(raster(temp_file))
-                ft = logit((datP[[pid]][[mid]][[2]]+dat0[[mid]][[2]]*sc)/sc)
+                ft = FUN((datP[[pid]][[mid]][[2]]+dat0[[mid]][[2]]*sc)/sc)
                 #ft = addLayer(ft - error*1.5, ft + error*1.5)
                 FUN4cell <- function(x, y) {
                     p = dnorm(xs, x, error)
@@ -117,7 +122,7 @@ plotFun <- function(fname, anomolise = FALSE, signify = TRUE) {
                 }
                 pv = 1-exp(-mapply(FUN4cell, h[mask], ft[mask]))
                 out[mask] = pv
-                test = datP[[pid]][[mid]][[2]] <0
+                test = datP[[pid]][[mid]][[2]] < 0
                 out[test] = -out[test]         
                 out = writeRaster(out, file = temp_file, overwrite = TRUE)           
             }
@@ -220,18 +225,18 @@ plotFun <- function(fname, anomolise = FALSE, signify = TRUE) {
             mapply(triangulaise, pvsp, c(F, T), c("RCP2.6", "RCP6.0"),
                    MoreArgs = list(dlimits =sdlimits))
         dev.off()
-        browser()
+        
     }  
 }           
 Pcols = "#330000"
 Ncols = "#000033"
 
-plotFun("BA")
+plotFun("BA", controlT = FALSE)
 
 limits =  c(0, 0.1, 0.5, 1, 5, 10, 50)
 dlimits = c(-10, -5, -1, -0.5, -0.1, -0.05, -0.01, 0.01, 0.05, 0.1, 0.5, 1, 5, 10)
 
-plotFun("BA", TRUE)
+plotFun("BA", TRUE, FALSE)
 
 plotCOntrols <- function(control) {
     variable <<- paste0("standard_",control)
