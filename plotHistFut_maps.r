@@ -9,7 +9,8 @@ graphics.off()
 
 dir = 'outputs/sampled_posterior_ConFire_ISIMIP_solutions/attempt3/'
 
-models = c("GFDL-ESM2M", "HADGEM2-ES",  "MIROC5", "IPSL-CM5A-LR")
+models = c("GFDL-ESM2M", "HADGEM2-ES", "MIROC5", "IPSL-CM5A-LR")
+
 
 periods = c("historic", "RCP2.6", "RCP6.0")
 
@@ -26,7 +27,6 @@ sc = 12 * 100
 
 obs = mean(brick("data/ISIMIP_data2/burnt_area_GFED4sObs.nc"))
 
-
 logit <- function(r) {
     r[r < 0.0000001] = 0.0000001
     log(r/(1-r))
@@ -41,6 +41,7 @@ obsL = logit(obs)
 
 OpenPlotMap <- function(model, period, cols, limits, dcols = NULL, dlimits = NULL, dat0 = NULL,
                     anomolise = NULL, pnew = TRUE) {
+    file = paste(dir, model, period, "fullPost.nc", sep = '/')
     file = paste(dir, model, period, "model_summary.nc", sep = '/')
     dat = brick(file, varname = variable)[[c(1, 50, 99)]]
     
@@ -56,7 +57,7 @@ OpenPlotMap <- function(model, period, cols, limits, dcols = NULL, dlimits = NUL
         if (pnew) plot.new()
     } else {
         dat = (dat-dat0) * sc
-        plotStandardMap(dat, cols = dcols,limits = dlimits)
+        plotStandardMap(dat, cols = dcols, limits = dlimits)
     }
     return(dat)
 }
@@ -124,8 +125,8 @@ plotFun <- function(fname, anomolise = FALSE, signify = TRUE) {
         }
         pvs = lapply(1:length(dat0), signifM)
         
-        png(paste0("figs/", fname, "anomIs_", anomolise, "signifChange", signify, "_Ymaps.png"),
-            height = 5, width = 7.2, units = 'in',res  = 300)
+        fname = paste0(fname, "anomIs_", anomolise, "signifChange", signify, "_Ymaps")
+        png(paste0("figs/", fname, ".png"), height = 5, width = 7.2, units = 'in',res  = 300)
 
             layout(cbind(1:5, c(6:9, 14), c(10:13,  14)), height = c(1,1, 1, 1, 0.5))
             par(mar = rep(0, 4), oma = c(0, 2, 2, 0))
@@ -134,6 +135,7 @@ plotFun <- function(fname, anomolise = FALSE, signify = TRUE) {
             
             legendFun( cols,  limits, dat0[[1]])
             pvsp = lapply(1:length(pvs[[1]]), function(i) lapply(pvs, function(j) 100*j[[i]]))
+           
             lapply(pvsp, function(i)
                         lapply(i, plotStandardMap, cols = dcols, limits = sdlimits))           
             mtext(outer = TRUE, "RCP2.6", adj = 0.5)
@@ -148,6 +150,8 @@ plotFun <- function(fname, anomolise = FALSE, signify = TRUE) {
             if (nlayers(p[[1]])>1) q = layer.apply(p, function(q) q[[i]]) else q = p
             P = mean(layer.apply(q, function(i) {i[i<0] = 0; i}))
             N = abs(mean(layer.apply(q, function(i) {i[i>0] = 0; i})))
+            fout = paste0("outputs/", fnameP,'_',lab, '.nc')
+            writeRaster.gitInfo(addLayer(P, N), file = fout, overwrite = TRUE)
             
             PNcols = make_col_vector(dcols, ncols = length( dlimits)+1)
             
@@ -172,6 +176,7 @@ plotFun <- function(fname, anomolise = FALSE, signify = TRUE) {
                 PNcols = c(PNcols, col)
                 legXY = rbind(legXY, c(i, j))
             }            
+             
             
             plotStandardMap(PN, cols = PNcols, limits = 0.5+1:((length(PNlims)+1)^2-1), 
                             readyCut = TRUE, speedy = FALSE)
@@ -192,7 +197,8 @@ plotFun <- function(fname, anomolise = FALSE, signify = TRUE) {
         #layer.apply(1:3, perctile)
         perctile(2)
     }
-    png(paste0("figs/", fname, "anomIs_", anomolise, "_CXmaps.png"),
+    fnameP = paste0(fname, "anomIs_", anomolise, "_CXmaps")
+    png(paste0("figs/", fnameP, ".png"),
         height = 10, width = 7.2, units = 'in',res  = 300)
         layout(matrix(1:5, ncol = 1), heights = c(1, 0.3, 1, 1, 1))
         par(mar = rep(0, 4))
@@ -207,7 +213,8 @@ plotFun <- function(fname, anomolise = FALSE, signify = TRUE) {
               MoreArgs = list(dlimits = dlimits))
     dev.off()
     if (signify) {
-        png(paste0("figs/", fname, "anomIs_", anomolise, "sign",signify, "_CXmaps.png"),
+        fnameP = paste0(fname, "anomIs_", anomolise, "_CXmaps")
+        png(paste0("figs/", fnameP, "anomIs_", anomolise, "sign",signify, "_CXmaps.png"),
             height = 7, width = 7.2, units = 'in',res  = 300)
             par(mar = rep(0, 4), mfrow = c(3, 1))
             mapply(triangulaise, pvsp, c(F, T), c("RCP2.6", "RCP6.0"),
