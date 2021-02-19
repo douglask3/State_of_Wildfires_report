@@ -210,7 +210,8 @@ plotFun <- function(fname, anomolise = FALSE, signify = TRUE, controlT = TRUE) {
         if (length(dat0) > 1)
             dat0 = mean(layer.apply(dat0, function(i) i[[2]]))
         else dat0 = dat0[[1]]
-    
+        writeRaster.gitInfo(dat0 * sc, file = paste0('outputs/', fnameP, '-GFED4s', '.nc'),
+                            overwrite = TRUE)
         plotStandardMap(dat0 * sc, cols = cols, limits = limits, speedy = FALSE)
         mtext(side = 2, "Historic", line = -8)
         legendFun( cols,  limits, dat0[[1]])
@@ -263,8 +264,8 @@ plotCOntrols <- function(control) {
 cols = c('#ffffe5','#f7fcb9','#d9f0a3','#addd8e','#78c679','#41ab5d','#238443','#006837','#004529')
 dcols = c('#40004b','#762a83','#9970ab','#c2a5cf','#e7d4e8','#f7f7f7','#d9f0d3','#a6dba0','#5aae61','#1b7837','#00441b')
 
-Ncols = "#110011"
-Pcols = "#001111"
+#Ncols = "#110011"
+#Pcols = "#001111"
 
 plotCOntrols("fuel")
 
@@ -273,7 +274,7 @@ cols = c('#ffffe5','#fff7bc','#fee391','#fec44f','#fe9929','#ec7014','#cc4c02','
 
 dcols = rev(c('#543005','#8c510a','#bf812d','#dfc27d','#f6e8c3','#f5f5f5','#c7eae5','#80cdc1','#35978f','#01665e','#003c30'))
 
-Pcols = "#190900"
-Ncols = "#001909"
+#Pcols = "#190900"
+#Ncols = "#001909"
 
 plotCOntrols("moisture")
