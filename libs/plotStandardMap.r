@@ -28,6 +28,7 @@ lineBox <- function(x, y, ...)
 plotStandardMap <- function(r, cols, limits, e = NULL, add_legend = FALSE,
                             limits_error = c(0.2, 0.200000001),
                             title2 = '', title3 = '', xlim = c(-180, 180), ylim = c(-60, 90),
+                            ePatternRes = 67, ePatternThick = 0.5,
                             ...,  speedy = T) {
     
 
@@ -62,7 +63,7 @@ plotStandardMap <- function(r, cols, limits, e = NULL, add_legend = FALSE,
     
     plot_raster_from_raster(r, e = e,coast.lwd = 1,
                             cols = cols, limits = limits, add_legend = FALSE,
-                            quick = TRUE, ePatternRes = 67, ePatternThick = 0.5,
+                            quick = TRUE, ePatternRes = ePatternRes, ePatternThick = ePatternThick,
                             limits_error = limits_error, add = FALSE, ...)
     
     if (!speedy) for (i in 1:4) addCoastlineAndIce2map()
