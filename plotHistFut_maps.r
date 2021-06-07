@@ -72,13 +72,14 @@ plotFun <- function(fname, anomolise = FALSE, signify = TRUE, controlT = TRUE) {
     print(fname)
     print(variable)
     print("---")
-    png(paste0("figs/", fname, "anomIs_", anomolise, "_Ymaps.png"),
-        height = 10, width = 7.2, units = 'in',res  = 300)
+    pdf(paste0("figs/", fname, "anomIs_", anomolise, "_Ymaps.pdf"),
+        height = 10, width = 7.2)#, units = 'in',res  = 300)
         layout(rbind(matrix(1:(6*length(models)), ncol = 3), (6*length(models)) + c(1, 2, 2)))
         par(mar = rep(0, 4), oma = c(0, 2, 2, 0))
         
         if (anomolise) datA = obs else datA = NULL
         dat0 = lapply(models, OpenPlotMap, periods[1], cols, limits, anomolise = datA)
+        
         if (anomolise) {
             datA = lapply(dat0, function(i) logit(i) - logit(obs))
             dat0 = list(obs)
@@ -92,6 +93,7 @@ plotFun <- function(fname, anomolise = FALSE, signify = TRUE, controlT = TRUE) {
         legendFun(dcols, dlimits, datP[[1]][[1]], extend_min = TRUE, extend_max = TRUE)       
             
     dev.off.gitWatermark()
+    pvsp = list(NULL)
     if (signify) {
         signifM <- function(mid) {
             if (controlT) FUN <- function(x) x else FUN = logit
@@ -131,7 +133,7 @@ plotFun <- function(fname, anomolise = FALSE, signify = TRUE, controlT = TRUE) {
         pvs = lapply(1:length(dat0), signifM)
         
         fname = paste0(fname, "anomIs_", anomolise, "signifChange", signify, "_Ymaps")
-        png(paste0("figs/", fname, ".png"), height = 5, width = 7.2, units = 'in',res  = 300)
+        pdf(paste0("figs/", fname, "pdf"), height = 5, width = 7.2)#, units = 'in',res  = 300)
 
             layout(cbind(1:5, c(6:9, 14), c(10:13,  14)), height = c(1,1, 1, 1, 0.5))
             par(mar = rep(0, 4), oma = c(0, 2, 2, 0))
@@ -150,7 +152,7 @@ plotFun <- function(fname, anomolise = FALSE, signify = TRUE, controlT = TRUE) {
         print("yay")
     }  
     
-    triangulaise <- function(p, addLegend, lab, dlimits) {
+    triangulaise <- function(p, addLegend, lab, dlimits, pval = NULL) {
         perctile <- function(i) {            
             if (nlayers(p[[1]])>1) q = layer.apply(p, function(q) q[[i]]) else q = p
             P = mean(layer.apply(q, function(i) {i[i<0] = 0; i}))
@@ -169,6 +171,7 @@ plotFun <- function(fname, anomolise = FALSE, signify = TRUE, controlT = TRUE) {
             PNcols = c()
             cols = make_col_vector(c(Ncols, Pcols), ncols = 101)
             index = seq(0, 1, length.out = length(PNlims)+1)
+            dleg = (index[2]- index[1])/2
             legXY = c()
             for (i in index) for (j in index) {
                 if (i == 0 && j == 0) rt = 50 else rt = round(100*j/(j+i))
@@ -181,20 +184,49 @@ plotFun <- function(fname, anomolise = FALSE, signify = TRUE, controlT = TRUE) {
                 PNcols = c(PNcols, col)
                 legXY = rbind(legXY, c(i, j))
             }            
-             
+            if (is.null(pval) || !controlT) e = NULL
+            else e = 4 - sum(layer.apply(pval, function(i) abs(i)>95))
             
-            plotStandardMap(PN, cols = PNcols, limits = 0.5+1:((length(PNlims)+1)^2-1), 
+            plotStandardMap(PN, e = e, limits_error = 0.5:3.5, cols = PNcols,
+                            limits = 0.5+1:((length(PNlims)+1)^2-1), ePatternRes = 50, 
+                            ePatternThick = 0.67,
                             readyCut = TRUE, speedy = FALSE)
             mtext(lab, side = 2, line = -8)
             if (addLegend) {
-                par(mar = c(3, 13, 1, 11))
-                plot(c(0, 1), c(0, 1), axes = FALSE, xlab = '', ylab ='', xaxs = 'i', yaxs = 'i')
-                for (cex in 10*seq(10, 0, by = -0.2))
-                    points(legXY[,1], legXY[,2], pch = 19, cex = cex, col = PNcols)
-                polygon(c(0, 1, 1, 0), c(1, 1, 0, 1), col = "white", border = "white")
+                
+                par(mar = c(3, 10, 1, 33.5))
+                ext = range(index) + c(-dleg, dleg*1.1)
+                plot(ext, ext, axes = FALSE, xlab = '', ylab ='', xaxs = 'i', yaxs = 'i')
+                addSquare <- function(xy) {
+                    if (as.numeric(xy[2]) < (1+1.5*dleg-as.numeric(xy[1]))) 
+                        polygon(as.numeric(xy[1]) + dleg * c(-1, 1, 1, -1),
+                                as.numeric(xy[2]) + dleg * c(-1, -1, 1, 1), col = xy[3])
+                }
+                apply(cbind(legXY, PNcols), 1, addSquare)
+                #for (cex in 10*seq(10, 0, by = -0.2))
+                #    points(legXY[,1], legXY[,2], pch = 19, cex = cex, col = PNcols)
+                
+                #polygon(c(0, 1, 1, 0), c(1, 1, 0, 1), col = "white", border = "white")
                 mtext("Decrease (%)", side = 1, line = 2)
                 mtext("Increase (%)", side = 2, line = 2)
-                lapply(1:2, axis, at = index - c(0, diff(index)/2), labels = c(0, PNlims))
+                
+                at1 = index - dleg#c(index[1] - diff(index[1])/2, index + diff(index)/2)
+                at2 = rep(-0.12-dleg, length(at1))
+                labels = c(0, PNlims)
+                
+                axisFUN <- function(id) {
+                    #text(x = index[1], y = index[1], '0', xpd = NA, cex = 0.9)
+                    text(x = at1, y = at2, labels, srt = 45, xpd = NA, cex = 0.9)
+                    text(y = at1, x = at2, labels, srt = 45, xpd = NA, cex = 0.9)
+                    lapply(1:2, axis, at = (index - diff(index)/2),
+                                    labels = rep('', length(index)))
+                    #id = seq(id, length(labels), by = 2)
+                    #lapply(1:2, axis, at = (index - c(0, diff(index)/2))[id],
+                    #                labels = labels[id], srt = 45)
+                }
+                lapply(1:2, axisFUN)
+                lapply(1:2, axis, at = c(-9e9, 9e9), labels = c('', ''))
+
             
             }
     
@@ -202,11 +234,16 @@ plotFun <- function(fname, anomolise = FALSE, signify = TRUE, controlT = TRUE) {
         #layer.apply(1:3, perctile)
         perctile(2)
     }
+    if (controlT) {
+        datP = lapply(datP, function(rs) mapply(function(r, r0)
+                            r/max.raster(r0[[2]], na.rm = T), rs, dat0))
+        dat0 = lapply(dat0, function(r) r/max.raster(r[[2]], na.rm = T))
+    }
     fnameP = paste0(fname, "anomIs_", anomolise, "_CXmaps")
-    png(paste0("figs/", fnameP, ".png"),
-        height = 10, width = 7.2, units = 'in',res  = 300)
-        layout(matrix(1:5, ncol = 1), heights = c(1, 0.3, 1, 1, 1))
-        par(mar = rep(0, 4))
+    pdf(paste0("figs/", fnameP, ".pdf"),
+        height = 10, width = 7.2)#, units = 'in',res  = 300)
+        layout(rbind(1, 2, 3, 4, c(5, 4), c(5, 5), 6), heights = c(1, 0.3, 1, 0.58, 0.42, 0.44, 0.56), widths = c(0.25, 0.75))
+        par(mar = rep(0, 4), oma = c(0.1, 0, 0, 0))
         if (length(dat0) > 1)
             dat0 = mean(layer.apply(dat0, function(i) i[[2]]))
         else dat0 = dat0[[1]]
@@ -214,15 +251,31 @@ plotFun <- function(fname, anomolise = FALSE, signify = TRUE, controlT = TRUE) {
                             overwrite = TRUE)
         plotStandardMap(dat0 * sc, cols = cols, limits = limits, speedy = FALSE)
         mtext(side = 2, "Historic", line = -8)
-        legendFun( cols,  limits, dat0[[1]])
-        mapply(triangulaise, datP, c(F, T), c("RCP2.6", "RCP6.0"),
+        if (controlT) {
+            extend_max = FALSE
+            maxLab = 100
+        } else {
+            extend_max = TRUE
+            maxLab = NULL
+        }
+        
+        legendFun(cols,  limits, dat0[[1]], extend_max = extend_max, maxLab = maxLab, 
+                  units = '%')
+        
+        mapply(triangulaise, datP, pval = pvsp, c(F, T), c("RCP2.6", "RCP6.0"),
               MoreArgs = list(dlimits = dlimits))
     dev.off()
+   
     if (signify) {
         fnameP = paste0(fname, "anomIs_", anomolise, "_CXmaps")
-        png(paste0("figs/", fnameP, "anomIs_", anomolise, "sign",signify, "_CXmaps.png"),
-            height = 7, width = 7.2, units = 'in',res  = 300)
-            par(mar = rep(0, 4), mfrow = c(3, 1))
+        pdf(paste0("figs/", fnameP, "anomIs_", anomolise, "sign",signify, "_CXmaps.pdf"),
+            height = 10, width = 7.2)#, units = 'in',res  = 300)#height = 7, width = 7.2)#, units = 'in',res  = 300)
+            #par(mar = rep(0, 4), mfrow = c(3, 1))
+            layout(rbind(1, 2, 3, 4, c(5, 4), c(5, 5), 6), heights = c(1, 0.3, 1, 0.58, 0.42, 0.38, 0.62), widths = c(0.25, 0.75))
+            par(mar = rep(0, 4), oma = c(0.1, 0, 0, 0))
+            #browser()
+            plot.new()
+            plot.new()
             mapply(triangulaise, pvsp, c(F, T), c("RCP2.6", "RCP6.0"),
                    MoreArgs = list(dlimits =sdlimits))
         dev.off()
@@ -232,25 +285,27 @@ plotFun <- function(fname, anomolise = FALSE, signify = TRUE, controlT = TRUE) {
 Pcols = "#330000"
 Ncols = "#000033"
 
-plotFun("BA", controlT = FALSE)
+#plotFun("BA", controlT = FALSE)
 
 limits =  c(0, 0.1, 0.5, 1, 5, 10, 50)
 dlimits = c(-10, -5, -1, -0.5, -0.1, -0.05, -0.01, 0.01, 0.05, 0.1, 0.5, 1, 5, 10)
 
-plotFun("BA", TRUE, FALSE)
+#plotFun("BA", TRUE, FALSE)
 
-plotCOntrols <- function(control) {
+plotCOntrols <- function(control, 
+                         slimits = c(0, 1, 2, 5, 10, 20, 50, 100, 150)/10,
+                        sdlimits = c(-50, -20, -10, -5, -2, -1, 1, 2, 5, 10, 20, 50)/10) {
     variable <<- paste0("standard_",control)
     sc <<-  100# * 10
-    limits <<- c(0, 1, 2, 5, 10, 20, 50, 100, 150)/10
-    limits <<- c(-100, -50, -20, -10, -5, -2, -1, 1, 2, 5, 10, 20, 50, 100)/10
+    limits <<-slimits
+    dlimits <<- sdlimits
     plotFun(variable)
 
     sc <<-  100 * 12
     variable <<- paste0("potential_",control)
     limits <<- c(0, 0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.15)
     dlimits <<-  c(-0.2, -0.1, -0.01, -0.001, 0.001, 0.01, 0.1, 0.2)/10
-    plotFun(variable)
+    #plotFun(variable)
 
     variable <<- paste0("sensitivity_",control)
     
@@ -258,23 +313,24 @@ plotCOntrols <- function(control) {
     #limits <<- c(0, 1, 2, 5, 10, 20, 50, 100, 150)/10
     #limits <<- c(-100, -50, -20, -10, -5, -2, -1, 1, 2, 5, 10, 20, 50, 100)/10
     if (control == "moisture") variable <<- "unknown"
-    plotFun(variable)    
+    #plotFun(variable)    
 }
 
 cols = c('#ffffe5','#f7fcb9','#d9f0a3','#addd8e','#78c679','#41ab5d','#238443','#006837','#004529')
 dcols = c('#40004b','#762a83','#9970ab','#c2a5cf','#e7d4e8','#f7f7f7','#d9f0d3','#a6dba0','#5aae61','#1b7837','#00441b')
 
-#Ncols = "#110011"
-#Pcols = "#001111"
+Ncols = "#200026"
+Pcols = "#002226"
 
-plotCOntrols("fuel")
+plotCOntrols("fuel", slimits = c(5, 10, 20, 50, 80, 90, 95),
+            sdlimits = c(-20, -10, -5, -2, -1, 1, 2, 5, 10, 20))
 
-
-cols = c('#ffffe5','#fff7bc','#fee391','#fec44f','#fe9929','#ec7014','#cc4c02','#993404','#662506')
+cols = c('#ffffe5','#fff7bc','#fee391','#fec44f','#fe9929','#ec7014','#cc4c02','#993404','#662506', '#331303')
 
 dcols = rev(c('#543005','#8c510a','#bf812d','#dfc27d','#f6e8c3','#f5f5f5','#c7eae5','#80cdc1','#35978f','#01665e','#003c30'))
 
-#Pcols = "#190900"
-#Ncols = "#001909"
+Pcols = "#131600"
+Ncols = "#001620"
 
-plotCOntrols("moisture")
+plotCOntrols("moisture", slimits = c(5, 10, 20, 50, 80, 90, 95),
+            sdlimits = c(-20, -10, -5, -2, -1, 1, 2, 5, 10, 20))
