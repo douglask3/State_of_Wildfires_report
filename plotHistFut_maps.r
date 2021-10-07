@@ -1,19 +1,19 @@
+###########
+## setup ##
+###########
 library(raster)
 library(rasterExtras)
 library(gitBasedProjects)
 library(ncdf4)
-source("libs/plotStandardMap.r")
-source("libs/sd.raster.r")
-source("libs/filename.noPath.r")
+sourceAllLibs("libs/")
 graphics.off()
 
+############
+## params ##
+############
 dir = 'outputs/sampled_posterior_ConFire_ISIMIP_solutions/attempt3/'
-
 models = c("GFDL-ESM2M", "HADGEM2-ES", "MIROC5", "IPSL-CM5A-LR")
-
-
 periods = c("historic", "RCP2.6", "RCP6.0")
-
 variable = "burnt_area_mean"
 
 limits =  c(0,1, 2, 5, 10, 20, 40)
@@ -25,19 +25,14 @@ dcols = rev(c('#a50026','#d73027','#f46d43','#fdae61','#fee090','#ffffbf','#e0f3
 
 sc = 12 * 100
 
-obs = mean(brick("data/ISIMIP_data2/burnt_area_GFED4sObs.nc"))
-
-logit <- function(r) {
-    r[r < 0.0000001] = 0.0000001
-    log(r/(1-r))
-}
-
-logistic <- function(r) 
-    1/(1+exp(r*(-1)))
+obs_file = "data/ISIMIP_data2/burnt_area_GFED4sObs.nc"
 
 
-obsL = logit(obs)
-
+##########
+## Open ##
+##########
+obs = mean(brick(obs_file))
+obsL = (obs)
 
 OpenPlotMap <- function(model, period, cols, limits, dcols = NULL, dlimits = NULL, dat0 = NULL,
                     anomolise = NULL, pnew = TRUE) {
@@ -62,16 +57,16 @@ OpenPlotMap <- function(model, period, cols, limits, dcols = NULL, dlimits = NUL
     return(dat)
 }
 
-legendFun <- function(cols, limits, dat, ...) 
-    add_raster_legend2(cols, limits, dat = dat,
-                           transpose = FALSE, srt = 0, oneSideLabels= TRUE,
-                           plot_loc = c(0.1, 0.9, 0.73, 0.8), ylabposScling=0.8,
-                           add = FALSE, ...)
-
+##########
+## plot ##
+##########
 plotFun <- function(fname, anomolise = FALSE, signify = TRUE, controlT = TRUE) {
     print(fname)
     print(variable)
     print("---")
+    #######################
+    ## open plot all map ##
+    #######################
     pdf(paste0("figs/", fname, "anomIs_", anomolise, "_Ymaps.pdf"),
         height = 10, width = 7.2)#, units = 'in',res  = 300)
         layout(rbind(matrix(1:(6*length(models)), ncol = 3), (6*length(models)) + c(1, 2, 2)))
@@ -89,67 +84,134 @@ plotFun <- function(fname, anomolise = FALSE, signify = TRUE, controlT = TRUE) {
         datP = lapply(periods[2:3], function(p)
                     mapply(OpenPlotMap, models, dat0 = dat0, anomolise = datA,
                     MoreArgs = list(p, cols, limits, dcols, dlimits)))
-        legendFun( cols,  limits, dat0[[1]])
-        legendFun(dcols, dlimits, datP[[1]][[1]], extend_min = TRUE, extend_max = TRUE)       
+        StanrdardLegend.new( cols,  limits, dat0[[1]])
+        StanrdardLegend.new(dcols, dlimits, datP[[1]][[1]],
+                            extend_min = TRUE, extend_max = TRUE)       
             
     dev.off.gitWatermark()
     pvsp = list(NULL)
-    if (signify) {
+
+    #############################################
+    ## Signicance of difference from historic ##
+    ############################################
+    if (signify) {        
         signifM <- function(mid) {
             if (controlT) FUN <- function(x) x else FUN = logit
             dx = 0.01
             sce = 0.68
             xs = seq(-23, 23, dx)
-            h = FUN(dat0[[mid]])[[2]]
+            h = dat0[[mid]][[2]]
+            #h = FUN(dat0[[mid]])[[2]]
             mask = !(h==h[1] & is.na(obsL))
             if (controlT) {
-                error = dat0[[mid]][[3]]-dat0[[mid]][[1]] 
+                error = sd((dat0[[mid]][[3]]-dat0[[mid]][[1]])[],
+                          na.rm = TRUE )
             } else {
-                error = sd((h -obsL)[], na.rm = TRUE)*sce
+                error = sd((FUN(h) -obsL)[], na.rm = TRUE)*sce
             }
             h[!mask] = NaN          
             out = h
             #h = addLayer(h - error*1.5, h + error*1.5)
             signifP <- function(pid) {
                 #### This bit changes when full model post is done 
-                temp_file = paste("temp/pvs", mid,  pid, sce,anomolise,fname,'.nc', sep = '-') 
+                temp_file = paste("temp/pvs3", mid,  pid, sce,anomolise,fname,'.nc', sep = '-') 
                 print(temp_file) 
                 if (file.exists(temp_file)) return(raster(temp_file))
-                ft = FUN((datP[[pid]][[mid]][[2]]+dat0[[mid]][[2]]*sc)/sc)
+                #ft = FUN((datP[[pid]][[mid]][[2]]+dat0[[mid]][[2]]*sc)/sc)
+                
                 #ft = addLayer(ft - error*1.5, ft + error*1.5)
-                FUN4cell <- function(x, y) {
-                    p = dnorm(xs, x, error)
-                    q = dnorm(xs, y, error)
-                    sum(p*log(p/q))
-                }
-                pv = 1-exp(-mapply(FUN4cell, h[mask], ft[mask]))
-                out[mask] = pv
-                test = datP[[pid]][[mid]][[2]] < 0
-                out[test] = -out[test]         
-                out = writeRaster(out, file = temp_file, overwrite = TRUE)           
+                #FUN4cell <- function(x, y) {
+                #    p = dnorm(xs, x, error)
+                #    q = dnorm(xs, y, error)
+                #    sum(p*log(p/q))
+                #}
+                
+                #pv = 1-exp(-mapply(FUN4cell, h[mask], ft[mask]))
+                #out[mask] = pv
+                #test = datP[[pid]][[mid]][[2]] < 0
+                #out[test] = -out[test] 
+               
+                out = cal_pd_product(xs, h, datP[[pid]][[mid]][[2]],
+                                     sc, error, mask, FUN)        
+                #browser()
+                out = writeRaster(out, file = temp_file, overwrite = TRUE)   
+                        
             }
             lapply(1:2, signifP)    
         }
         pvs = lapply(1:length(dat0), signifM)
+        #sigsP = lapply(pvs, lapply, function(i) i>  0.9 )
+        #sigsN = lapply(pvs, lapply, function(i) i<(-0.9))
+        #browser()
+
+        out = pvs[[1]][[1]]
+        out[] = NaN
+
+        ## Under fire
+        Sfire = max(layer.apply(pvs, layer.apply, function(i) abs(i))) > 0.9
+        out[Sfire] = 1
+
+        # under climate        
+        RCPs = lapply(1:2, function(i) mean(layer.apply(pvs, function(p) p[[i]])))
+        Smods = (abs(RCPs[[1]])>0.9) | (abs(RCPs[[2]]) > 0.9)
+        out[Smods] = 2
+
+        mods = layer.apply(pvs, function(i) abs(mean(layer.apply(i, function(x) x))))
+        Srcp = max(mods) > 0.9
+        out[Srcp] = 3
+               
+        All = mean(layer.apply(pvs, layer.apply, function(i) i))
+        AllP = All > 0.9
+        AllN = All < -0.9
+        out[AllP] = 4
+        out[AllN] = 5
+
         
+        #browser()
+        ## All agree
+        #for (md in 1:length(sigsP)) for (rcp in 1:length(sigsP[[1]]))
+        png("figs/Siggys.png", height = 5, width = 7.2, res = 300, units = 'in')  
+        colsSigs = c('#fc8d62', '#8da0cb', '#66c2a5', '#a50026', '#313695')
+        plotStandardMap(out, readyCut = TRUE, cols = colsSigs,
+                        limits = seq(1.5, 4.5))
+        legend('bottomleft', col = colsSigs, pch = 19, pt.cex = 2, legend = c('Sig. fire +', '\t climate', '\t RCP', '\t All - Increase', '\t All - Decrease'), bty = 'n')
+        dev.off()
+
+        out[] = NaN
+        out[RCPs[[2]] >  0.9 & RCPs[[1]] <  0.9] = 1
+        out[RCPs[[2]] <  0.9 & RCPs[[1]] >  0.9] = 2
+        out[RCPs[[2]] < -0.9 & RCPs[[1]] > -0.9] = 3
+        out[RCPs[[2]] > -0.9 & RCPs[[1]] < -0.9] = 4
+     
+        png("figs/Mitigation.png", height = 5, width = 7.2, res = 300, units = 'in')  
+        colsSigs = c('#ca0020', '#92c5de', '#f4a582', '#0571b0')
+        plotStandardMap(out, readyCut = TRUE, cols = colsSigs,
+                        limits = seq(1.5, 4.5))
+        legend('bottomleft', col = colsSigs, pch = 19, pt.cex = 2, legend = c('Sig. fire +', '\t climate', '\t RCP', '\t All - Increase', '\t All - Decrease'), bty = 'n')
+        dev.off()
+
+        browser()         
+#browser() 
+        fname0  = fname
         fname = paste0(fname, "anomIs_", anomolise, "signifChange", signify, "_Ymaps")
         pdf(paste0("figs/", fname, "pdf"), height = 5, width = 7.2)#, units = 'in',res  = 300)
+         
 
             layout(cbind(1:5, c(6:9, 14), c(10:13,  14)), height = c(1,1, 1, 1, 0.5))
             par(mar = rep(0, 4), oma = c(0, 2, 2, 0))
             lapply(models, OpenPlotMap, periods[1], cols, limits,
                    anomolise = datA, pnew = FALSE)
             
-            legendFun( cols,  limits, dat0[[1]])
+            StanrdardLegend.new( cols,  limits, dat0[[1]])
             pvsp = lapply(1:length(pvs[[1]]), function(i) lapply(pvs, function(j) 100*j[[i]]))
            
             lapply(pvsp, function(i)
                         lapply(i, plotStandardMap, cols = dcols, limits = sdlimits))           
             mtext(outer = TRUE, "RCP2.6", adj = 0.5)
             mtext(outer = TRUE, "RCP8.0", adj = 0.85)   
-            legendFun(dcols, sdlimits, pvsp[[1]][[1]], extend_min = TRUE, extend_max = TRUE)
+            StanrdardLegend.new(dcols, sdlimits, pvsp[[1]][[1]], 
+                                extend_min = TRUE, extend_max = TRUE)
         dev.off()
-        print("yay")
     }  
     
     triangulaise <- function(p, addLegend, lab, dlimits, pval = NULL) {
@@ -236,8 +298,8 @@ plotFun <- function(fname, anomolise = FALSE, signify = TRUE, controlT = TRUE) {
     }
     if (controlT) {
         datP = lapply(datP, function(rs) mapply(function(r, r0)
-                            r/max.raster(r0[[2]], na.rm = T), rs, dat0))
-        dat0 = lapply(dat0, function(r) r/max.raster(r[[2]], na.rm = T))
+                            r/max.raster(r0[[1]], na.rm = T), rs, dat0))
+        dat0 = lapply(dat0, function(r) r/max.raster(r[[1]], na.rm = T))
     }
     fnameP = paste0(fname, "anomIs_", anomolise, "_CXmaps")
     pdf(paste0("figs/", fnameP, ".pdf"),
@@ -259,7 +321,7 @@ plotFun <- function(fname, anomolise = FALSE, signify = TRUE, controlT = TRUE) {
             maxLab = NULL
         }
         
-        legendFun(cols,  limits, dat0[[1]], extend_max = extend_max, maxLab = maxLab, 
+        StanrdardLegend.new(cols,  limits, dat0[[1]], extend_max = extend_max, maxLab = maxLab, 
                   units = '%')
         
         mapply(triangulaise, datP, pval = pvsp, c(F, T), c("RCP2.6", "RCP6.0"),
@@ -285,12 +347,12 @@ plotFun <- function(fname, anomolise = FALSE, signify = TRUE, controlT = TRUE) {
 Pcols = "#330000"
 Ncols = "#000033"
 
-#plotFun("BA", controlT = FALSE)
+plotFun("BA", controlT = FALSE)
 
 limits =  c(0, 0.1, 0.5, 1, 5, 10, 50)
 dlimits = c(-10, -5, -1, -0.5, -0.1, -0.05, -0.01, 0.01, 0.05, 0.1, 0.5, 1, 5, 10)
 
-#plotFun("BA", TRUE, FALSE)
+plotFun("BA", TRUE, FALSE)
 
 plotCOntrols <- function(control, 
                          slimits = c(0, 1, 2, 5, 10, 20, 50, 100, 150)/10,
