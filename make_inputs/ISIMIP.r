@@ -7,15 +7,16 @@ sourceAllLibs("../rasterextrafuns/rasterExtras/R/")
 source("libs/process_jules_file.r")
 source("libs/writeRaster.Standard.r")
 
-dirs = list(historic = '/hpc/data/d01/hadcam/jules_output/RUNC20C_u-bk886_isimip_0p5deg_origsoil_dailytrif/',
-            RCP2.6_2010s = '/hpc/data/d01/hadcam/jules_output/RUNFUT26_u-bk886_isimip_0p5deg_origsoil_dailytrif/',
-            RCP6.0_2010s = '/hpc/data/d01/hadcam/jules_output/RUNFUT60_u-bk886_isimip_0p5deg_origsoil_dailytrif/',
-            RCP2.6_2020s = '/hpc/data/d01/hadcam/jules_output/RUNFUT26_u-bk886_isimip_0p5deg_origsoil_dailytrif/',
-            RCP6.0_2020s = '/hpc/data/d01/hadcam/jules_output/RUNFUT60_u-bk886_isimip_0p5deg_origsoil_dailytrif/',
-            RCP2.6_2040s = '/hpc/data/d01/hadcam/jules_output/RUNFUT26_u-bk886_isimip_0p5deg_origsoil_dailytrif/',
-            RCP6.0_2040s = '/hpc/data/d01/hadcam/jules_output/RUNFUT60_u-bk886_isimip_0p5deg_origsoil_dailytrif/',
-            RCP2.6_2090s = '/hpc/data/d01/hadcam/jules_output/RUNFUT26_u-bk886_isimip_0p5deg_origsoil_dailytrif/',
-            RCP6.0_2090s = '/hpc/data/d01/hadcam/jules_output/RUNFUT60_u-bk886_isimip_0p5deg_origsoil_dailytrif/')
+histDir = futDir  = "/hpc/data/d01/hadcam/jules_output/ALL_u-bk886_isimip_0p5deg_origsoil_dailytrif"
+dirs = list(historic = histDir,
+            RCP2.6_2010s = futDir,
+            RCP6.0_2010s = futDir,
+            RCP2.6_2020s = futDir,
+            RCP6.0_2020s = futDir,
+            RCP2.6_2040s = futDir,
+            RCP6.0_2040s = futDir,
+            RCP2.6_2090s = futDir,
+            RCP6.0_2090s = futDir)
 
 years = list(historic = 1995:2004,
              RCP2.6 = 2089:2098,
