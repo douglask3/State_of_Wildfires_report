@@ -41,23 +41,30 @@ models = c("MIROC5", "GFDL-ESM2M", "HADGEM2-ES", "IPSL-CM5A-LR")
 
 temp_dir = '/data/users/dkelley/ConFIRE_ISIMIP_temp/-makeISIMIPins'
 temp_dir_mem = '/data/users/dkelley/ConFIRE_ISIMIP_temp/memSafe/'
-out_dir  = '/data/users/dkelley/ConFIRE_ISIMIP/inputs/'
+out_dir  = '/data/users/dkelley/ConFIRE_ISIMIP/inputs2/'
 
 coverTypes = list(trees = c(1:7), totalVeg = c(1:13), crop = c(10, 12), pas = c(11, 13))
-
+makeDir(out_dir)
 memSafeFile.initialise(temp_dir_mem)
 makeDat <- function(id, dir, years_out) {
     years = c(years_out[1] - 1, years_out, tail(years_out, 1) + 1)
     forModel <- function(mod) {
         print(id)
         print(mod)
+        out_dirM = paste0(out_dir , '/', mod)
+        makeDir(out_dirM)
+        out_dirM = paste(out_dir,  mod, id, '', sep = '/')
+        makeDir(out_dirM)
+        
+
+        if(file.exists(paste0(out_dirM, '/genVars.Rd'))) return()
         tfile0 = paste0(c(temp_dir, id, mod, range(years)), collapse = '-')
         dir = paste0(dir, '/', mod, '/')
         files = list.files(dir, full.names = TRUE)
        
         ## select years
         files = files[apply(sapply(years, function(i) grepl(i, files)), 1, any)]
-    
+        files = files[substr(files, nchar(files)-2, nchar(files))=='.nc']
         openVar <- function(fileID, vname) {
             tfile = paste(tfile0 , fileID, vname, '.Rd', sep = '-')
             
@@ -133,8 +140,8 @@ makeDat <- function(id, dir, years_out) {
         precip = layer.apply(dats[-1, 'precip'], function(i) i)
         humid  = layer.apply(dats[-1, 'humid' ], function(i) i)
         tas    = layer.apply(dats[-1, 'tas'   ], function(i) i)
-
-        out_dirM = paste(out_dir,  mod, id, '', sep = '/')
+        
+       
         writeOut <- function(dat, name) {
             file = paste0(out_dirM,  name, '.nc')
             print(file)
@@ -152,7 +159,8 @@ makeDat <- function(id, dir, years_out) {
         writeOut(precip, 'precip')
         writeOut(humid, 'humid')
         writeOut(tas, 'tas')
-        
+        save(soil12, soilM_bottom , soilM_top, precip, humid, tas, 
+             file = paste0(out_dirM, '/genVars.Rd'))
         gc()
     }
     lapply(models, forModel)
