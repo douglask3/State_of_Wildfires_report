@@ -65,14 +65,19 @@ makeDat <- function(id, dir, years_out) {
         ## select years
         files = files[apply(sapply(years, function(i) grepl(i, files)), 1, any)]
         files = files[substr(files, nchar(files)-2, nchar(files))=='.nc']
+       
         openVar <- function(fileID, vname) {
-            tfile = paste(tfile0 , fileID, vname, '.Rd', sep = '-')
+            tfile = paste(tfile0 , fileID, vname, '-correcred.Rd', sep = '-')
             
             if (file.exists(tfile)) {
                 load(tfile)
             } else {
                 print(tfile)
-                files = files[grepl(fileID, files)]    
+                files = files[grepl(fileID, files)]  
+                if (substr(id, 1,3) == "RCP") {
+                    files = files[grepl(paste0('rcp', substr(id, 4, 6)), files)]
+                    #browser()
+                }
                 processSaveFile <- function(file, yr) {
                     dat =  process.jules.file(file, NULL, vname)
                     if (!is.list(dat)) {
