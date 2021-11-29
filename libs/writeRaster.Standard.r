@@ -1,4 +1,4 @@
-library(gitBasedProjects)
+#library(gitBasedProjects)
 library(ncdf4)
 
 writeRaster.Standard <- function(r, file, ...) 
