@@ -51,12 +51,13 @@ forPnt <- function(pnt, nm) {
     xy = c(colFromX(obs, pnt[1]), rowFromY(obs, pnt[2]))
     
     addPoly <- function(liki, col = NULL) {
-        
+       
         py = lapply(liki, function(i) i[xy[2], xy[1]])
+        
         py = py0 = lapply(py, function(i) i / sum(i))
         py = do.call('*', py)^(1/length(py))
         #lapply(py, function(y) polygon(px, y, col = make.transparent(col, 0.9), border = NA))
-  
+         
         if (is.null(col))     
             return(unlist(py))
         else 
@@ -68,8 +69,9 @@ forPnt <- function(pnt, nm) {
     test = which(apply(py, 1, sum)>0)
     test = c(max(1, test[1]-1), test, min(length(py), tail(test, 1)+1))
     xr = range(px[test])
-    #xr = range(px)
-    xr = logit(c(0.1, 30)/100)
+    xr = range(px)
+    #xr = logit(c(0.1, 30)/100)
+    #sev.new()
     plot(xr, c(0, max(unlist(py))),
          type = 'n', axes = FALSE, xlab = '', ylab = '')
     for (i in 1:8) mapply(addPoly, rev(likis), c("red", "blue", "black"))
@@ -86,8 +88,8 @@ forPnt <- function(pnt, nm) {
     
     ii = xy[1] + -1:1
     jj = xy[2] + -1:1
-    #browser()
-    pO = p0 = obs[jj, ii]
+    
+    pO = p0 = obs[jj, ii]/12
     pO = logit(mean(pO)/100) - 0.0
     lines(c(pO, pO), c(0, max(py)*0.67), lty = 2)
     pc =  apply(py, 2, function(i) sum(i[px > pO])/sum(i))
@@ -122,7 +124,7 @@ forPnt <- function(pnt, nm) {
 }
 
 png("figs/likihoodEventCurves.png", height = 6, width = 5, units = 'in', res = 300)
-    par(mfrow = c(3, 2), mar = rep(1, 4), oma = c(2, 2, 0, 0))
+    par(mfrow = c(3, 1), mar = rep(1, 4), oma = c(2, 2, 0, 0))
     mapply(forPnt,pnts, names(pnts))
     mtext('Burnt area (%)', side = 1, line = 2, font = 2)
     mtext('Prob.', side = 2, line = 0, outer = TRUE, font = 2)
