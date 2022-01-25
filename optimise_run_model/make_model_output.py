@@ -61,8 +61,6 @@ def newCubes3D(variable, step, eg_cube_in, dimname = 'model_level_number', minV 
     
     return(eg_cubes)
 
-
-
 ################
 ## input info ##
 ################
@@ -70,10 +68,10 @@ def newCubes3D(variable, step, eg_cube_in, dimname = 'model_level_number', minV 
 dir = "../ConFIRE_ISIMIP/inputs2/"
 model_names = os.listdir(dir)
 
-model_names = [model_names[2]]
-experiments = os.listdir(dir + model_names[0])#[0:2]
+model_names = [model_names[3]]
+experiments = os.listdir(dir + model_names[0])
 browser()
-#experiments = [experiments[0]]
+experiments = [experiments[0]]
 files = {'soilwMax'           : 'soil12.nc',
          'shallow_soilw'      : 'soilM_top.nc',
          'deep_soilw'         : 'soilM_bottom.nc',
@@ -504,7 +502,7 @@ output_potential_limitation = True
 output_sensitivity = True
 output_fullPost = True
 
-n_posterior_sample = 10
+n_posterior_sample = 50
 qs = np.arange(1, 100, 1)
 
 BAs = model.burnt_area_pdf.coord("model_level_number").points
@@ -586,7 +584,7 @@ def bootModel(input, model, experiment):
             if i == 0:
                 fullPost = MPDF.copy()
             else:
-                fullPost.data =+ MPDF.data
+                fullPost.data += MPDF.data
         
         fire_outi = fire_outi + [cubes]
         
