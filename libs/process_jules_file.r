@@ -1,4 +1,7 @@
-process.jules.file <- function(file, level = NULL, varName, fracWeight = FALSE) {
+
+source("libs/warningFuns.r")
+
+process.jules.file <- function(file, level = NULL, varName, fracWeight = FALSE, mask = NULL) {
     print(file)
     nc = nc_open(file)
     #if (class(nc) == "try-error") return(NULL)
@@ -15,26 +18,43 @@ process.jules.file <- function(file, level = NULL, varName, fracWeight = FALSE) 
 	dat = ncvar_get( nc, var)
 	return(dat)
     }
-	
+    
     dat = getVar(varName)
     lat = getVar("latitude")
     lon = getVar("longitude")
     tim = getVar("time_bounds")
-	
+    if (!is.null(mask))     {
+        extent = extent(mask)
+        test = lon >= (extent[1]-0.25) & lon <= (extent[2]+0.25) & lat > (extent[3]-0.25) & lat < (extent[4]+0.25)
+        if (length(dim(dat)) == 4) dat = dat[test,,,]
+        else if (length(dim(dat)) == 3) dat = dat[test,,]
+        else if (length(dim(dat)) == 2) dat = dat[test,]
+        else if (length(dim(dat)) == 1) dat = dat[test]
+        lat = lat[test]
+        lon = lon[test]
+    }
     l = length(lat)
-	
+    
     multiLayer <- function(mn, leveli = level) {
 	mdat = dat[, leveli, mn]
 	if (!is.null(dim(mdat)))
             mdat = apply(mdat,1 , sum)
 	return(mdat)
     }
+
+
+    cropMaskRasterisze <- function(lon, lat, r) {
+        r = rasterFromXYZ(cbind(lon, lat, r))
+        if (!is.null(extent)) r = raster::crop(r, extent)
+        if (!is.null(mask)) r[mask] = NaN
+        r
+    }
 	
     singleLayer <- function(mn) dat[, mn]
 	
-    monthizeData <- function(mn, FUN, ...) {
-    	mdat = FUN(mn, ...)
-	r = rasterFromXYZ(cbind(lon, lat, mdat))
+    monthizeData <- function(mn, FUN, ..., rasterize = TRUE) {
+    	r = FUN(mn, ...)
+	if (rasterize) r = cropMaskRasterisze(lon, lat, r)
 	return(r)
     }
     
@@ -49,12 +69,17 @@ process.jules.file <- function(file, level = NULL, varName, fracWeight = FALSE) 
 	    }
 	    ri = mapply(openWeightLayer, list(1, 2, 3:5, 6:8, 9), 1:5)
 	    r = ri[[1]] + ri[[2]] + ri[[3]] + ri[[4]] + ri[[5]]				
-	} else  {
-            monAll <- function(...) layer.apply(1:12, monthizeData, multiLayer, ...)
-            if (is.null(level))  r = lapply(1:(dim(dat)[2]), monAll)
-            else r = layer.apply(1:12, monthizeData, multiLayer)
+	} else  {	
+            monAll <- function(...) sapply(1:12, monthizeData, multiLayer, 
+                                                ..., rasterize = FALSE)  
+            if (is.null(level))  {
+                
+                r = lapply(1:(dim(dat)[2]), monAll)
+                r = lapply(r, function(i) cropMaskRasterisze(lon, lat, i))
+            } else r = layer.apply(1:12, monthizeData, multiLayer)
         }
-    } else r = sum(rasterFromXYZ(cbind(lon, lat, dat))[[level]])
-    
+    } else r = sum(cropMaskRasterisze(cbind(lon, lat, dat))[[level]])
+        
+       
     return(r)
 }
