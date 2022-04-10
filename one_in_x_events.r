@@ -23,7 +23,9 @@ models = list.dirs(likiDir, recursive = FALSE, full.name = FALSE)
 postFile = "model_summary-10.nc"
 percentile = T#F
 
-countriesSubL = sort(c("Brazil", "Botswana", "Madaga", "Portugal", "Guinea", "Paraguay", "Ghana", "Russia", "Thailand", "Ivory Coast", "Israel", "Cambodia", "Australia", "Canada", "United States of America"))
+#countriesSubL = sort(c("Brazil", "Botswana", "Madaga", "Portugal", "Guinea", "Paraguay", "Ghana", "Russia", "Thailand", "Ivory Coast", "Israel", "Cambodia", "Australia", "Canada", "United States of America"))
+countriesSubL = NULL
+countriesSubL = c("Netherlands", "France", "Belgium", "Germany", "Luxe")
 findCountry <- function(i) {
     id = which (substr(ckey, 1, nchar(i)) == i)
     if (length(id) > 1) id = id[nchar(as.character(ckey[id])) == nchar(i)]
@@ -249,7 +251,7 @@ forCountry <- function(i, name = '', areaNorm = FALSE, countries, ...) {
 
 
 forMask <- function(countries, maskName) {
-    countries[is.na(countries)] = 0
+    #countries[is.na(countries)] = 0
     id = unique(countries[])#[1:10]
     if (!is.null(countriesSubL)) id = sapply(countriesSubL, findCountry)
     
@@ -273,9 +275,9 @@ forMask <- function(countries, maskName) {
         allZero <- function(x) {
             isZero <- function(y) {
                 if (is.numeric(y)) {
-                    return(round(y, 2) == 0 )
+                    return(round(y, 6) == 0 )
                 } else {
-                    return(all(round(scenNotSplit(y), 2)==0))
+                    return(all(round(scenNotSplit(y), 6)==0))
                 }
             }
             #browser()
@@ -285,10 +287,11 @@ forMask <- function(countries, maskName) {
         #browser()
         out = c(allZero(i), allZero(j))
         if (any(is.na(out))) out = TRUE
-        else out = all(out)
+        else out =  all(out)
         out
     }
     test = !mapply(allZeros, BAkms, BAs)
+    
     BAkms = BAkms[test]
     BAs = BAs[test]
 
@@ -305,7 +308,7 @@ forMask <- function(countries, maskName) {
     largest[is.na(largest)] = 0
     index = sort.int(largest, index.return=TRUE, decreasing=TRUE)[[2]]
     
-    if (is.null(countriesSubL)) {BAkms = BAkms[index]; BAs = BAs[index]}
+    #if (is.null(countriesSubL)) {BAkms = BAkms[index]; BAs = BAs[index]}
     #BAkms = BAkms[1:7]; BAs = BAs[1:7]
     
     cols = c('#ffffcc','#ffeda0','#fed976','#feb24c','#fd8d3c','#fc4e2a',
