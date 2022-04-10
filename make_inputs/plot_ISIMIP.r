@@ -5,10 +5,11 @@ sourceAllLibs("libs/")
 library(raster)
 sourceAllLibs("../rasterextrafuns/rasterExtras/R/")
 dir = "../ConFIRE_ISIMIP/inputs2/"
-countries = c("Kenya", "Indonesia", "Malaysia", "Brazil", Paraguay = 'Paraguay')
+countries = c("Brazil", "Brazil")#, "Malaysia", "Brazil", Paraguay = 'Paraguay')
+extents = list(NULL, c(-52.5, -42.5, -17.5, -2.5))
 
-vars = c("trees", "tas", "soilM_top", "soilM_bottom", "crop", "pas", "totalVeg", "precip", "humid")
-areaAv = rep(TRUE, 9)
+vars = c("trees", "tas", "soilM_top", "soilM_bottom", "crop", "pas", "totalVeg", "precip", "humid", "cveg", "csoil")
+areaAv = rep(TRUE, 11)
 annualAv = areaAv#c(TRUE, TRUE, TRUE)
 monthAv = areaAv#c(TRUE, TRUE, TRUE)
 TSannualAv = areaAv
@@ -30,9 +31,11 @@ limits = list(c(0, 1, 2, 5, 10, 20, 40, 60, 80),
               c(0, 10, 20, 30, 40, 50),
               c(0, 1, 2, 5, 10, 20, 40, 60, 80),
              c(0, 20, 50, 100, 200, 400, 600, 1000, 1500, 2000),
-             c(0, 1, 2, 5, 10, 20))
-scale = c(100, 1, 1, 1, 100, 100, 100, 60*60*365*24, 1000)
-shift = c(0, 273.15, 0, 0, 0, 0, 0, 0, 0)
+             c(0, 1, 2, 5, 10, 20),
+              c(0, 0.01, 0.1, 1, 10, 100, 1000),
+              c(0, 0.01, 0.1, 1, 10, 100, 1000))
+scale = c(100, 1, 1, 1, 100, 100, 100, 60*60*365*24, 1000, 1, 1)
+shift = c(0, 273.15, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 
 periods = c("historic_TS_short" = 1960, "RCP2.6_TS" = 2006, "RCP6.0_TS" = 2006)
 col = c("black", "blue", "red")
@@ -40,11 +43,11 @@ mapYrs = list(c(1960, 1970), c(1995, 2005), c(2040, 2050), c(2089, 2099))
 
 lty = c("GFDL-ESM2M" = 1, "HADGEM2-ES" = 2, "IPSL-CM5A-LR" = 3, "MIROC5" = 4)
 
-extend_mins = c(FALSE, TRUE, rep(FALSE, 7))
-extend_maxs = c(FALSE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, TRUE, TRUE)
-maxLabs     = list(100, NULL, NULL, NULL, 100, 100, 100, NULL, NULL)
+extend_mins = c(FALSE, TRUE, rep(FALSE, 9))
+extend_maxs = c(FALSE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, TRUE)
+maxLabs     = list(100, NULL, NULL, NULL, 100, 100, 100, NULL, NULL, NULL, NULL)
 
-forCountry <- function(country, variable, areaA, annualA, monthA, TSannualA,      
+forCountry <- function(country, extent, variable, areaA, annualA, monthA, TSannualA,      
                        scale, shift, cols, limits,
                        extend_min, extend_max, maxLab) {
 
@@ -68,15 +71,21 @@ forCountry <- function(country, variable, areaA, annualA, monthA, TSannualA,
     
     openPeriod <- function(period, yrs) {
         tfile = paste("temp/plot_ISIMIP-x", period, yrs, country, variable, 
-                      areaA, annualA, monthA, ".Rd", sep = '-')
+                      areaA, annualA, monthA, sep = '-')
+        if (is.null(extent)) tfile = paste(tfile, ".Rd", sep = '-')
+            else  tfile = paste(c(tfile, extent, ".Rd"), collapse  = '-')        
         if (file.exists(tfile)) {load(tfile); return(list(yrs, tss, maps))}
         dir = paste(dir, country, period, sep = '/')
         files = list.files(dir, recursive = TRUE)
         openMod <- function(file) {
             dat = brick(paste0(dir, '/', file))
+            print(nlayers(dat))
+            #if (grepl("MIR", file)) browser()
+            if (!is.null(extent)) dat = raster::crop(dat, extent)
             areaR = raster::area(dat[[1]], na.rm = TRUE)
             ts = dat * areaR
             ts = apply(ts[], 2, sum, na.rm = TRUE)
+            
             ts = ts/sum(areaR[], na.rm = TRUE)
 
             yrs = yrs + (1:nlayers(dat))/12-1/24
@@ -110,26 +119,58 @@ forCountry <- function(country, variable, areaA, annualA, monthA, TSannualA,
     tsMap = mapply( openPeriod, names(periods), periods)
     if (TSannualA) {        
         runnuingMn <- function(ts, nm = 12)
-            sapply(nm:length(ts), function(mn) mean(ts[(mn-nm+1):mn]))
-        tsMap[2, ] = lapply(tsMap[2,], lapply, runnuingMn)
+            sapply(nm:length(ts), function(mn) mean(ts[(mn-nm+1):mn]))#ts[nm:length(ts)]#
+        
+        tsMap = rbind(tsMap, lapply(tsMap[2,], lapply, runnuingMn))
     }
     
-    plot(range(unlist(tsMap[1,])), range(unlist(tsMap[2,]))*scale-shift, type = 'n', 
+    plot(range(unlist(tsMap[1,])), range(unlist(tsMap[4,]))*scale-shift, type = 'n', 
          xlab = '', ylab = '')
+    
     legend('topleft', names(tsMap[[2,1]]), lwd = 2, lty = lty, bty = 'n')
     legend('top', colnames(tsMap), col = col, lwd = 2, bty = 'n')
     title(paste(country, '-', variable))
     addTS <- function(tss) {
         yrs = tss[[1]]
-        if (TSannualA) yrs = yrs[12:length(yrs)]
-        addMod <- function(ts, name) {
+        if (TSannualA) yrs12 = yrs[12:length(yrs)] else yrs12 = yrs
+        tss[[2]] = lapply(tss[[2]], function(i) i * scale + shift)
+        findAxis <- function(nsig = 1) {
+            out = seq(min(unlist(tss[[2]])), max(unlist(tss[[2]])) , length.out = 6)
+            out = unique(signif(out, nsig))
+            if (length(out) < 4) out = findAxis(nsig+1)
+            return(out)
+        }
+        ylabels = findAxis()
+        maxT = max(c(ylabels, unlist(tss[[2]]))) 
+        minT = min(c(ylabels, unlist(tss[[2]]))) 
+        addMod <- function(ts12, ts, name) {
             #if (TSannualA) {
             #    yrs = yrs[12:length(yrs)]
             #    ts = sapply(12:length(ts), function(mn) mean(ts[(mn-11):mn]))
             #}
-            lines(yrs, ts*scale-shift, lty = lty[names(lty) == name], col = tss[[4]])
+            test = yrs >=1996 & yrs <= 2005
+            if (sum(test) >=12) {
+                ts = ts[test]
+                ts = sapply(1:12, function(mn) mean(ts[seq(mn, length(ts), by = 12)]))
+            
+                yrange =  par("usr")[3:4]
+                yrange = yrange[1] + diff(yrange) * c(0.67, 0.97)
+            
+                xclim = seq(1990, 2011, length.out = 12)
+                yclim = yrange[1] + (ts-minT) * diff(yrange) / (maxT-minT)
+                lines(xclim, yclim, lty = lty[names(lty) == name])  
+                
+                lines(range(xclim), rep(yrange[1], 2)) 
+                text(xclim, yrange[1] - 0.05*diff(yrange), sapply(month.abb, substr, 1, 1))
+
+                lines(rep(xclim[1] - 0.1 * diff(xclim[1:2]), 2), yrange)
+                yat = yrange[1] + (ylabels-minT) * diff(yrange) / (maxT-minT)
+                text(xclim[1] - 0.1 * diff(xclim[1:2]), yat , ylabels, adj = 1.5, col = tss[[5]])
+            }
+            
+            lines(yrs12, ts12*scale-shift, lty = lty[names(lty) == name], col = tss[[5]])
         }
-        mapply(addMod, tss[[2]], names(tss[[2]]))
+        mapply(addMod, tss[[4]], tss[[2]], names(tss[[2]]))
     }
 
     apply(rbind(tsMap, col), 2, addTS)
@@ -161,11 +202,11 @@ forCountry <- function(country, variable, areaA, annualA, monthA, TSannualA,
 
 forVar <- function(...) {
     
-    lapply(countries, forCountry, ...)
+    mapply(forCountry, countries, extents, MoreArgs = list(...))
 
 }
 
-pdf("figs/CountryVarTSMap.pdf", height = 10, width = 7)
+pdf("figs/CountryVarTSMap-withC.pdf", height = 10*1.5, width = 7*1.5)
 mapply(forVar, vars, areaAv, annualAv, monthAv, TSannualAv,      
                        scale, shift, cols, limits, 
                        extend_mins, extend_maxs, maxLabs)
