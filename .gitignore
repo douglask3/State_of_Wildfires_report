@@ -4,3 +4,8 @@ temp/*
 outputs/*
 data/*
 *.swp
+*.csv
+*checkpoints/*
+*pycache*
+*ods*
+*~lock*
