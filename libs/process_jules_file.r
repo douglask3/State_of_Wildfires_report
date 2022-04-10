@@ -22,10 +22,11 @@ process.jules.file <- function(file, level = NULL, varName, fracWeight = FALSE, 
     dat = getVar(varName)
     lat = getVar("latitude")
     lon = getVar("longitude")
+    
     tim = getVar("time_bounds")
     if (!is.null(mask))     {
         extent = extent(mask)
-        test = lon >= (extent[1]-0.25) & lon <= (extent[2]+0.25) & lat > (extent[3]-0.25) & lat < (extent[4]+0.25)
+        test = lon >= (extent[1]-0.5) & lon <= (extent[2]+0.5) & lat > (extent[3]-0.25) & lat < (extent[4]+0.25)
         if (length(dim(dat)) == 4) dat = dat[test,,,]
         else if (length(dim(dat)) == 3) dat = dat[test,,]
         else if (length(dim(dat)) == 2) dat = dat[test,]
@@ -45,7 +46,8 @@ process.jules.file <- function(file, level = NULL, varName, fracWeight = FALSE, 
 
     cropMaskRasterisze <- function(lon, lat, r) {
         r = rasterFromXYZ(cbind(lon, lat, r))
-        if (!is.null(extent)) r = raster::crop(r, extent)
+        if (!is.null(extent) && class(extent) != "standardGeneric")
+            r = raster::crop(r, extent)
         if (!is.null(mask)) r[mask] = NaN
         r
     }
@@ -78,8 +80,9 @@ process.jules.file <- function(file, level = NULL, varName, fracWeight = FALSE, 
                 r = lapply(r, function(i) cropMaskRasterisze(lon, lat, i))
             } else r = layer.apply(1:12, monthizeData, multiLayer)
         }
-    } else r = sum(cropMaskRasterisze(cbind(lon, lat, dat))[[level]])
-        
-       
+    } else {
+        r = cropMaskRasterisze(lon, lat, dat)
+        if (!is.null(level)) r = sum(r[[level]])
+    }   
     return(r)
 }
