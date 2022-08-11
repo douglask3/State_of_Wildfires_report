@@ -3,10 +3,14 @@ class ConFIRE(object):
         """
         Initalise parameters and calculates the key variables needed to calculate burnt area.
         """
-        numPCK =  __import__('numpy') if inference else numPCK =  __import__('theano').tensor
+        self.inference = inference
+        if self.inference:
+            self.numPCK =  __import__('numpy')
+        else:
+            self.numPCK =  __import__('theano').tensor
 
         self.params = params
-
+        
 
         ## finds controls
         self.fuel = self.control_fuel(data['cveg'], data['csoil'], self.params['c_csoil'])
@@ -71,35 +75,36 @@ class ConFIRE(object):
 
 
         ## if the inputs are iris cubes, we can add some useful metadata
-        try:
-            self.burnt_area.long_name = "burnt_area"
-            self.burnt_area_mode.long_name = "burnt_area_mode"
-            #self.burnt_area_median.long_name = "burnt_area_median"
-            self.burnt_area_mean.long_name = "burnt_area_mean"
+        if (not inference):
+            try:
+                self.burnt_area.long_name = "burnt_area"
+                self.burnt_area_mode.long_name = "burnt_area_mode"
+                #self.burnt_area_median.long_name = "burnt_area_median"
+                self.burnt_area_mean.long_name = "burnt_area_mean"
 
-            self.fuel.long_name = "fuel continuity"
-            self.fuel.units = '1'
+                self.fuel.long_name = "fuel continuity"
+                self.fuel.units = '1'
 
-            self.moisture.long_name = "moisture content"
-            self.moisture.units = '1'
+                self.moisture.long_name = "moisture content"
+                self.moisture.units = '1'
 
-            self.ignitions.long_name = "ignitions"
-            self.ignitions.units = 'km-2'
+                self.ignitions.long_name = "ignitions"
+                self.ignitions.units = 'km-2'
 
-            self.suppression.long_name = "suppression"
-            self.suppression.units = '1'
+                self.suppression.long_name = "suppression"
+                self.suppression.units = '1'
 
-            self.standard_fuel.long_name = "standard_fuel"
-            self.standard_moisture.long_name = "standard_moisture"
-            self.standard_ignitions.long_name = "standard_ignitions"
-            self.standard_suppression.long_name = "standard_suppression"
+                self.standard_fuel.long_name = "standard_fuel"
+                self.standard_moisture.long_name = "standard_moisture"
+                self.standard_ignitions.long_name = "standard_ignitions"
+                self.standard_suppression.long_name = "standard_suppression"
 
-            self.standard_fuel.units = '1'
-            self.standard_moisture.units = '1'
-            self.standard_ignitions.units = '1'
-            self.standard_suppression.units = '1'
-        except:
-            pass        
+                self.standard_fuel.units = '1'
+                self.standard_moisture.units = '1'
+                self.standard_ignitions.units = '1'
+                self.standard_suppression.units = '1'
+            except:
+                pass        
     
         
     def control_fuel(self, vegcover, alphaMax, fuel_pw, fuel_pg):
@@ -110,11 +115,11 @@ class ConFIRE(object):
     
     def emc_weighted(self, emc, precip, wd_pg):
         try:
-            wet_days = 1 - numPCK.exp(-wd_pg * precip)
+            wet_days = 1 - self.numPCK.exp(-wd_pg * precip)
             emcw = wet_days + (1-wet_days) * emc
         except:
             emcw = emc.copy()
-            emcw.data  = 1 - numPCK.exp(-wd_pg * precip.data)
+            emcw.data  = 1 - self.numPCK.exp(-wd_pg * precip.data)
             emcw.data = emcw.data + (1-emcw.data) * emc.data
         return(emcw)
 
@@ -123,7 +128,7 @@ class ConFIRE(object):
         Definition to describe moisture
         """
         moist = (shallow_soil/100.0 + cMs * deeps_soil/100.0 + cM*emc + cMT * (treeCover**pT)) / (1 + cMs + cM + cMT)
-        moist.data = 1 - numPCK.log(1 - moist.data*kM)
+        moist.data = 1 - self.numPCK.log(1 - moist.data*kM)
         return moist
 
 
@@ -148,10 +153,11 @@ class ConFIRE(object):
 
         gradient = self.gradient(x, x0, k)
         sens = gradient * self.control_removal(fi)
-
+        if self.inference:
+            return sens
         try: sens.units = '1'
         except: pass
-
+        
         if long_name is not None:
             try: sens.long_name = long_name
             except: browser()
@@ -165,7 +171,7 @@ class ConFIRE(object):
     def potential(self, fi, long_name = None):
         out = fi.copy()
         out.data = self.burnt_area_mode.data * ((1/out.data) - 1)
-
+        
         try: out.units = '1'
         except: pass
 
@@ -198,17 +204,17 @@ class ConFIRE(object):
         try:
             out = x.copy()
             out.data = -k*(x.data - x0)
-            out.data = 1.0/(1.0 + numPCK.exp(out.data))
+            out.data = 1.0/(1.0 + self.numPCK.exp(out.data))
             x = out
         except:
             x = -k * (x - x0)
-            x = 1.0/(1.0 + numPCK.exp(x))
+            x = 1.0/(1.0 + self.numPCK.exp(x))
         return x
     
     def burnt_area_calPDF(self, data, p0, pp):
         
-        mask = numPCK.logical_not(self.burnt_area_mode.data.mask)
-        self.burnt_area_pdf = newCubes3D('burnt_area', 0.5, data['burnt_area'])
+        mask = self.numPCK.logical_not(self.burnt_area_mode.data.mask)
+        self.burnt_area_pdf = newCubes3D('burnt_area', 0.5, data['fireObs'])
         
         self.burnt_area_mean = self.burnt_area_mode.copy()
         self.burnt_area_mean.data[mask] = 0.0
@@ -223,7 +229,7 @@ class ConFIRE(object):
         x = self.burnt_area_pdf.coord('model_level_number').points
         for k in range(1, self.burnt_area_pdf.shape[0]):       
             self.burnt_area_pdf.data[k][mask] = dist.pdf(x[k]) * (1.0 - self.pz)
-            self.burnt_area_mean.data[mask]  = self.burnt_area_mean.data[mask] +  dist.pdf(x[k]) * (1.0 - self.pz)  *(1/(1+numPCK.exp(-x[k])))
+            self.burnt_area_mean.data[mask]  = self.burnt_area_mean.data[mask] +  dist.pdf(x[k]) * (1.0 - self.pz)  *(1/(1+self.numPCK.exp(-x[k])))
                                      
         PDFtot = self.burnt_area_pdf.collapsed(['model_level_number'], iris.analysis.SUM)
         
