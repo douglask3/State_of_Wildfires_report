@@ -50,31 +50,61 @@ px = sapply(px, convertLayer2Num)
 forPnt <- function(pnt, nm) {
     xy = c(colFromX(obs, pnt[1]), rowFromY(obs, pnt[2]))
     
-    addPoly <- function(liki, col = NULL) {
-       
+    addPoly <- function(liki, col = NULL, ncall) {
         py = lapply(liki, function(i) i[xy[2], xy[1]])
         
         py = py0 = lapply(py, function(i) i / sum(i))
         py = do.call('*', py)^(1/length(py))
         #lapply(py, function(y) polygon(px, y, col = make.transparent(col, 0.9), border = NA))
-         
+        
+        c(px, py) := spline(px, py, 1000)#log(py+0.000000001), 1000)
+        py[py<0] = 0
+        #py = exp(py)
+        py = py/max(py)
         if (is.null(col))     
             return(unlist(py))
-        else 
+        else {
             polygon(px, py, col = make.transparent(col, 0.95), border = NA)
-
+            if (is.na(bah)) {
+                bah = which((cumsum(py)/sum(py))>0.99)[1]
+                bah <<- bah
+                lines(px[c(bah, bah)], c(0, py[bah]*1.5), col = col, twd = 2, lty = 2)
+                
+                text(-5, 0.5, '1% likelihood 2010-2020', adj = 0.0,  length = 0.1, angle = 20)
+                #arrows(-5.1, 0.5,px[bah], py[bah])
+            } else if(ncall ==1 ) {
+                lk = round(100*((sum(py[bah:length(py)])-1)/sum(py)), 1)
+                text(-4, 0.4, "2090-2010 likelihood", adj = 0)
+                if (col == "blue") {
+                    text(-4, 0.33, paste0(lk, '% - RCP2.6'), 
+                          adj = 0.0, col = 'blue')
+                    #arrows(-4.1, 0.33, -5, 0.05, col = 'blue', length = 0.1, angle = 20)
+                } else  {
+                    text(-4, 0.26, paste0(lk, '% - RCP6.0'), 
+                         adj = 0.0, col = 'red')
+                    #arrows(-4.1, 0.26, -4.6, 0.08, col = 'red',  length = 0.1, angle = 20)
+                }
+                
+            }
+            index = bah:length(px)
+            polygon(px[c(bah, index)], c(0, py[index]), col = make.transparent(col, 0.5), density = 50)
+              #browser()  
+           # }
+        }
         return(py)
     }
     py = mapply(addPoly, likis)
     test = which(apply(py, 1, sum)>0)
-    test = c(max(1, test[1]-1), test, min(length(py), tail(test, 1)+1))
+    #test = c(max(1, test[1]-1), test, min(length(py), tail(test, 1)+1))
     xr = range(px[test])
     xr = range(px)
+    xr[2] = 1.4
     #xr = logit(c(0.1, 30)/100)
-    #sev.new()
+    #dev.new()
     plot(xr, c(0, max(unlist(py))),
          type = 'n', axes = FALSE, xlab = '', ylab = '')
-    for (i in 1:8) mapply(addPoly, rev(likis), c("red", "blue", "black"))
+    bah <<- NaN
+    for (i in 1:8) mapply(addPoly, likis, c("black", "red", "blue"), i)
     #polygon(px, py[,2], col = make.transparent('blue', 0.9), border = 'blue')
     #polygon(px, py[,3], col = make.transparent('red', 0.9), border = 'red')
     #polygon(px, py[,1], col = make.transparent(, 0.9))
@@ -88,9 +118,18 @@ forPnt <- function(pnt, nm) {
     
     ii = xy[1] + -1:1
     jj = xy[2] + -1:1
-    
+    obsBased = FALSE
+    if (!obsBased) {
+        nmS = sapply(1:nchar(nm), function(i) substr(nm,i,i))
+        nmS = paste0(nmS[is.na(as.numeric(nmS))], collapse = '')
+       
+        mtext(side = 3, line = -1.5, nmS)
+        mtext.units(sise = 3, line = -2.5,  paste0(pnt[1], '~DEG~E ', pnt[2], '~DEG~N'))
+        return()
+    }
     pO = p0 = obs[jj, ii]/12
     pO = logit(mean(pO)/100) - 0.0
+
     lines(c(pO, pO), c(0, max(py)*0.67), lty = 2)
     pc =  apply(py, 2, function(i) sum(i[px > pO])/sum(i))
     if (pc[1] < 0.01) pc[1] = 0.01
@@ -123,7 +162,7 @@ forPnt <- function(pnt, nm) {
     
 }
 
-png("figs/likihoodEventCurves.png", height = 6, width = 5, units = 'in', res = 300)
+png("figs/likihoodEventCurves-noArrows.png", height = 6, width = 5, units = 'in', res = 300)
     par(mfrow = c(3, 1), mar = rep(1, 4), oma = c(2, 2, 0, 0))
     mapply(forPnt,pnts, names(pnts))
     mtext('Burnt area (%)', side = 1, line = 2, font = 2)
