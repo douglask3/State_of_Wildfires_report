@@ -1,8 +1,10 @@
 class ConFIRE(object):
-    def __init__(self, data, params):
+    def __init__(self, data, params, inference = False):
         """
         Initalise parameters and calculates the key variables needed to calculate burnt area.
         """
+        numPCK =  __import__('numpy') if inference else numPCK =  __import__('theano').tensor
+
         self.params = params
 
 
@@ -109,11 +111,11 @@ class ConFIRE(object):
     
     def emc_weighted(self, emc, precip, wd_pg):
         try:
-            wet_days = 1 - np.exp(-wd_pg * precip)
+            wet_days = 1 - numPCK.exp(-wd_pg * precip)
             emcw = wet_days + (1-wet_days) * emc
         except:
             emcw = emc.copy()
-            emcw.data  = 1 - np.exp(-wd_pg * precip.data)
+            emcw.data  = 1 - numPCK.exp(-wd_pg * precip.data)
             emcw.data = emcw.data + (1-emcw.data) * emc.data
         return(emcw)
 
@@ -122,7 +124,7 @@ class ConFIRE(object):
         Definition to describe moisture
         """
         moist = (shallow_soil/100.0 + cMs * deeps_soil/100.0 + cM*emc + cMT * (treeCover**pT)) / (1 + cMs + cM + cMT)
-        moist.data = 1 - np.log(1 - moist.data*kM)
+        moist.data = 1 - numPCK.log(1 - moist.data*kM)
         return moist
 
 
@@ -197,16 +199,16 @@ class ConFIRE(object):
         try:
             out = x.copy()
             out.data = -k*(x.data - x0)
-            out.data = 1.0/(1.0 + np.exp(out.data))
+            out.data = 1.0/(1.0 + numPCK.exp(out.data))
             x = out
         except:
             x = -k * (x - x0)
-            x = 1.0/(1.0 + np.exp(x))
+            x = 1.0/(1.0 + numPCK.exp(x))
         return x
     
     def burnt_area_calPDF(self, data, p0, pp):
         
-        mask = np.logical_not(self.burnt_area_mode.data.mask)
+        mask = numPCK.logical_not(self.burnt_area_mode.data.mask)
         self.burnt_area_pdf = newCubes3D('burnt_area', 0.5, data['burnt_area'])
         
         self.burnt_area_mean = self.burnt_area_mode.copy()
@@ -222,7 +224,7 @@ class ConFIRE(object):
         x = self.burnt_area_pdf.coord('model_level_number').points
         for k in range(1, self.burnt_area_pdf.shape[0]):       
             self.burnt_area_pdf.data[k][mask] = dist.pdf(x[k]) * (1.0 - self.pz)
-            self.burnt_area_mean.data[mask]  = self.burnt_area_mean.data[mask] +  dist.pdf(x[k]) * (1.0 - self.pz)  *(1/(1+np.exp(-x[k])))
+            self.burnt_area_mean.data[mask]  = self.burnt_area_mean.data[mask] +  dist.pdf(x[k]) * (1.0 - self.pz)  *(1/(1+numPCK.exp(-x[k])))
                                      
         PDFtot = self.burnt_area_pdf.collapsed(['model_level_number'], iris.analysis.SUM)
         
