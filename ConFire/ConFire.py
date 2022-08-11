@@ -9,19 +9,18 @@ class ConFIRE(object):
 
 
         ## finds controls
-        self.fuel = self.control_fuel(data['vegcover'], data['soilwMax'], self.params['fuel_pw'],
-                                      self.params['fuel_pg'])
+        self.fuel = self.control_fuel(data['cveg'], data['csoil'], self.params['c_csoil'])
         
-        self.emcw = self.emc_weighted(data['emc'], data["precip"], self.params['wd_pg'])
+        self.emcw = self.emc_weighted(data['humid'], data["precip"], self.params['wd_pg'])
         
-        self.moisture = self.control_moisture(data['shallow_soilw'], data['deep_soilw'],
-                                              self.emcw, data['treeCover'],
-                                              self.params['cMs'], self.params['cM'], self.params['cMT'], 
+        self.moisture = self.control_moisture(data['soilM'],
+                                              self.emcw, data['trees'],
+                                              self.params['c_emc2'], self.params['c_trees'], 
                                               self.params['kM'], self.params['pT'])
 
-        self.ignitions = self.control_ignitions(data['pasture'])
+        self.ignitions = self.control_ignitions(data['pas'])
 
-        self.suppression = self.control_suppression(data['cropland'])
+        self.suppression = self.control_suppression(data['crop'])
 
         ## calculates limiting factor of each control.
         self.standard_fuel        = self.sigmoid(self.fuel       ,
