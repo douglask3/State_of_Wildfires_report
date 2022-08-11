@@ -14,58 +14,26 @@ genVarID = "genVar-C-cover2-soilM-soilC"
 
 overwrite_outputs = FALSE
 
-histDir = futDir  = "/hpc/data/d01/hadcam/jules_output/ALL_u-bk886_isimip_0p5deg_origsoil_dailytrif"
-dirs = list(historic_TS_vshort = histDir,
-            historic_TS_short = histDir,
-            #historic_TS  = histDir,
-            RCP2.6_TS    = futDir ,
-            RCP6.0_TS    = futDir,
-            historic     = histDir,
-            RCP2.6_2010s = futDir ,
-            RCP6.0_2010s = futDir ,
-            RCP2.6_2020s = futDir ,
-            RCP6.0_2020s = futDir ,
-            RCP2.6_2040s = futDir ,
-            RCP6.0_2040s = futDir ,
-            RCP2.6_2090s = futDir ,
-            RCP6.0_2090s = futDir  )
+histDir = "/hpc//data/d00/hadea/jules_output/u-cc669_isimip3a_es/GSWP3-W5E5/"
+dirs = list(historic_TS_short = histDir,
+            historic_TS  = histDir)
 
-years = list(historic_TS_vshort = 1999:2005,
-             historic_TS_short = 1960:2005,
-             #historic_TS  = 1861:2004,
-             RCP2.6_TS    = 2006:2099,
-             RCP6.0_TS    = 2006:2099,
-             historic     = 1995:2005,
-             RCP2.6_2010s = 2010:2019,
-             RCP6.0_2010s = 2010:2019,
-             RCP2.6_2020s = 2020:2029,
-             RCP6.0_2020s = 2020:2029,
-             RCP2.6_2040s = 2040:2049,
-             RCP6.0_2040s = 2040:2049,
-             RCP2.6_2090s = 2090:2099,
-             RCP6.0_2090s = 2090:2099)
+years = list(historic_TS_short = 2001:2019,
+             historic_TS  = 1873:2019)
 
-countries = c(Global = NA, Kenya = 'Kenya', 
-              Indonesia = 'Indonesia',  
-              Malaysia = 'Malaysia', 
-              Brazil = 'Brazil', Paraguay = 'Paraguay', Bolivia = 'Bolivia', 
-              Botswana = 'Botswana', Madagascar = 'Madagascar', 
-              Portugal = 'Portugal', 'NewGuinea' = 'Papua New Guinea', Ghana = 'Ghana', 
-              Russia = 'Russia', Thailand = 'Thailand', IvoryCoast = 'Ivory Coast',
-              Israel = 'Israel', Cambodia = 'Cambodia', Australia = 'Australia', 
-              Canada = 'Canada', USA = 'United States of America', UK = 'United Kingdom')
+countries = c(Global = NA)
 
-fileIDs = c(cover = "ilamb", soilM = "gen_mon_layer", cveg = "ilamb", cs_gb = "ilamb",
-            precip = "ilamb", humid = "ilamb", tas = "ilamb", cs_soilLayer = "c_ann_pftlayer")
+fileIDs = c(cover = "ilamb", soilM = "ilamb", cveg = "ilamb", cs_gb = "ilamb",
+            precip = "ilamb", humid = "ilamb", tas = "ilamb")
 
-varnames =  c(cover = "frac", soilM = "smcl", cveg = "cv", cs_gb = "cs_gb",
-              precip = "precip", humid = "q1p5m_gb", tas = "t1p5m_gb", cs_soilLayer = "cs")
+varnames =  c(cover = "frac", soilM = "smc_tot", cveg = "cv", cs_gb = "cs_gb",
+              precip = "precip", humid = "q1p5m_gb", tas = "t1p5m_gb")
 
-models = c("MIROC5", "GFDL-ESM2M", "HADGEM2-ES", "IPSL-CM5A-LR")
+models = c("obsclim", "counterclim")
 
-temp_dir = '/data/users/dkelley/ConFIRE_ISIMIP_temp/-makeISIMIPins'
+temp_dir = '/data/users/dkelley/ConFIRE_ISIMIP_temp/-makeISIMIP3ins'
 temp_dir_mem = '/data/users/dkelley/ConFIRE_ISIMIP_temp/memSafe/'
-out_dir  = '/data/users/dkelley/ConFIRE_ISIMIP/inputs3/'
+out_dir  = '/data/users/dkelley/ConFIRE_ISIMIP/isimip3_inputs/'
 
 coverTypes = list(trees = c(1:7), totalVeg = c(1:13), crop = c(10, 12), pas = c(11, 13))
 makeDir(out_dir)
@@ -73,8 +41,7 @@ try(memSafeFile.remove())
 memSafeFile.initialise(temp_dir_mem)
 makeDat <- function(id, dir, years, out_dir, mask,  extent, country) {
     
-    if ( grepl("TS", id) &&  is.null(mask)) return()
-    if (!grepl("TS", id) && !is.null(mask)) return()
+    
     print(id)
     print(country)
     #years = c(years_out, tail(years_out, 1) + 1)
@@ -90,13 +57,14 @@ makeDat <- function(id, dir, years, out_dir, mask,  extent, country) {
         genVarFile = paste0(out_dirM, '/', genVarID, '.Rd')
         if(file.exists(genVarFile)) return()
         tfile0 = paste0(c(temp_dir, country, id, mod, range(years)), collapse = '-')
-        dir = paste0(dir, '/', mod, '/')
+        
+        #dir = paste0(dir, '/', mod, '/')
         files = list.files(dir, full.names = TRUE)
-       
+        files = files[grepl(mod, files)]
         ## select years
         files = files[apply(sapply(years, function(i) grepl(i, files)), 1, any)]
-        files = files[substr(files, nchar(files)-2, nchar(files))=='.nc']
-       
+        files = files0 = files[substr(files, nchar(files)-2, nchar(files))=='.nc']
+        if (length(files) == 0) browser()
         openVar <- function(fileID, vname) {
             tfileC = paste(tfile0 , fileID, vname, '-masked-corrected.Rd', sep = '-')
             print(tfileC)
@@ -106,7 +74,8 @@ makeDat <- function(id, dir, years, out_dir, mask,  extent, country) {
             } else {
                 print(tfileC)
                 
-                files = files[grepl(fileID, files)]  
+                files = files[grepl(fileID, files)] 
+                
                 if (substr(id, 1,3) == "RCP") 
                     files = files[grepl(paste0('rcp', substr(id, 4, 6)), files)]
                 
@@ -152,16 +121,17 @@ makeDat <- function(id, dir, years, out_dir, mask,  extent, country) {
             coverTy = layer.apply(cover, group)
         }
         covers = lapply(coverTypes, makeCover)
-        soilMs = lapply(1:4, function(ly) layer.apply(dats[, 'soilM'], function(i) i[[ly]]))
-       
+        
+        #soilMs = lapply(1:4, function(ly) layer.apply(dats[, 'soilM'], function(i) i[[ly]]))
+        
         int2Month <- function(i, r) {
             out = layer.apply(r, function(j) j[[i]])
             out[[rep(1:nlayers(out), each = 12)]]
         }
-
-        soilCLayers = dats[, "cs_soilLayer"]
-        if (is.raster( dats[, 'cs_soilLayer'][[1]]))
-            soilCLayers = lapply(1:4, int2Month, soilCLayers)
+        soilM = dats[, 'soilM']
+        #soilCLayers = dats[, "cs_soilLayer"]
+        #if (is.raster( dats[, 'cs_soilLayer'][[1]]))
+        #    soilCLayers = lapply(1:4, int2Month, soilCLayers)
         
         writeOut <- function(dat, name) {
             file = paste0(out_dirM,  name, '.nc')
@@ -177,12 +147,13 @@ makeDat <- function(id, dir, years, out_dir, mask,  extent, country) {
             out = writeOut(out, file)
         }
         out = list(covers = mapply(writeOut, covers, names(coverTypes)),
-                   soilMs = mapply(writeOut, soilMs, paste0('soilM', 1:4)),    
-                   soilCs = mapply(writeOut, soilCLayers, paste0('soilC', 1:4)),
+                   #soilMs = mapply(writeOut, soilMs, paste0('soilM', 1:4)),    
+                   #soilCs = mapply(writeOut, soilCLayers, paste0('soilC', 1:4)),
                    precip = var2layerWrite("precip"),
                    humid  = var2layerWrite("humid"),
                    tas    = var2layerWrite("tas"),
                    cveg   = var2layerWrite("cveg"),
+                   soilM  = var2layerWrite("soilM"),
                    csoil  = var2layerWrite("cs_gb", "csoil"))       
        
         save(out, file = genVarFile)
