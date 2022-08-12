@@ -4,7 +4,7 @@ sourceAllLibs("../rasterextrafuns/rasterExtras/R/")
 
 dir = '/data/users/dkelley/ConFIRE_ISIMIP/isimip3_inputs/Global/historic_TS_short/obsclim/'
 temp_dir = '/data/users/dkelley/ConFIRE_ISIMIP_temp/ISIMIP_csv4ins'
-out_file = "/data/users/dkelley/ConFIRE_ISIMIP/isimip3_inputs/Global/inference_data.csv"
+out_file = "/data/users/dkelley/ConFIRE_ISIMIP/isimip3_inputs/Global/inference_data/GSWP5.csv"
 
 files = list.files(dir)
 files = files[grepl('.nc', files)]

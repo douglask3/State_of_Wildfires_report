@@ -11,15 +11,25 @@ abcd <- function() source("make_inputs/ISIMIP.r")
 countriesMap = raster('../ConFIRE_ISIMIP/data/countries.nc')
 ckey = read.csv("../ConFIRE_ISIMIP/data/countries_key.csv")[,2]
 genVarID = "genVar-C-cover2-soilM-soilC"
-
+#
 overwrite_outputs = FALSE
 
 histDir = "/hpc//data/d00/hadea/jules_output/u-cc669_isimip3a_es/GSWP3-W5E5/"
-dirs = list(historic_TS_short = histDir,
-            historic_TS  = histDir)
 
-years = list(historic_TS_short = 2001:2019,
-             historic_TS  = 1873:2019)
+runYrLen = 20
+
+Syears = seq(1880, 2010, by = runYrLen)
+names = paste('historic_TS', Syears, Syears+runYrLen-1, sep = '_')
+years = lapply(Syears, function(i) i:(i+runYrLen-1))
+names(years) = names
+
+dirs = rep(histDir, length(years))
+names(dirs) = names
+#dirs = list(historic_TS_short = histDir,
+#            historic_TS  = histDir)
+
+#years = list(historic_TS_short = 2001:2019,
+#             historic_TS  = 1873:2019)
 
 countries = c(Global = NA)
 
@@ -33,10 +43,11 @@ models = c("obsclim", "counterclim")
 
 temp_dir = '/data/users/dkelley/ConFIRE_ISIMIP_temp/-makeISIMIP3ins'
 temp_dir_mem = '/data/users/dkelley/ConFIRE_ISIMIP_temp/memSafe/'
-out_dir  = '/data/users/dkelley/ConFIRE_ISIMIP/isimip3_inputs/'
+out_dir  = '/data/users/dkelley/ConFIRE_ISIMIP/isimip3_inputs/GSWP3-W5E5/'
 
 coverTypes = list(trees = c(1:7), totalVeg = c(1:13), crop = c(10, 12), pas = c(11, 13))
 makeDir(out_dir)
+
 try(memSafeFile.remove())
 memSafeFile.initialise(temp_dir_mem)
 makeDat <- function(id, dir, years, out_dir, mask,  extent, country) {
@@ -50,7 +61,9 @@ makeDat <- function(id, dir, years, out_dir, mask,  extent, country) {
         print(id)
         print(mod)
         out_dirM = paste0(out_dir , '/', id)
+        
         makeDir(out_dirM)
+        makeDir(paste0(out_dir, '/inference_data/'))
         out_dirM = paste(out_dir,  id, mod, '', sep = '/')
         makeDir(out_dirM)
         
