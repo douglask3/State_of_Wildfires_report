@@ -1,81 +1,105 @@
-class ConFIRE(object):
+class ConFire(object):
     def __init__(self, data, params, inference = False):
         """
         Initalise parameters and calculates the key variables needed to calculate burnt area.
         """
+        from pdb import set_trace as browser
+        self.browser = browser
         self.inference = inference
         if self.inference:
-            self.numPCK =  __import__('numpy')
+            self.numPCK =  __import__('aesara').tensor
+            self.pow = self.numPCK.pow
         else:
-            self.numPCK =  __import__('theano').tensor
-
+            self.numPCK =  __import__('numpy')
+            self.pow = self.numPCK.power
+        
         self.params = params
         
 
         ## finds controls
+        
         self.fuel = self.control_fuel(data['cveg'], data['csoil'], self.params['c_csoil'])
         
         self.emcw = self.emc_weighted(data['humid'], data["precip"], self.params['wd_pg'])
         
         self.moisture = self.control_moisture(data['soilM'],
                                               self.emcw, data['trees'],
-                                              self.params['c_emc2'], self.params['c_trees'], 
+                                              self.params['c_emc'], self.params['c_trees'], 
                                               self.params['kM'], self.params['pT'])
-
+        
         self.ignitions = self.control_ignitions(data['pas'])
 
         self.suppression = self.control_suppression(data['crop'])
 
         ## calculates limiting factor of each control.
-        self.standard_fuel        = self.sigmoid(self.fuel       ,
-                                            self.params[       'fuel_x0'], self.params[       'fuel_k'])  
+        self.standard_fuel = self.sigmoid(self.fuel, 
+                                          self.params['fuel_x0'], self.params['fuel_k'])  
         
-        self.standard_moisture    = self.sigmoid(self.moisture   ,
-                                            self.params[   'moisture_x0'], -self.params[   'moisture_k'])
-        self.standard_ignitions   = self.sigmoid(self.ignitions   ,
-                                            self.params[  'ignition_x0'], self.params[  'ignition_k'])
-        self.standard_suppression = self.sigmoid(self.suppression,
-                                            self.params['suppression_x0'], -self.params['suppression_k'])
+        self.standard_moisture = self.sigmoid( self.moisture, self.params['moisture_x0'], 
+                                              -self.params['moisture_k']) 
         
-        
-        self.error = self.params['sigma']
-        ## burnt area us just limitation of each control muliplied together.
-        self.burnt_area_mode = self.standard_fuel * self.standard_moisture * self.standard_ignitions * \
-            self.standard_suppression * self.params['max_f']
-        
-        ## find the mean burnt area
-        self.burnt_area_calPDF(data, self.params['p0'], self.params['pp'])
-        
-        self.burnt_area = self.burnt_area_mean.copy() #* (1.0-self.p0)
-        
-        #browser()
-        
-        self.standard_moisture    = self.standard_moisture    / self.sigmoid(0.0, self.params['moisture_x0'],
-                                                 -self.params['moisture_k'])
-        self.standard_suppression = self.standard_suppression / self.sigmoid(0.0, self.params['suppression_x0'],
+        self.standard_ignitions = self.sigmoid(self.ignitions, self.params['ignition_x0'], 
+                                               self.params['ignition_k'])
+        self.standard_suppression = self.sigmoid( self.suppression, 
+                                                  self.params['suppression_x0'], 
                                                  -self.params['suppression_k'])
-
-        self.potential_fuel = self.potential(self.standard_fuel, "potential_fuel")
-        self.potential_moisture = self.potential(self.standard_moisture, "potential_moisture")
-        self.potential_ignitions = self.potential(self.standard_ignitions, "potential_ignitions")
-        self.potential_suppression = self.potential(self.standard_suppression, "potential_suppression")
-
-        self.sensitivity_fuel = self.sensitivity(self.fuel, self.params['fuel_x0'], self.params['fuel_k'],
-                                    self.standard_fuel, "sensitivity_fuel")
-
-        self.sensitivity_moisture = self.sensitivity(self.moisture, self.params['moisture_x0'], -self.params['moisture_k'],
-                                    self.standard_moisture, "sensitivity_moisture")
-
-        self.sensitivity_ignitions = self.sensitivity(self.ignitions, self.params['ignition_x0'], self.params['ignition_k'],
-                                    self.standard_ignitions, "sensitivity_ignitions")
-
-
-        self.sensitivity_suppression = self.sensitivity(self.suppression, self.params['suppression_x0'], -self.params['suppression_k'] ,
-                                    self.standard_suppression, "sensitivity_suppression")
-
-
-        ## if the inputs are iris cubes, we can add some useful metadata
+        
+        
+        
+        ## burnt area us just limitation of each control muliplied together.
+        self.burnt_area_mode = self.standard_fuel * self.standard_moisture * \
+                               self.standard_ignitions *  self.standard_suppression * \
+                               self.params['max_f']
         if (not inference):
+            self.error = self.params['sigma']
+            ## find the mean burnt area
+            self.burnt_area_calPDF(data, self.params['p0'], self.params['pp'])
+        
+            self.burnt_area = self.burnt_area_mean.copy() #* (1.0-self.p0)
+        
+        
+        
+            self.standard_moisture = self.standard_moisture / \
+                                     self.sigmoid(0.0, self.params['moisture_x0'],
+                                                  -self.params['moisture_k'])
+            self.standard_suppression = self.standard_suppression / \
+                                        self.sigmoid(0.0, self.params['suppression_x0'],
+                                                     -self.params['suppression_k'])
+
+            self.potential_fuel = self.potential(self.standard_fuel, "potential_fuel")
+            self.potential_moisture = self.potential(self.standard_moisture, 
+                                                     "potential_moisture")
+            self.potential_ignitions = self.potential(self.standard_ignitions, 
+                                                      "potential_ignitions")
+            self.potential_suppression = self.potential(self.standard_suppression, 
+                                                        "potential_suppression")
+
+            self.sensitivity_fuel = self.sensitivity(self.fuel, self.params['fuel_x0'], 
+                                                      self.params['fuel_k'],
+                                                      self.standard_fuel, "sensitivity_fuel")
+
+            self.sensitivity_moisture = self.sensitivity(self.moisture, 
+                                                         self.params['moisture_x0'], 
+                                                        -self.params['moisture_k'],
+                                                         self.standard_moisture, 
+                                                         "sensitivity_moisture")
+
+            self.sensitivity_ignitions = self.sensitivity(self.ignitions, 
+                                                          self.params['ignition_x0'], 
+                                                          self.params['ignition_k'],
+                                                          self.standard_ignitions, 
+                                                          "sensitivity_ignitions")
+
+
+            self.sensitivity_suppression = self.sensitivity(self.suppression, 
+                                                            self.params['suppression_x0'], 
+                                                           -self.params['suppression_k'] ,
+                                                            self.standard_suppression, 
+                                                            "sensitivity_suppression")
+
+
+            ## if the inputs are iris cubes, we can add some useful metadata
+        
             try:
                 self.burnt_area.long_name = "burnt_area"
                 self.burnt_area_mode.long_name = "burnt_area_mode"
@@ -107,28 +131,37 @@ class ConFIRE(object):
                 pass        
     
         
-    def control_fuel(self, vegcover, alphaMax, fuel_pw, fuel_pg):
+    def control_fuel(self, cveg, csoil, c_csoil):
         """
         Definition to describe fuel load: while return the input; capability to be modified later.
         """
-        return (vegcover**(fuel_pw+1)) * (fuel_pg * (alphaMax-1) + 1) / (1 + fuel_pg)
+        
+        return (c_csoil * csoil + cveg)/(1.0 + c_csoil)
+        #return (vegcover**(fuel_pw+1)) * (fuel_pg * (alphaMax-1) + 1) / (1 + fuel_pg)
     
     def emc_weighted(self, emc, precip, wd_pg):
+        
         try:
             wet_days = 1 - self.numPCK.exp(-wd_pg * precip)
-            emcw = wet_days + (1-wet_days) * emc
+            emcw = (1.0 - wet_days) * emc + wet_days
         except:
             emcw = emc.copy()
             emcw.data  = 1 - self.numPCK.exp(-wd_pg * precip.data)
             emcw.data = emcw.data + (1-emcw.data) * emc.data
         return(emcw)
 
-    def control_moisture(self, shallow_soil, deeps_soil, emc, treeCover, cMs, cM, cMT, kM, pT):
+    def control_moisture(self, soilM, emc, treeCover, c_emc, c_trees, kM, pT):
         """
         Definition to describe moisture
         """
-        moist = (shallow_soil/100.0 + cMs * deeps_soil/100.0 + cM*emc + cMT * (treeCover**pT)) / (1 + cMs + cM + cMT)
-        moist.data = 1 - self.numPCK.log(1 - moist.data*kM)
+       
+        
+        moist = (emc * c_emc + c_trees * self.pow(treeCover,pT) + soilM)/(1.0 + c_emc + c_trees)
+        
+        if self.inference:
+            moist = 1 - self.numPCK.log(1 - moist*kM)
+        else:
+            moist.data = 1 - self.numPCK.log(1 - moist.data*kM)
         return moist
 
 
@@ -207,8 +240,11 @@ class ConFIRE(object):
             out.data = 1.0/(1.0 + self.numPCK.exp(out.data))
             x = out
         except:
-            x = -k * (x - x0)
-            x = 1.0/(1.0 + self.numPCK.exp(x))
+            try:
+                x = k * (x0 - x)
+                x = 1.0/(1.0 + self.numPCK.exp(x))
+            except:
+                self.browser()
         return x
     
     def burnt_area_calPDF(self, data, p0, pp):
