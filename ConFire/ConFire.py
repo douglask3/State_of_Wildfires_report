@@ -1,8 +1,19 @@
+import numpy as np
+import iris
+from scipy.stats import norm
+
+import iris.plot as iplt
+import iris.quickplot as qplt
+import matplotlib.pyplot as plt
+
 class ConFire(object):
-    def __init__(self, data, params, inference = False):
+    def __init__(self, data, params, inference = False,
+                 run_potential = False, run_sensitivity = False,
+                 run_pdf = False, nBootstrap = 0):
         """
         Initalise parameters and calculates the key variables needed to calculate burnt area.
         """
+        
         from pdb import set_trace as browser
         self.browser = browser
         self.inference = inference
@@ -20,8 +31,9 @@ class ConFire(object):
         self.fuel = self.control_fuel(data['totalVeg'], data['cveg'], data['csoil'], 
                                       self.params['c_cveg'], self.params['c_csoil'])
         
-        self.emcw = self.emc_weighted(data['humid'], data["precip"], self.params['wd_pg'])
+        self.emcw = self.emc_weighted(data['rhumid'], data["precip"], self.params['wd_pg'])
         
+
         self.moisture = self.control_moisture(data['soilM'],
                                               self.emcw, data['trees'], data['vpd'],
                                               self.params['c_emc'], self.params['c_trees'], 
@@ -52,14 +64,16 @@ class ConFire(object):
         self.burnt_area_mode = self.standard_fuel * self.standard_moisture * \
                                self.standard_ignitions *  self.standard_suppression * \
                                self.params['max_f']
-        if (not inference):
+        
+        if not inference:
             self.error = self.params['sigma']
             ## find the mean burnt area
-            self.burnt_area_calPDF(data, self.params['p0'], self.params['pp'])
-        
-            self.burnt_area = self.burnt_area_mean.copy() #* (1.0-self.p0)
-        
-        
+            if run_pdf:
+                self.burnt_area_calPDF(data, self.params['p0'], self.params['p1'])
+                
+            if nBootstrap > 0:
+                self.burnt_area_boots(data, self.params['p0'], self.params['p1'], nBootstrap)
+
         
             self.standard_moisture = self.standard_moisture / \
                                      self.sigmoid(0.0, self.params['moisture_x0'],
@@ -67,37 +81,37 @@ class ConFire(object):
             self.standard_suppression = self.standard_suppression / \
                                         self.sigmoid(0.0, self.params['suppression_x0'],
                                                      -self.params['suppression_k'])
+            if run_potential:
+                self.potential_fuel = self.potential(self.standard_fuel, "potential_fuel")
+                self.potential_moisture = self.potential(self.standard_moisture, 
+                                                         "potential_moisture")
+                self.potential_ignitions = self.potential(self.standard_ignitions, 
+                                                          "potential_ignitions")
+                self.potential_suppression = self.potential(self.standard_suppression, 
+                                                            "potential_suppression")
+            if run_sensitivity:
+                self.sensitivity_fuel = self.sensitivity(self.fuel, self.params['fuel_x0'], 
+                                                         self.params['fuel_k'],
+                                                         self.standard_fuel, "sensitivity_fuel")
 
-            self.potential_fuel = self.potential(self.standard_fuel, "potential_fuel")
-            self.potential_moisture = self.potential(self.standard_moisture, 
-                                                     "potential_moisture")
-            self.potential_ignitions = self.potential(self.standard_ignitions, 
-                                                      "potential_ignitions")
-            self.potential_suppression = self.potential(self.standard_suppression, 
-                                                        "potential_suppression")
+                self.sensitivity_moisture = self.sensitivity(self.moisture, 
+                                                             self.params['moisture_x0'], 
+                                                            -self.params['moisture_k'],
+                                                             self.standard_moisture, 
+                                                             "sensitivity_moisture")
 
-            self.sensitivity_fuel = self.sensitivity(self.fuel, self.params['fuel_x0'], 
-                                                      self.params['fuel_k'],
-                                                      self.standard_fuel, "sensitivity_fuel")
-
-            self.sensitivity_moisture = self.sensitivity(self.moisture, 
-                                                         self.params['moisture_x0'], 
-                                                        -self.params['moisture_k'],
-                                                         self.standard_moisture, 
-                                                         "sensitivity_moisture")
-
-            self.sensitivity_ignitions = self.sensitivity(self.ignitions, 
-                                                          self.params['ignition_x0'], 
-                                                          self.params['ignition_k'],
-                                                          self.standard_ignitions, 
-                                                          "sensitivity_ignitions")
+                self.sensitivity_ignitions = self.sensitivity(self.ignitions, 
+                                                              self.params['ignition_x0'], 
+                                                              self.params['ignition_k'],
+                                                              self.standard_ignitions, 
+                                                              "sensitivity_ignitions")
 
 
-            self.sensitivity_suppression = self.sensitivity(self.suppression, 
-                                                            self.params['suppression_x0'], 
-                                                           -self.params['suppression_k'] ,
-                                                            self.standard_suppression, 
-                                                            "sensitivity_suppression")
+                self.sensitivity_suppression = self.sensitivity(self.suppression, 
+                                                                self.params['suppression_x0'], 
+                                                               -self.params['suppression_k'] ,
+                                                                self.standard_suppression, 
+                                                                "sensitivity_suppression")
 
 
             ## if the inputs are iris cubes, we can add some useful metadata
@@ -144,12 +158,12 @@ class ConFire(object):
     def emc_weighted(self, emc, precip, wd_pg):
         
         try:
-            wet_days = 1 - self.numPCK.exp(-wd_pg * precip)
+            wet_days = 1.0 - self.numPCK.exp(-wd_pg * precip)
             emcw = (1.0 - wet_days) * emc + wet_days
         except:
             emcw = emc.copy()
-            emcw.data  = 1 - self.numPCK.exp(-wd_pg * precip.data)
-            emcw.data = emcw.data + (1-emcw.data) * emc.data
+            emcw.data  = 1.0 - self.numPCK.exp(-wd_pg * precip.data)
+            emcw.data = emcw.data + (1.0 - emcw.data) * emc.data
         return(emcw)
 
     def control_moisture(self, soilM, emc, treeCover, vpd, 
@@ -162,8 +176,7 @@ class ConFire(object):
         vpd = self.numPCK.exp(k_vpd2 * vpd) 
         treeCover = self.pow(treeCover,pT)
     
-        moist = (c_emc * emc + c_trees * treeCover +  c_vpd * vpd + soilM)/(1.0 + c_emc + c_trees + c_vpd)
-        
+        moist = (c_emc * emc + c_trees * treeCover +  c_vpd * vpd + soilM)/(1.0 + c_emc + c_trees + c_vpd)        
         if self.inference:
             moist = 1 - self.numPCK.log(1 - moist*kM)
         else:
@@ -256,7 +269,7 @@ class ConFire(object):
     def burnt_area_calPDF(self, data, p0, pp):
         
         mask = self.numPCK.logical_not(self.burnt_area_mode.data.mask)
-        self.burnt_area_pdf = newCubes3D('burnt_area', 0.5, data['fireObs'])
+        self.burnt_area_pdf = newCubes3D('burnt_area', 0.5, data['precip'])
         
         self.burnt_area_mean = self.burnt_area_mode.copy()
         self.burnt_area_mean.data[mask] = 0.0
@@ -273,9 +286,64 @@ class ConFire(object):
             self.burnt_area_pdf.data[k][mask] = dist.pdf(x[k]) * (1.0 - self.pz)
             self.burnt_area_mean.data[mask]  = self.burnt_area_mean.data[mask] +  dist.pdf(x[k]) * (1.0 - self.pz)  *(1/(1+self.numPCK.exp(-x[k])))
                                      
-        PDFtot = self.burnt_area_pdf.collapsed(['model_level_number'], iris.analysis.SUM)
         
         self.burnt_area_mean.data = self.burnt_area_mean.data/ PDFtot.data
+    
+    def burnt_area_boots(self, data, p0, pp, nboots = 1):
+        
+        mask = self.numPCK.logical_not(self.burnt_area_mode.data.mask)
+        self.burnt_area_bootstraps = newCubes3D('burnt_area', 1, data['precip'], 
+                                                'model_level_number', 0, nboots-1)
+        
+        
+        self.pz = 1.0 - (self.burnt_area_mode.data[mask]**pp) * (1.0 - p0)
+
+        def sampleModel():
+            
+            out = self.burnt_area_mode.data[mask].copy()
+            out0 = out.copy()
+            atZero = np.random.random(len(self.burnt_area_mode.data[mask])) < self.pz
+            notAtZero = np.logical_not(atZero)
+            out[atZero] = 0.0
+            out[notAtZero] = np.random.normal(npLogit(out[notAtZero]), self.error)
+            
+            return(out)
+        
+        for k in range(nboots):       
+            self.burnt_area_bootstraps.data[k][mask] = sampleModel()      
+            
+
+def npLogit(x):
+    return np.log(x/(1.0-x))
+
+def npLogistic(x):
+    return np.log(x/(1.0-x))
+
+
+def newCubes3D(variable, step, eg_cube_in, dimname = 'model_level_number', 
+               minV = -10, maxV = None):
+    
+    def newCube(i):
+        coord = iris.coords.AuxCoord(i, dimname)
+        eg_cube = eg_cube_in.copy()
+        eg_cube.data[eg_cube.data > 0.0] = 0.0
+        try:
+            eg_cube.remove_coord(dimname)
+        except:
+            pass
+        eg_cube.add_aux_coord(coord)
+        return(eg_cube)
+    
+    if not hasattr(step, '__len__'):
+        
+        if minV is None: minV = np.round(npLogit(np.min(eg_cube_in.data[eg_cube_in.data>0.0]))) 
+        if maxV is None: maxV = -minV        
+        minV = minV - 1
+        step = np.arange(minV ,maxV, step)     
+    
+    eg_cubes = iris.cube.CubeList([newCube(i) for i in step])
+    eg_cubes = eg_cubes.merge()[0]
+    
+    return(eg_cubes)
+
        
-        
-        
