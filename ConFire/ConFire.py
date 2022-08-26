@@ -41,7 +41,7 @@ class ConFire(object):
                                               self.params['k_vpd1'], self.params['k_vpd2'],
                                               self.params['kM'],  self.params['pT'])
         
-        self.ignitions = self.control_ignitions(data['pas'])
+        self.ignitions = self.control_ignitions(data['pas'],  self.params['bck_ignitions'])
 
         self.suppression = self.control_suppression(data['crop'])
 
@@ -171,9 +171,13 @@ class ConFire(object):
         """
         Definition to describe moisture
         """
-        
-        vpd = 1.0 - self.numPCK.exp(k_vpd1 * vpd) 
-        vpd = self.numPCK.exp(k_vpd2 * vpd) 
+        if self.inference:
+            vpd = 1.0 - self.numPCK.exp(k_vpd1 * vpd) 
+            vpd = self.numPCK.exp(k_vpd2 * vpd) 
+        else:
+            vpd.data = 1.0 - self.numPCK.exp(k_vpd1 * vpd.data) 
+            vpd.data = self.numPCK.exp(k_vpd2 * vpd.data) 
+
         treeCover = self.pow(treeCover,pT)
     
         moist = (c_emc * emc + c_trees * treeCover +  c_vpd * vpd + soilM)/(1.0 + c_emc + c_trees + c_vpd)        
@@ -184,11 +188,11 @@ class ConFire(object):
         return moist
 
 
-    def control_ignitions(self,pasture):
+    def control_ignitions(self, pasture, background = 0.0):
         """
         Definition for the measure of ignition
         """
-        return pasture
+        return background + pasture
 
 
     def control_suppression(self, cropland):

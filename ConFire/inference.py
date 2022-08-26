@@ -128,6 +128,7 @@ def runInference(fd, outfile):
                   "c_trees": pm.Lognormal  ('c_trees'     , 0.0, 1.0 ),
                   "ignition_x0": pm.Normal     ('ignition_x0', 1000.0, 50.0),
                   "ignition_k": pm.Exponential('ignition_k' , 100.0     ),
+                  "bck_ignitions": pm.Lognormal  ('bck_ignitions', 0.0, 10.0 ),
                   "suppression_x0": pm.Normal ('suppression_x0'  , 0.5, 0.25),
                   "suppression_k": pm.Exponential('suppression_k', 1.0     ),
                   "max_f": pm.LogitNormal('max_f'           , 0.0, 1.0)}        
@@ -148,11 +149,11 @@ def runInference(fd, outfile):
         istep = pm.Metropolis()
         
         # do the sampling
-        idata = pm.sample(nIterations, step=istep, chains = nChains) #, start=start, trace=db_save      
+        idata = pm.sample(step=istep, chains = nChains) #, start=start, trace=db_save      
         posterior = idata.posterior.to_dataframe()
+        browser()
         posterior.to_csv(param_outpath + '/' + param_file + '-' + 
-                         outfile + '-' + sample_pc + '-' + nTune + 
-                         '-' + nInterations + '-' + nChains + '.csv.', index=False)
+                         outfile + str(nChains) + '.csv.', index=False)
 
 for fd, outfile in zip(fds,os.listdir(datDir)):
     runInference(fd, outfile) 
