@@ -153,7 +153,7 @@ def runInference(fd, outfile):
         posterior = idata.posterior.to_dataframe()
         browser()
         posterior.to_csv(param_outpath + '/' + param_file + '-' + 
-                         outfile + str(nChains) + '.csv.', index=False)
+                         outfile + str(nChains) + '.csv', index=False)
 
 for fd, outfile in zip(fds,os.listdir(datDir)):
     runInference(fd, outfile) 
