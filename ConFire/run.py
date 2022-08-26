@@ -37,7 +37,7 @@ experiments = ["obsclim/", "counterclim/"]
 
 param_file = "../ConFIRE_ISIMIP/outputs/isimip3/params-for_sampling/GSWP5.csv"
 periods = fnmatch.filter(os.listdir(input_dir), 'hist*')
-#experiments = os.listdir(dir + model_names[0])
+periods = sorted(periods, reverse = True)
 
 output = ["controls", "standard", "potential", "sensitivity", "Bootstraps"]
 output = ["controls", "standard", "Bootstraps"]
