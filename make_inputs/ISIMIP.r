@@ -10,11 +10,12 @@ options(error=recover)
 abcd <- function() source("make_inputs/ISIMIP.r")
 countriesMap = raster('../ConFIRE_ISIMIP/data/countries.nc')
 ckey = read.csv("../ConFIRE_ISIMIP/data/countries_key.csv")[,2]
-genVarID = "genVar-C-cover2-soilM-soilC"
+genVarID = "genVar-C-cover2-FfsoilM-soilC-VDP"
 #
 overwrite_outputs = FALSE
 
 histDir = "/hpc//data/d00/hadea/jules_output/u-cc669_isimip3a_es/GSWP3-W5E5/"
+soilFile = '/hpc//data/d00/hadea/isimip3a/jules_ancils/qrparm.soil.latlon_fixed.nc'
 
 runYrLen = 20
 
@@ -25,6 +26,8 @@ names(years) = names
 
 dirs = rep(histDir, length(years))
 names(dirs) = names
+
+sm_sat = raster(soilFile, varname = "sm_sat")
 #dirs = list(historic_TS_short = histDir,
 #            historic_TS  = histDir)
 
@@ -33,10 +36,10 @@ names(dirs) = names
 
 countries = c(Global = NA)
 
-fileIDs = c(cover = "ilamb", soilM = "ilamb", cveg = "ilamb", cs_gb = "ilamb",
+fileIDs = c(cover = "ilamb", soilM = "ilamb", cveg = "ilamb", cs_gb = "ilamb", spres = "ilamb",
             precip = "ilamb", humid = "ilamb", tas = "ilamb")
 
-varnames =  c(cover = "frac", soilM = "smc_tot", cveg = "cv", cs_gb = "cs_gb",
+varnames =  c(cover = "frac", soilM = "smc_tot", cveg = "cv", cs_gb = "cs_gb", spres = "pstar",
               precip = "precip", humid = "q1p5m_gb", tas = "t1p5m_gb")
 
 models = c("obsclim", "counterclim")
@@ -141,7 +144,9 @@ makeDat <- function(id, dir, years, out_dir, mask,  extent, country) {
             out = layer.apply(r, function(j) j[[i]])
             out[[rep(1:nlayers(out), each = 12)]]
         }
-        soilM = dats[, 'soilM']
+        #soilM = dats[, 'soilM']
+        
+        
         #soilCLayers = dats[, "cs_soilLayer"]
         #if (is.raster( dats[, 'cs_soilLayer'][[1]]))
         #    soilCLayers = lapply(1:4, int2Month, soilCLayers)
@@ -149,6 +154,8 @@ makeDat <- function(id, dir, years, out_dir, mask,  extent, country) {
         writeOut <- function(dat, name) {
             file = paste0(out_dirM,  name, '.nc')
             if (!overwrite_outputs && file.exists(file)) return(brick(file))
+            if (name == "soilM")
+                dat = layer.apply(dat, function(i) i/(3001*raster::resample(sm_sat, i)))
             print(file)
             date = as.Date(paste(rep(years, each = 12), 1:12, 15, sep = '-'))
             dat = setZ(dat, date, name = "Date")
@@ -167,8 +174,24 @@ makeDat <- function(id, dir, years, out_dir, mask,  extent, country) {
                    tas    = var2layerWrite("tas"),
                    cveg   = var2layerWrite("cveg"),
                    soilM  = var2layerWrite("soilM"),
+                   spres  = var2layerWrite("spres"),
                    csoil  = var2layerWrite("cs_gb", "csoil"))       
-       
+        relativeHumidity <- function(humid, pres, temp) {
+            #temp = temp - 273.15
+            out = 0.00263 * pres * humid / exp((17.67 * (temp-273.15))/(temp - 29.65))
+        }
+
+        SVP <- function(temp) {
+            temp = temp - 273.16
+            610.78 * exp(temp / (temp +237.3) * 17.2694)
+        }
+        rh = relativeHumidity(out[['humid']], out[['spres']], out[['tas']])
+        svp = SVP(out[['tas']])
+        vpd = svp*(1-rh)
+        writeOut(rh, "rhumid")
+        writeOut(svp, "svp")
+        writeOut(vpd, "vpd")
+        
         save(out, file = genVarFile)
         closeAllConnections()
         gc()
