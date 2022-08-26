@@ -62,6 +62,7 @@ def openDat(datPath):
     line_select = np.random.choice(range(0, nlines), npoints, False)
     line_select = line_select[line_select > 0]
     fd          = load_with_buffer(DATAPATH, line_select)
+    fd['vpd'].values[fd['vpd'] < 0.0] = 0.0
     BA = fd["fireObs"].values
     BA[BA < 10e-9] = 10e-9
     
@@ -78,9 +79,9 @@ from pdb import set_trace as browser
 
 datDir       =  "/data/users/dkelley/ConFIRE_ISIMIP/isimip3_inputs/Global/inference_data/"
 param_outpath = "../ConFIRE_ISIMIP/outputs/isimip3/params-for_sampling/"
-sample_pc     = 5
-nChains = 2
-nIterations = 2000
+sample_pc     = 1
+nChains = 1
+nIterations = 1000
 
 fds = [openDat(f) for f in os.listdir(datDir)]
 
@@ -108,10 +109,14 @@ def runInference(fd, outfile):
         
         params = {"fuel_x0": pm.Normal     ('fuel_x0'     , 0.5, 0.25),
                   "fuel_k": pm.Exponential('fuel_k'      , 1.0      ),
+                  "c_cveg":  pm.Lognormal ('c_cveg'      , 0.0, 1.0 ),
                   "c_csoil":  pm.Lognormal ('c_csoil'      , 0.0, 1.0 ),
+                  "c_vpd":  pm.Lognormal ('c_vpd'      , 0.0, 1.0 ),
                   "moisture_x0": pm.Normal     ('moisture_x0' , 0.5, 0.25),
                   "moisture_k": pm.Exponential('moisture_k'  , 1.0      ),
                   "wd_pg": pm.Exponential('wd_pg'       , 1.0      ),
+                  "k_vpd1": pm.LogitNormal('k_vpd1' , 0.0, 1.0),
+                  "k_vpd2": pm.LogitNormal('k_vpd2' , 0.0, 1.0),
                   "kM": pm.LogitNormal('kM' , 0.0, 1.0),
                   "pT": pm.Lognormal  ('pT' , 0.0, 1.0),
                   "c_emc": pm.Lognormal  ('c_emc'       , 0.0, 1.0 ),
@@ -139,7 +144,8 @@ def runInference(fd, outfile):
         istep = pm.Metropolis()
        
         # do the sampling
-        idata = pm.sample(nIterations, step=istep, chains = nChains) #, start=start, trace=db_save        
+        idata = pm.sample(nIterations, step=istep, chains = nChains) #, start=start, trace=db_save      
+        
         posterior = idata.posterior.to_dataframe()
         posterior.to_csv(param_outpath + '/' + outfile, index=False)
 

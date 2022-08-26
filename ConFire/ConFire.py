@@ -16,16 +16,18 @@ class ConFire(object):
         self.params = params
         
 
-        ## finds controls
-        
-        self.fuel = self.control_fuel(data['cveg'], data['csoil'], self.params['c_csoil'])
+        ## finds controls        
+        self.fuel = self.control_fuel(data['totalVeg'], data['cveg'], data['csoil'], 
+                                      self.params['c_cveg'], self.params['c_csoil'])
         
         self.emcw = self.emc_weighted(data['humid'], data["precip"], self.params['wd_pg'])
         
         self.moisture = self.control_moisture(data['soilM'],
-                                              self.emcw, data['trees'],
+                                              self.emcw, data['trees'], data['vpd'],
                                               self.params['c_emc'], self.params['c_trees'], 
-                                              self.params['kM'], self.params['pT'])
+                                              self.params['c_vpd'], 
+                                              self.params['k_vpd1'], self.params['k_vpd2'],
+                                              self.params['kM'],  self.params['pT'])
         
         self.ignitions = self.control_ignitions(data['pas'])
 
@@ -131,12 +133,12 @@ class ConFire(object):
                 pass        
     
         
-    def control_fuel(self, cveg, csoil, c_csoil):
+    def control_fuel(self, totalCover, cveg, csoil, c_cveg, c_csoil):
         """
         Definition to describe fuel load: while return the input; capability to be modified later.
         """
         
-        return (c_csoil * csoil + cveg)/(1.0 + c_csoil)
+        return (c_csoil * csoil + c_cveg * cveg + totalCover)/(1.0 + c_cveg + c_csoil)
         #return (vegcover**(fuel_pw+1)) * (fuel_pg * (alphaMax-1) + 1) / (1 + fuel_pg)
     
     def emc_weighted(self, emc, precip, wd_pg):
@@ -150,13 +152,17 @@ class ConFire(object):
             emcw.data = emcw.data + (1-emcw.data) * emc.data
         return(emcw)
 
-    def control_moisture(self, soilM, emc, treeCover, c_emc, c_trees, kM, pT):
+    def control_moisture(self, soilM, emc, treeCover, vpd, 
+                         c_emc, c_trees, c_vpd, k_vpd1, k_vpd2, kM, pT):
         """
         Definition to describe moisture
         """
-       
         
-        moist = (emc * c_emc + c_trees * self.pow(treeCover,pT) + soilM)/(1.0 + c_emc + c_trees)
+        vpd = 1.0 - self.numPCK.exp(k_vpd1 * vpd) 
+        vpd = self.numPCK.exp(k_vpd2 * vpd) 
+        treeCover = self.pow(treeCover,pT)
+    
+        moist = (c_emc * emc + c_trees * treeCover +  c_vpd * vpd + soilM)/(1.0 + c_emc + c_trees + c_vpd)
         
         if self.inference:
             moist = 1 - self.numPCK.log(1 - moist*kM)
