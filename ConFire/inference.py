@@ -17,6 +17,18 @@ import sys
 sys.path.append('../')
 from ConFire import ConFire
 
+from pdb import set_trace as browser
+
+
+datDir       =  "/data/users/dkelley/ConFIRE_ISIMIP/isimip3_inputs/Global/inference_data/"
+param_outpath = "../ConFIRE_ISIMIP/outputs/isimip3/params-for_sampling/"
+param_file = "with_vpd"
+sample_pc = 1
+nChains = 2
+nIterations = 1000
+nTune = 500
+
+
 #import corner
 
 
@@ -62,25 +74,16 @@ def openDat(datPath):
     line_select = np.random.choice(range(0, nlines), npoints, False)
     line_select = line_select[line_select > 0]
     fd          = load_with_buffer(DATAPATH, line_select)
+    
     BA = fd["fireObs"].values
     BA[BA < 10e-9] = 10e-9
     
     BA = npLogit(BA)
-     
-    fd["fireObs"].values[:] = BA[:]    
+    fd["fireObs"].values[:] = BA[:] 
+    
+    vpd = fd['vpd'].values  
+    vpd[vpd < 0.0] = 0.0 
     return fd
-
-
-
-
-from pdb import set_trace as browser
-
-
-datDir       =  "/data/users/dkelley/ConFIRE_ISIMIP/isimip3_inputs/Global/inference_data/"
-param_outpath = "../ConFIRE_ISIMIP/outputs/isimip3/params-for_sampling/"
-sample_pc     = 5
-nChains = 2
-nIterations = 2000
 
 fds = [openDat(f) for f in os.listdir(datDir)]
 
@@ -106,25 +109,29 @@ def runInference(fd, outfile):
 
     with pm.Model() as fire_error:
         
-        params = {"fuel_x0": pm.Normal     ('fuel_x0'     , 0.5, 0.25),
-                  "fuel_k": pm.Exponential('fuel_k'      , 1.0      ),
-                  "c_csoil":  pm.Lognormal ('c_csoil'      , 0.0, 1.0 ),
-                  "moisture_x0": pm.Normal     ('moisture_x0' , 0.5, 0.25),
-                  "moisture_k": pm.Exponential('moisture_k'  , 1.0      ),
-                  "wd_pg": pm.Exponential('wd_pg'       , 1.0      ),
-                  "kM": pm.LogitNormal('kM' , 0.0, 1.0),
-                  "pT": pm.Lognormal  ('pT' , 0.0, 1.0),
-                  "c_emc": pm.Lognormal  ('c_emc'       , 0.0, 1.0 ),
-                  "c_trees": pm.Lognormal  ('c_trees'     , 0.0, 1.0 ),
-                  "ignition_x0": pm.Normal     ('ignition_x0', 1000.0, 50.0),
-                  "ignition_k": pm.Exponential('ignition_k' , 100.0     ),
-                  "suppression_x0": pm.Normal ('suppression_x0'  , 0.5, 0.25),
-                  "suppression_k": pm.Exponential('suppression_k', 1.0     ),
-                  "max_f": pm.LogitNormal('max_f'           , 0.0, 1.0)}
+        params = {"fuel_x0": pm.Normal('fuel_x0', 0.5, 0.25),
+                  "fuel_k": pm.Lognormal('fuel_k', 0.0, 1.0),
+                  "c_cveg":  pm.Lognormal('c_cveg', 0.0, 1.0),
+                  "c_csoil":  pm.Lognormal('c_csoil', 0.0, 1.0),
+                  "moisture_x0": pm.Normal('moisture_x0', 0.5, 0.25),
+                  "moisture_k": pm.Lognormal('moisture_k', 0.0 , 1.0),
+                  "wd_pg": pm.Exponential('wd_pg', 1.0),
+                  "k_vpd": pm.LogitNormal('k_vpd', 0.0, 1.0),
+                  "kM": pm.LogitNormal('kM', 0.0, 1.0),
+                  "pT": pm.Lognormal('pT', 0.0, 1.0),
+                  "c_tas": pm.Lognormal('c_tas', 0.0, 1.0 ),
+                  "c_soilM": pm.Lognormal('c_soilM', 0.0, 1.0 ),
+                  "c_emc": pm.Lognormal('c_emc', 0.0, 1.0 ),
+                  "c_trees": pm.Lognormal('c_trees', 0.0, 1.0 ),
+                  "ignition_x0": pm.Normal('ignition_x0', 1000.0, 50.0),
+                  "ignition_k": pm.Lognormal('ignition_k', 0.0, 100.0),
+                  "suppression_x0": pm.Normal ('suppression_x0', 0.5, 0.25),
+                  "suppression_k": pm.Lognormal('suppression_k', 0.0, 1.0),
+                  "max_f": pm.LogitNormal('max_f', 0.0, 1.0)}
         
         p0 = pm.Uniform('p0', 0.0, 1.0)
         p1 = pm.Lognormal('p1', 0.0, 1.0)
-        sigma = pm.HalfNormal('sigma', 0.1)
+        sigma = pm.Lognormal('sigma', 0.0, 1.0)
         prediction = ConFire(fd, params, True).burnt_area_mode
         
                
@@ -137,11 +144,14 @@ def runInference(fd, outfile):
         
         # set the step-method (criteria algorithm for moving around information space)        
         istep = pm.Metropolis()
-       
+        
         # do the sampling
-        idata = pm.sample(nIterations, step=istep, chains = nChains) #, start=start, trace=db_save        
+        idata = pm.sample(nIterations, tune = nTune, step=istep, chains = nChains) #, start=start, trace=db_save 
+            
         posterior = idata.posterior.to_dataframe()
-        posterior.to_csv(param_outpath + '/' + outfile, index=False)
+        posterior.to_csv(param_outpath + '/' + param_file + '-' + 
+                         outfile + '-' + sample_pc + '-' + nTune + 
+                         '-' + nInterations + '-' + nChains + '.csv.', index=False)
 
 for fd, outfile in zip(fds,os.listdir(datDir)):
     runInference(fd, outfile) 
