@@ -16,10 +16,11 @@ overwrite_outputs = FALSE
 
 histDir = "/hpc//data/d00/hadea/jules_output/u-cc669_isimip3a_es/GSWP3-W5E5/"
 soilFile = '/hpc//data/d00/hadea/isimip3a/jules_ancils/qrparm.soil.latlon_fixed.nc'
+popDir = "/hpc//data/d00/hadea/isimip3a/InputData/socioeconomic/pop/histsoc/"
+lightFile = "/hpc/data/d00/hadea/isimip2b/ancils/lightning/lightning_cloud2ground.nc"
+runYrLen = 10
 
-runYrLen = 20
-
-Syears = seq(1880, 2010, by = runYrLen)
+Syears = seq(2000, 2010, by = runYrLen)#1880
 names = paste('historic_TS', Syears, Syears+runYrLen-1, sep = '_')
 years = lapply(Syears, function(i) i:(i+runYrLen-1))
 names(years) = names
@@ -28,11 +29,7 @@ dirs = rep(histDir, length(years))
 names(dirs) = names
 
 sm_sat = raster(soilFile, varname = "sm_sat")
-#dirs = list(historic_TS_short = histDir,
-#            historic_TS  = histDir)
 
-#years = list(historic_TS_short = 2001:2019,
-#             historic_TS  = 1873:2019)
 
 countries = c(Global = NA)
 
@@ -46,16 +43,20 @@ models = c("obsclim", "counterclim")
 
 temp_dir = '/data/users/dkelley/ConFIRE_ISIMIP_temp/-makeISIMIP3ins'
 temp_dir_mem = '/data/users/dkelley/ConFIRE_ISIMIP_temp/memSafe/'
-out_dir  = '/data/users/dkelley/ConFIRE_ISIMIP/isimip3_inputs/GSWP3-W5E5/'
+out_dir  = 'isimip3a/driving_data/GSWP3-W5E5/'
 
 coverTypes = list(trees = c(1:7), totalVeg = c(1:13), crop = c(10, 12), pas = c(11, 13))
-makeDir(out_dir)
 
+lightn = brick(lightFile)
+popFiles = list.files(popDir, full.names = TRUE)
+popFiles = popFiles[grepl('.nc', popFiles)]
+popDens  = stack(popFiles)
+extent(lightn) = extent(popDens)
+
+makeDir(out_dir)
 try(memSafeFile.remove())
 memSafeFile.initialise(temp_dir_mem)
 makeDat <- function(id, dir, years, out_dir, mask,  extent, country) {
-    
-    
     print(id)
     print(country)
     #years = c(years_out, tail(years_out, 1) + 1)
@@ -144,12 +145,6 @@ makeDat <- function(id, dir, years, out_dir, mask,  extent, country) {
             out = layer.apply(r, function(j) j[[i]])
             out[[rep(1:nlayers(out), each = 12)]]
         }
-        #soilM = dats[, 'soilM']
-        
-        
-        #soilCLayers = dats[, "cs_soilLayer"]
-        #if (is.raster( dats[, 'cs_soilLayer'][[1]]))
-        #    soilCLayers = lapply(1:4, int2Month, soilCLayers)
         
         writeOut <- function(dat, name) {
             file = paste0(out_dirM,  name, '.nc')
@@ -188,9 +183,27 @@ makeDat <- function(id, dir, years, out_dir, mask,  extent, country) {
         rh = relativeHumidity(out[['humid']], out[['spres']], out[['tas']])
         svp = SVP(out[['tas']])
         vpd = svp*(1-rh)
+        vpd[vpd < 0] = 0
         writeOut(rh, "rhumid")
         writeOut(svp, "svp")
         writeOut(vpd, "vpd")
+
+        popDensi = popDens[[c(min(years) - 1, years, max(years) + 1) - 1849]]
+        popDensi = raster::crop(popDensi, vpd[[1]])
+        interpolate_popdens <- function(mn) {
+            mn = mn + 6
+            mn = mn/12
+            wd = mn - floor(mn)
+            yr = ceiling(mn)
+           return(popDensi[[yr]] * (1-wd) + popDensi[[yr + 1]] * wd)
+        }
+        
+        popDens_int = layer.apply(1:nlayers(vpd), interpolate_popdens)
+        writeOut(popDens_int, "popDens")
+
+        lightn = raster::resample(lightn, vpd[[1]])
+        lightn = do.call(addLayer, rep(c(lightn), length(years)))
+        writeOut(lightn, "lightn")
         
         save(out, file = genVarFile)
         closeAllConnections()
