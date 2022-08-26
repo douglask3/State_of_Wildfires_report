@@ -20,7 +20,7 @@ popDir = "/hpc//data/d00/hadea/isimip3a/InputData/socioeconomic/pop/histsoc/"
 lightFile = "/hpc/data/d00/hadea/isimip2b/ancils/lightning/lightning_cloud2ground.nc"
 runYrLen = 10
 
-Syears = seq(2000, 2010, by = runYrLen)#1880
+Syears = seq(1880, 2010, by = runYrLen)
 names = paste('historic_TS', Syears, Syears+runYrLen-1, sep = '_')
 years = lapply(Syears, function(i) i:(i+runYrLen-1))
 names(years) = names
