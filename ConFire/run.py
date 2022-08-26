@@ -15,8 +15,6 @@ import matplotlib.pyplot as plt
 import numpy.ma as ma
 import cartopy.crs as ccrs
 from   libs.plot_maps    import *
-from libs.newCubes3D import *
-from libs.npLogit import *
 from scipy.stats import norm
 from scipy.stats import skewnorm
 from scipy.stats import lognorm
@@ -24,6 +22,8 @@ from scipy.stats import lognorm
 from pdb import set_trace as browser
 
 import glob
+
+from ConFire import *
 from ConFire import ConFire
 
 import iris.plot as iplt
@@ -42,9 +42,9 @@ periods = fnmatch.filter(os.listdir(input_dir), 'hist*')
 output = ["controls", "standard", "potential", "sensitivity", "Bootstraps"]
 output = ["controls", "standard", "Bootstraps"]
 
-n_posterior_sample = 10
+n_posterior_sample = 4
 
-qs = np.arange(1, 100, 1)
+qs = np.array([0.01, 0.05, 0.1, 0.5, 0.9, 0.95, 0.99])
 
 ignore_lock = False
 
@@ -73,7 +73,7 @@ def runSample(paramLoc, output_dir, params, input_data):
     if ignore_lock or not os.path.exists(lock_file):
         model = ConFire(input_data, params.loc[paramLoc], 
                         run_potential = run_potential, run_sensitivity = run_sensitivity, nBootstrap = 5)
-
+        
         makeSampleOutputFile(model.burnt_area_mode, output_dir_sample, 'burnt_area_mode')
         if np.any(np.array(output) == 'controls'):
             makeSampleOutputFile(model.fuel, output_dir_sample, 'fuel')
@@ -101,16 +101,37 @@ def runSample(paramLoc, output_dir, params, input_data):
             mkDir(output_dir_boots)
             nboots = model.burnt_area_bootstraps.shape[0]
             for i in range(nboots):
-                makeSampleOutputFile(model.burnt_area_bootstraps, 
+                makeSampleOutputFile(model.burnt_area_bootstraps[i], 
                                      output_dir_boots, 'bootstrap_' + str(i))
         open(lock_file, 'a').close()
 
-def listFiles_recursive(PATH, ext = '.nc'):
-    return([os.path.join(dp, f) for dp, dn, filenames in os.walk(PATH) for f in filenames if os.path.splitext(f)[1] == ext])
+def listFiles_recursive(PATH, fname = '', ext = '.nc'):
+    return([os.path.join(dp, f) for dp, dn, filenames in os.walk(PATH) for f in filenames if fname in f and os.path.splitext(f)[1] == ext])
 
-def build_distribution_from_boots(ensembles_dir, output_dir, var):
-    files = listFiles_recursive(ensembles_dir)
-    browser()
+
+
+def build_distribution_from_boots(ensembles_dir, output_dir, var, period):
+    output_dir_var = output_dir + var + '/'
+    mkDir(output_dir_var)
+    outFile = output_dir_var + period + '.nc'
+    if ignore_lock or not os.path.exists(outFile):
+        files = listFiles_recursive(ensembles_dir, var)
+        cubes = iris.load(files)
+    
+        mls = np.arange(0.0, len(cubes[1].coord('model_level_number').points))
+    
+        for cube in cubes:  
+            cube.coord('model_level_number').points = mls
+            mls = mls + len(cubes[1].coord('model_level_number').points)
+        cubes = cubes.concatenate()[0]
+   
+        def quantile_time(tstep):
+            print(tstep)
+            return(cube[:,[tstep],:,:].collapsed('model_level_number', iris.analysis.PERCENTILE, percent = qs))
+        cube_quantile = [quantile_time(tstep) for tstep in range(cube.shape[1])]
+        cube_quantile = iris.cube.CubeList(cube_quantile).concatenate()[0]
+        iris.save(cube_quantile, outFile)
+        browser()
 
 def run_for_period(period, experiment):
     print("experiment: " + experiment + "; period: " + period)
@@ -123,19 +144,19 @@ def run_for_period(period, experiment):
     output_dir_exp = output_dir + '/' + experiment + '/'
     mkDir(output_dir_exp)
     
-    output_dir_exp = output_dir_exp + '/' + period + '/'
-    mkDir(output_dir_exp)
+    output_dir_period = output_dir_exp + '/' + period + '/'
+    mkDir(output_dir_period)
 
-    output_dir_sample = output_dir_exp + '/ensembles/'
+    output_dir_sample = output_dir_period + '/ensembles/'
     mkDir(output_dir_sample)
     
     ngap =int(params.shape[0]/n_posterior_sample)
     sample_nos = range(0, params.shape[0], ngap)
     for i in sample_nos: runSample(i, output_dir_sample, params, input_data)
 
-    #if np.any(np.array(output) == 'Bootstraps'):
-    #    build_distribution_from_boots(output_dir_sample, output_dir_exp, 'bootstrap_')
-    #browser()
+    if np.any(np.array(output) == 'Bootstraps'):
+        build_distribution_from_boots(output_dir_sample, output_dir_exp, 'bootstrap_', period)
+    browser()
 
 for period in periods:
     for experiment in experiments:
