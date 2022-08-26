@@ -2,11 +2,12 @@ library(raster)
 source("../gitProjectExtras/gitBasedProjects/R/sourceAllLibs.r")
 sourceAllLibs("../rasterextrafuns/rasterExtras/R/")
 
-dir = '/data/users/dkelley/ConFIRE_ISIMIP/isimip3_inputs/GSWP3-W5E5/Global/historic_TS_2000_2019/obsclim/'
-temp_dir = '/data/users/dkelley/ConFIRE_ISIMIP_temp/ISIMIP_csv4ins'
-out_file = "/data/users/dkelley/ConFIRE_ISIMIP/isimip3_inputs/Global/inference_data/GSWP5.csv"
+dir = paste0('isimip3a/driving_data//GSWP3-W5E5/Global/historic_TS_', 
+             c('2000_2009', '2010_2019'), '/obsclim/')
+temp_dir = 'isimip3a/temp/ISIMIP_csv4ins'
+out_file = "isimip3a/Global/inference_data/GSWP5.csv"
 
-files = list.files(dir)
+files = list.files(dir[1])
 files = files[grepl('.nc', files)]
 
 fireObs = brick("../fireMIPbenchmarking/data/benchmarkData/GFED4s_v2.nc")
@@ -14,7 +15,7 @@ nl = nlayers(fireObs)
 
 openDat <- function(file) {
     print(file)
-    out = brick(paste(dir, file, sep = '/'))
+    out = layer.apply(paste(dir, file, sep = '/'), brick)
     out[[1:nl]]
 }
 
@@ -38,6 +39,7 @@ extract <- function(dat, name) {
     return(mat)
 }
 names = c('fireObs', sapply(files, function(i) substr(i, 1, nchar(i)-3)))
+
 out = mapply(extract, dats, names)
 colnames(out) = names
 write.csv(out, file = out_file)
