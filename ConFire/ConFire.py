@@ -328,7 +328,8 @@ def newCubes3D(variable, step, eg_cube_in, dimname = 'model_level_number',
                minV = -10, maxV = None):
     
     def newCube(i):
-        coord = iris.coords.AuxCoord(i, dimname)
+        
+        coord =  __import__('iris').coords.AuxCoord(i, dimname)
         eg_cube = eg_cube_in.copy()
         eg_cube.data[eg_cube.data > 0.0] = 0.0
         try:
@@ -345,7 +346,7 @@ def newCubes3D(variable, step, eg_cube_in, dimname = 'model_level_number',
         minV = minV - 1
         step = np.arange(minV ,maxV, step)     
     
-    eg_cubes = iris.cube.CubeList([newCube(i) for i in step])
+    eg_cubes =  __import__('iris').cube.CubeList([newCube(i) for i in step])
     eg_cubes = eg_cubes.merge()[0]
     
     return(eg_cubes)
