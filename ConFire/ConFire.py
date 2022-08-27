@@ -41,9 +41,16 @@ class ConFire(object):
                                               self.params['k_vpd1'], self.params['k_vpd2'],
                                               self.params['kM'],  self.params['pT'])
         
-        self.ignitions = self.control_ignitions(data['pas'],  self.params['bck_ignitions'])
+        self.ignitions = self.control_ignitions(data['lightn'], data['pas'],  data['crop'], 
+                                                data['popDens'],
+                                                self.params['c_pas1'], self.params['c_crop'],
+                                                self.params['c_popDens1'],
+                                                self.params['bck_ignitions'])
 
-        self.suppression = self.control_suppression(data['crop'])
+        self.suppression = self.control_suppression(data['crop'], data['pas'], data['popDens'],
+                                                    self.params['c_pas2'], 
+                                                    self.params['c_popDens2'], 
+                                                    self.params['k_popDens'])
 
         ## calculates limiting factor of each control.
         self.standard_fuel = self.sigmoid(self.fuel, 
@@ -152,7 +159,8 @@ class ConFire(object):
         Definition to describe fuel load: while return the input; capability to be modified later.
         """
         
-        return (c_csoil * csoil + c_cveg * cveg + totalCover)/(1.0 + c_cveg + c_csoil)
+        fuel = (c_csoil * csoil + c_cveg * cveg + totalCover)/(1.0 + c_cveg + c_csoil)
+        return(fuel)
         #return (vegcover**(fuel_pw+1)) * (fuel_pg * (alphaMax-1) + 1) / (1 + fuel_pg)
     
     def emc_weighted(self, emc, precip, wd_pg):
@@ -185,22 +193,32 @@ class ConFire(object):
             moist = 1 - self.numPCK.log(1 - moist*kM)
         else:
             moist.data = 1 - self.numPCK.log(1 - moist.data*kM)
-        return moist
+        return(moist)
 
-
-    def control_ignitions(self, pasture, background = 0.0):
+   
+    def control_ignitions(self, lightn, pasture, crop, popDens, 
+                          c_pas1, c_crop, c_popDens1, background = 0.0):
         """
         Definition for the measure of ignition
         """
-        return background + pasture
+        igni = (background + c_pas1 * pasture + c_crop * crop + \
+               c_popDens1 * popDens + lightn)/ \
+                (1.0 + background + c_pas1 + c_crop + c_popDens1)
+        return(igni)
 
 
-    def control_suppression(self, cropland):
+    def control_suppression(self, cropland, pasture, popDens, c_pas2, c_popDens2, k_popDens):
         """
         Definition for the measure of fire supression
         """
-        return cropland
+        if self.inference:
+            popDensC = 1.0 - self.numPCK.exp(-k_popDens * popDens) 
+        else:
+            popDensC = popDens.copy()
+            popDensC.data = 1.0 - self.numPCK.exp(-k_popDens * popDensC.data) 
+        
 
+        return(c_pas2 * pasture + c_popDens2 * popDensC + cropland)
         """
         Defines potential limitation for each control in turn
         """

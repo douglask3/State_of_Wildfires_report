@@ -20,10 +20,10 @@ from ConFire import ConFire
 from pdb import set_trace as browser
 
 
-datDir       =  "/data/users/dkelley/ConFIRE_ISIMIP/isimip3_inputs/Global/inference_data/"
-param_outpath = "../ConFIRE_ISIMIP/outputs/isimip3/params-for_sampling/"
-param_file = "with_vpd"
-sample_pc = 1
+datDir       =  "isimip3a/driving_data/GSWP3-W5E5/Global/inference_data/"
+param_outpath = "isimip3a/driving_data/GSWP3-W5E5/params-for_sampling/"
+param_file = "with_ancils"
+sample_pc = 3
 nChains = 2
 nIterations = 1000
 nTune = 500
@@ -85,6 +85,7 @@ def openDat(datPath):
     
     vpd = fd['vpd'].values  
     vpd[vpd < 0.0] = 0.0 
+    
     return fd
 
 fds = [openDat(f) for f in os.listdir(datDir)]
@@ -124,13 +125,19 @@ def runInference(fd, outfile):
                   "k_vpd2": pm.LogitNormal('k_vpd2' , 0.0, 1.0),
                   "kM": pm.LogitNormal('kM' , 0.0, 1.0),
                   "pT": pm.Lognormal  ('pT' , 0.0, 1.0),
-                  "c_emc": pm.Lognormal  ('c_emc'       , 0.0, 1.0 ),
-                  "c_trees": pm.Lognormal  ('c_trees'     , 0.0, 1.0 ),
+                  "c_emc": pm.Lognormal  ('c_emc', 0.0, 1.0 ),
+                  "c_trees": pm.Lognormal  ('c_trees', 0.0, 1.0 ),
                   "ignition_x0": pm.Normal     ('ignition_x0', 1000.0, 50.0),
-                  "ignition_k": pm.Exponential('ignition_k' , 100.0     ),
+                  "ignition_k": pm.Exponential('ignition_k' , 100.0),
+                  "c_pas1": pm.Lognormal('c_pas1', 0.0, 1.0),
+                  "c_crop": pm.Lognormal('c_crop', 0.0, 1.0),
+                  "c_popDens1": pm.Lognormal('c_popDens1', 0.0, 1.0),
                   "bck_ignitions": pm.Lognormal  ('bck_ignitions', 0.0, 10.0 ),
                   "suppression_x0": pm.Normal ('suppression_x0'  , 0.5, 0.25),
                   "suppression_k": pm.Exponential('suppression_k', 1.0     ),
+                  "c_pas2": pm.Lognormal('c_pas2', 0.0, 1.0),
+                  "c_popDens2": pm.Exponential('c_popDens2', 1.0),
+                  "k_popDens": pm.LogitNormal('k_popDens' , -4.0, 1.0),
                   "max_f": pm.LogitNormal('max_f'           , 0.0, 1.0)}        
         p0 = pm.Uniform('p0', 0.0, 1.0)
         p1 = pm.Lognormal('p1', 0.0, 1.0)
@@ -151,9 +158,9 @@ def runInference(fd, outfile):
         # do the sampling
         idata = pm.sample(step=istep, chains = nChains) #, start=start, trace=db_save      
         posterior = idata.posterior.to_dataframe()
-        browser()
+        browser() 
         posterior.to_csv(param_outpath + '/' + param_file + '-' + 
-                         outfile + str(nChains) + '.csv', index=False)
+                         outfile + str(nChains) + str(sample_pc) + '.csv', index=False)
 
 for fd, outfile in zip(fds,os.listdir(datDir)):
     runInference(fd, outfile) 
