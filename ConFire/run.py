@@ -181,11 +181,15 @@ def run_for_period(period, experiment):
     sample_nos = range(0, params.shape[0], ngap)
     for i in sample_nos: runSample(i, output_dir_sample, params, input_data)
 
-    build_distribution_from_boots(output_dir_sample, output_dir_exp, "burnt_area_mode", period, "annual")
-    build_distribution_from_boots(output_dir_sample, output_dir_exp, "burnt_area_mode", period)
+    build_distribution_from_boots(output_dir_sample, output_dir_exp, 
+                                  "burnt_area_mode", period, output_period = "annual")
+    build_distribution_from_boots(output_dir_sample, output_dir_exp, 
+                                  "burnt_area_mode", period)
     if np.any(np.array(output) == 'Bootstraps'):
-        build_distribution_from_boots(output_dir_sample, output_dir_exp, 'bootstrap_', period, "annual", transform = npLogistic)
-        build_distribution_from_boots(output_dir_sample, output_dir_exp, 'bootstrap_', period, transform = npLogistic)
+        build_distribution_from_boots(output_dir_sample, output_dir_exp, 
+                                      'bootstrap_', period, output_period = "annual", transform = npLogistic)
+        build_distribution_from_boots(output_dir_sample, output_dir_exp, 
+                                      'bootstrap_', period, transform = npLogistic)
     
 
 for period in periods:
