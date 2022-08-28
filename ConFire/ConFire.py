@@ -44,8 +44,7 @@ class ConFire(object):
         self.ignitions = self.control_ignitions(data['lightn'], data['pas'],  data['crop'], 
                                                 data['popDens'],
                                                 self.params['c_pas1'], self.params['c_crop'],
-                                                self.params['c_popDens1'],
-                                                self.params['bck_ignitions'])
+                                                self.params['c_popDens1'])
 
         self.suppression = self.control_suppression(data['crop'], data['pas'], data['popDens'],
                                                     self.params['c_pas2'], 
@@ -197,13 +196,13 @@ class ConFire(object):
 
    
     def control_ignitions(self, lightn, pasture, crop, popDens, 
-                          c_pas1, c_crop, c_popDens1, background = 0.0):
+                          c_pas1, c_crop, c_popDens1):
         """
         Definition for the measure of ignition
         """
-        igni = (background + c_pas1 * pasture + c_crop * crop + \
+        igni = (c_pas1 * pasture + c_crop * crop + \
                c_popDens1 * popDens + lightn)/ \
-                (1.0 + background + c_pas1 + c_crop + c_popDens1)
+                (1.0 + c_pas1 + c_crop + c_popDens1)
         return(igni)
 
 

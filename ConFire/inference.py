@@ -23,10 +23,8 @@ from pdb import set_trace as browser
 datDir       =  "isimip3a/driving_data/GSWP3-W5E5/Global/inference_data/"
 param_outpath = "isimip3a/driving_data/GSWP3-W5E5/params-for_sampling/"
 param_file = "with_ancils"
-sample_pc = 3
+sample_pc = 20
 nChains = 2
-nIterations = 1000
-nTune = 500
 
 
 #import corner
@@ -132,7 +130,6 @@ def runInference(fd, outfile):
                   "c_pas1": pm.Lognormal('c_pas1', 0.0, 1.0),
                   "c_crop": pm.Lognormal('c_crop', 0.0, 1.0),
                   "c_popDens1": pm.Lognormal('c_popDens1', 0.0, 1.0),
-                  "bck_ignitions": pm.Lognormal  ('bck_ignitions', 0.0, 10.0 ),
                   "suppression_x0": pm.Normal ('suppression_x0'  , 0.5, 0.25),
                   "suppression_k": pm.Exponential('suppression_k', 1.0     ),
                   "c_pas2": pm.Lognormal('c_pas2', 0.0, 1.0),
@@ -158,9 +155,10 @@ def runInference(fd, outfile):
         # do the sampling
         idata = pm.sample(step=istep, chains = nChains) #, start=start, trace=db_save      
         posterior = idata.posterior.to_dataframe()
-        browser() 
+        
         posterior.to_csv(param_outpath + '/' + param_file + '-' + 
-                         outfile + str(nChains) + str(sample_pc) + '.csv', index=False)
+                         outfile + '-' + str(nChains) + '-' + str(sample_pc) + '.csv', 
+                         index=False)
 
 for fd, outfile in zip(fds,os.listdir(datDir)):
     runInference(fd, outfile) 
