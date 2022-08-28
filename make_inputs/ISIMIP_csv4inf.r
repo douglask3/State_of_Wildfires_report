@@ -5,7 +5,7 @@ sourceAllLibs("../rasterextrafuns/rasterExtras/R/")
 dir = paste0('isimip3a/driving_data//GSWP3-W5E5/Global/historic_TS_', 
              c('2000_2009', '2010_2019'), '/obsclim/')
 temp_dir = 'isimip3a/temp/ISIMIP_csv4ins'
-out_file = "isimip3a/Global/inference_data/GSWP5.csv"
+out_file = "isimip3a/driving_data/GSWP3-W5E5/Global/inference_data/GSWP5.csv"
 
 files = list.files(dir[1])
 files = files[grepl('.nc', files)]
