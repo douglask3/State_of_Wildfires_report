@@ -24,8 +24,7 @@ from scipy.stats import norm
 from scipy.stats import skewnorm
 from scipy.stats import lognorm
 
-from pdb import set_trace as browser
-
+from pdb import set_trace as browser 
 import glob
 
 from ConFire import *
@@ -52,8 +51,8 @@ nBootstrap = 10
 
 qs = np.array([1, 5, 10, 25, 50, 75, 90, 95, 99])
 
-ignore_lock = False
-
+ignore_lock_samples = False
+ignore_lock_summery = False
 ################################################################################
 ## Run period and experiment                                                  ##
 ################################################################################
@@ -67,48 +66,55 @@ mkDir(output_dir)
 run_potential = np.any(np.array(output) == 'potential')
 run_sensitivity = np.any(np.array(output) == 'sensitivity')
 
-def makeSampleOutputFile(cube, dir, varName):
-    iris.save(cube, dir + varName + '.nc')
+def makeSampleOutputFile(cube, varName, dir, period, ens_no):
+    var_dir = dir + '/' + varName + '/'
+    mkDir(var_dir)
+    ens_dir = var_dir + 'ensemble_' + str(ens_no) + '/'
+    mkDir(ens_dir)
+    iris.save(cube, ens_dir + period + '.nc')
 
-def runSample(paramLoc, output_dir, params, input_data):
+def runSample(paramLoc, output_dir, params, input_data, period):
     print(paramLoc)
-    output_dir_sample = output_dir + '/no_' + str(paramLoc) + '/'
-    mkDir(output_dir_sample)
-
-    lock_file = output_dir_sample + 'lock.txt'
-    if ignore_lock or not os.path.exists(lock_file):
+    #output_dir_sample = output_dir + '/no_' + str(paramLoc) + '/'
+    #mkDir(output_dir_sample)
+    def makeSampleOutputFileLocal(cube, varname, ens_no = paramLoc):
+        makeSampleOutputFile(cube, varname, output_dir, period, ens_no)
+    
+    output_dir_lock = output_dir + '/lockFiles/'
+    mkDir(output_dir_lock)
+    lock_file = output_dir_lock + period + str(paramLoc) + '_lock.txt'
+    if ignore_lock_samples or not os.path.exists(lock_file):
         model = ConFire(input_data, params.loc[paramLoc], 
                         run_potential = run_potential, run_sensitivity = run_sensitivity, nBootstrap = nBootstrap)
         
-        makeSampleOutputFile(model.burnt_area_mode, output_dir_sample, 'burnt_area_mode')
+        makeSampleOutputFileLocal(model.burnt_area_mode, 'burnt_area_mode')
         if np.any(np.array(output) == 'controls'):
-            makeSampleOutputFile(model.fuel, output_dir_sample, 'fuel')
-            makeSampleOutputFile(model.moisture, output_dir_sample, 'moisture')
-            makeSampleOutputFile(model.suppression, output_dir_sample, 'suppression')
-            makeSampleOutputFile(model.ignitions, output_dir_sample, 'ignitions')
+            makeSampleOutputFileLocal(model.fuel, 'fuel')
+            makeSampleOutputFileLocal(model.moisture, 'moisture')
+            makeSampleOutputFileLocal(model.suppression, 'suppression')
+            makeSampleOutputFileLocal(model.ignitions, 'ignitions')
         if np.any(np.array(output) == 'standard'):
-            makeSampleOutputFile(model.standard_fuel, output_dir_sample, 'standard_fuel')
-            makeSampleOutputFile(model.standard_moisture, output_dir_sample, 'standard_moisture')
-            makeSampleOutputFile(model.standard_suppression, output_dir_sample, 'standard_suppression')
-            makeSampleOutputFile(model.standard_ignitions, output_dir_sample, 'standard_ignitions')
+            makeSampleOutputFileLocal(model.standard_fuel, 'standard_fuel')
+            makeSampleOutputFileLocal(model.standard_moisture, 'standard_moisture')
+            makeSampleOutputFileLocal(model.standard_suppression, 'standard_suppression')
+            makeSampleOutputFileLocal(model.standard_ignitions, 'standard_ignitions')
         if run_potential:
-            makeSampleOutputFile(model.potential_fuel, output_dir_sample, 'potential_fuel')
-            makeSampleOutputFile(model.potential_moisture, output_dir_sample, 'potential_moisture')
-            makeSampleOutputFile(model.potential_suppression, output_dir_sample, 'potential_suppression')
-            makeSampleOutputFile(model.potential_ignitions, output_dir_sample, 'potential_ignitions')
+            makeSampleOutputFileLocal(model.potential_fuel, output_dir_sample, 'potential_fuel')
+            makeSampleOutputFileLocal(model.potential_moisture, 'potential_moisture')
+            makeSampleOutputFileLocal(model.potential_suppression, 'potential_suppression')
+            makeSampleOutputFileLocal(model.potential_ignitions, 'potential_ignitions')
         if run_sensitivity:
-            makeSampleOutputFile(model.sensitivity_fuel, output_dir_sample, 'sensitivity_fuel')
-            makeSampleOutputFile(model.sensitivity_moisture, output_dir_sample, 'sensitivity_moisture')
-            makeSampleOutputFile(model.sensitivity_suppression, output_dir_sample, 'sensitivity_suppression')
-            makeSampleOutputFile(model.sensitivity_ignitions, output_dir_sample, 'sensitivity_ignitions')
+            makeSampleOutputFileLocal(model.sensitivity_fuel, 'sensitivity_fuel')
+            makeSampleOutputFileLocal(model.sensitivity_moisture, 'sensitivity_moisture')
+            makeSampleOutputFileLocal(model.sensitivity_suppression, 'sensitivity_suppression')
+            makeSampleOutputFileLocal(model.sensitivity_ignitions, 'sensitivity_ignitions')
 
         if np.any(np.array(output) == 'Bootstraps'): 
-            output_dir_boots = output_dir_sample  + '/bootstraps/'  
-            mkDir(output_dir_boots)
             nboots = model.burnt_area_bootstraps.shape[0]
             for i in range(nboots):
-                makeSampleOutputFile(model.burnt_area_bootstraps[i], 
-                                     output_dir_boots, 'bootstrap_' + str(i))
+                makeSampleOutputFileLocal(model.burnt_area_bootstraps[i], 
+                                          'burnt_area_full_posterior', str(paramLoc)+ '-' + str(i))
+        
         open(lock_file, 'a').close()
 
 def listFiles_recursive(PATH, fname = '', ext = '.nc'):
@@ -125,7 +131,7 @@ def build_distribution_from_boots(ensembles_dir, output_dir, var, period, output
     mkDir(output_dir_var)
     outFile = output_dir_var + period + '.nc'
 
-    if ignore_lock or not os.path.exists(outFile):
+    if ignore_lock_summery or not os.path.exists(outFile):
         ## open and orgaise cube
         files = listFiles_recursive(ensembles_dir, var)
         cubes = iris.load(files)
@@ -171,25 +177,25 @@ def run_for_period(period, experiment):
     output_dir_exp = output_dir + '/' + experiment + '/'
     mkDir(output_dir_exp)
     
-    output_dir_period = output_dir_exp + '/' + period + '/'
-    mkDir(output_dir_period)
+    #output_dir_period = output_dir_exp + '/' + period + '/'
+    #mkDir(output_dir_period)
 
-    output_dir_sample = output_dir_period + '/ensembles/'
+    output_dir_sample = output_dir_exp + '/ensembles/'
     mkDir(output_dir_sample)
     
     ngap =int(params.shape[0]/n_posterior_sample)
     sample_nos = range(0, params.shape[0], ngap)
-    for i in sample_nos: runSample(i, output_dir_sample, params, input_data)
+    for i in sample_nos: runSample(i, output_dir_sample, params, input_data, period)
 
-    build_distribution_from_boots(output_dir_sample, output_dir_exp, 
-                                  "burnt_area_mode", period, output_period = "annual")
-    build_distribution_from_boots(output_dir_sample, output_dir_exp, 
-                                  "burnt_area_mode", period)
-    if np.any(np.array(output) == 'Bootstraps'):
-        build_distribution_from_boots(output_dir_sample, output_dir_exp, 
-                                      'bootstrap_', period, output_period = "annual", transform = npLogistic)
-        build_distribution_from_boots(output_dir_sample, output_dir_exp, 
-                                      'bootstrap_', period, transform = npLogistic)
+    #build_distribution_from_boots(output_dir_sample, output_dir_exp, 
+    #                              "burnt_area_mode", period, output_period = "annual")
+    #build_distribution_from_boots(output_dir_sample, output_dir_exp, 
+    #                              "burnt_area_mode", period)
+    #if np.any(np.array(output) == 'Bootstraps'):
+    #    build_distribution_from_boots(output_dir_sample, output_dir_exp, 
+    #                                  'bootstrap_', period, output_period = "annual", transform = npLogistic)
+    #    build_distribution_from_boots(output_dir_sample, output_dir_exp, 
+    #                                  'bootstrap_', period, transform = npLogistic)
     
 
 for period in periods:
