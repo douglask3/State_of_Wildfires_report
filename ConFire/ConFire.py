@@ -179,15 +179,18 @@ class ConFire(object):
         Definition to describe moisture
         """
         if self.inference:
-            vpd = 1.0 - self.numPCK.exp(k_vpd1 * vpd) 
-            vpd = self.numPCK.exp(k_vpd2 * vpd) 
+            vpdc = 1.0 - self.numPCK.exp(k_vpd1 * vpd) 
+            vpdc = self.numPCK.exp(k_vpd2 * vpdc) 
+            treeCoverc = self.pow(treeCover,pT)
         else:
-            vpd.data = 1.0 - self.numPCK.exp(k_vpd1 * vpd.data) 
-            vpd.data = self.numPCK.exp(k_vpd2 * vpd.data) 
+            vpdc = vpd.copy()
+            vpdc.data = 1.0 - self.numPCK.exp(k_vpd1 * vpdc.data) 
+            vpdc.data = self.numPCK.exp(k_vpd2 * vpdc.data) 
+            treeCoverc = treeCover.copy()
+            treeCoverc.data = self.pow(treeCoverc.data,pT)
+        
+        moist = (c_emc * emc + c_trees * treeCoverc +  c_vpd * vpdc + soilM)/(1.0 + c_emc + c_trees + c_vpd)        #
 
-        treeCover = self.pow(treeCover,pT)
-    
-        moist = (c_emc * emc + c_trees * treeCover +  c_vpd * vpd + soilM)/(1.0 + c_emc + c_trees + c_vpd)        
         if self.inference:
             moist = 1 - self.numPCK.log(1 - moist*kM)
         else:
@@ -314,7 +317,7 @@ class ConFire(object):
         
         mask = self.numPCK.logical_not(self.burnt_area_mode.data.mask)
         self.burnt_area_bootstraps = newCubes3D('burnt_area', 1, data['precip'], 
-                                                'model_level_number', 0, nboots-1)
+                                                'realization', 0, nboots-1)
         
         
         self.pz = 1.0 - (self.burnt_area_mode.data[mask]**pp) * (1.0 - p0)
@@ -326,7 +329,8 @@ class ConFire(object):
             atZero = np.random.random(len(self.burnt_area_mode.data[mask])) < self.pz
             notAtZero = np.logical_not(atZero)
             out[atZero] = 0.0
-            out[notAtZero] = np.random.normal(npLogit(out[notAtZero]), self.error)
+            not0 = np.random.normal(npLogit(out[notAtZero]), self.error)
+            out[notAtZero] = 1/(1+np.exp(-not0))
             
             return(out)
         
