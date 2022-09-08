@@ -63,8 +63,11 @@ def mkDir(dir):
 
 output = np.array(output)
 mkDir(output_dir)
+run_controls = np.any(np.array(output) == 'controls')
+run_standard = np.any(np.array(output) == 'standard')
 run_potential = np.any(np.array(output) == 'potential')
 run_sensitivity = np.any(np.array(output) == 'sensitivity')
+run_Bootstraps = np.any(np.array(output) == 'Bootstraps')
 
 def makeSampleOutputFile(cube, varName, dir, period, ens_no):
     var_dir = dir + '/' + varName + '/'
@@ -88,12 +91,12 @@ def runSample(paramLoc, output_dir, params, input_data, period):
                         run_potential = run_potential, run_sensitivity = run_sensitivity, nBootstrap = nBootstrap)
         
         makeSampleOutputFileLocal(model.burnt_area_mode, 'burnt_area_mode')
-        if np.any(np.array(output) == 'controls'):
+        if run_controls:
             makeSampleOutputFileLocal(model.fuel, 'fuel')
             makeSampleOutputFileLocal(model.moisture, 'moisture')
             makeSampleOutputFileLocal(model.suppression, 'suppression')
             makeSampleOutputFileLocal(model.ignitions, 'ignitions')
-        if np.any(np.array(output) == 'standard'):
+        if run_standard:
             makeSampleOutputFileLocal(model.standard_fuel, 'standard_fuel')
             makeSampleOutputFileLocal(model.standard_moisture, 'standard_moisture')
             makeSampleOutputFileLocal(model.standard_suppression, 'standard_suppression')
@@ -109,7 +112,7 @@ def runSample(paramLoc, output_dir, params, input_data, period):
             makeSampleOutputFileLocal(model.sensitivity_suppression, 'sensitivity_suppression')
             makeSampleOutputFileLocal(model.sensitivity_ignitions, 'sensitivity_ignitions')
 
-        if np.any(np.array(output) == 'Bootstraps'): 
+        if run_Bootstraps: 
             nboots = model.burnt_area_bootstraps.shape[0]
             for i in range(nboots):
                 makeSampleOutputFileLocal(model.burnt_area_bootstraps[i], 
@@ -117,25 +120,35 @@ def runSample(paramLoc, output_dir, params, input_data, period):
         
         open(lock_file, 'a').close()
 
-def listFiles_recursive(PATH, fname = '', ext = '.nc'):
-    return([os.path.join(dp, f) for dp, dn, filenames in os.walk(PATH) for f in filenames if fname in f and os.path.splitext(f)[1] == ext])
+def listFiles_recursive(PATH, fname = '', pname = '', ext = '.nc'):
+    return([os.path.join(dp, f) for dp, dn, filenames in os.walk(PATH) for f in filenames if fname in f and pname in dp and os.path.splitext(f)[1] == ext])
 
 def npLogistic(x):
     return(1/(1+np.exp(-x)))
 
-def build_distribution_from_boots(ensembles_dir, output_dir, var, period, output_period = "monthly", transform = None):
+def build_distribution_from_boots(ensembles_dir, output_dir, var, period, 
+                                  output_period = "monthly", transform = None, difference = False):
     ## setup directories and path
-    if var == 'bootstrap_': output_dir_var = output_dir + "burnt_area_full_posterior"
-    else: output_dir_var = output_dir + var
+    mkDir(output_dir)
+    output_dir_var = output_dir + var
     output_dir_var = output_dir_var + '-' + output_period + '/'
+    
     mkDir(output_dir_var)
     outFile = output_dir_var + period + '.nc'
-
+    print(outFile)
     if ignore_lock_summery or not os.path.exists(outFile):
         ## open and orgaise cube
-        files = listFiles_recursive(ensembles_dir, var)
-        cubes = iris.load(files)
-        
+        files = listFiles_recursive(ensembles_dir, period, var)
+        if difference: 
+            def fileFromID(files, id):
+                return([file for file in files if id in file])
+            
+            files = fileFromID(files, "ensemble")
+            cubesC = iris.load(fileFromID(files, experiments[0]))
+            cubesE = iris.load(fileFromID(files, experiments[1]))
+            cubes = iris.cube.CubeList([C - E for C, E in zip(cubesC, cubesE)])
+        else:
+            cubes = iris.load(files)        
         try:
             mls = np.arange(0.0, len(cubes[1].coord('model_level_number').points))
             for cube in cubes:  
@@ -176,9 +189,6 @@ def run_for_period(period, experiment):
     
     output_dir_exp = output_dir + '/' + experiment + '/'
     mkDir(output_dir_exp)
-    
-    #output_dir_period = output_dir_exp + '/' + period + '/'
-    #mkDir(output_dir_period)
 
     output_dir_sample = output_dir_exp + '/ensembles/'
     mkDir(output_dir_sample)
@@ -186,22 +196,39 @@ def run_for_period(period, experiment):
     ngap =int(params.shape[0]/n_posterior_sample)
     sample_nos = range(0, params.shape[0], ngap)
     for i in sample_nos: runSample(i, output_dir_sample, params, input_data, period)
-
-    #build_distribution_from_boots(output_dir_sample, output_dir_exp, 
-    #                              "burnt_area_mode", period, output_period = "annual")
-    #build_distribution_from_boots(output_dir_sample, output_dir_exp, 
-    #                              "burnt_area_mode", period)
-    #if np.any(np.array(output) == 'Bootstraps'):
-    #    build_distribution_from_boots(output_dir_sample, output_dir_exp, 
-    #                                  'bootstrap_', period, output_period = "annual", transform = npLogistic)
-    #    build_distribution_from_boots(output_dir_sample, output_dir_exp, 
-    #                                  'bootstrap_', period, transform = npLogistic)
+    
+    def summery_outputs(var):
+        build_distribution_from_boots(output_dir_sample, output_dir_exp, 
+                                      var, period, output_period = "annual")
+        build_distribution_from_boots(output_dir_sample, output_dir_exp, 
+                                      var, period)
+    
+    summery_outputs("burnt_area_mode")
+    if run_Bootstraps: summery_outputs("burnt_area_full_posterior")
+    if run_standard:
+        summery_outputs("standard_fuel")
+        summery_outputs("standard_moisture")
+        summery_outputs("standard_ignitions")
+        summery_outputs("standard_suppression")
     
 
 for period in periods:
     for experiment in experiments:
         run_for_period(period, experiment)
 
+    def summery_difference(var):    
+        build_distribution_from_boots(output_dir, output_dir + '/difference/', 
+                                      var, period, output_period = "annual", difference = True)
+        build_distribution_from_boots(output_dir, output_dir + '/difference/', 
+                                      var, period, difference = True)
 
+    summery_difference("burnt_area_mode")
 
+    if run_Bootstraps: summery_difference("burnt_area_full_posterior")
+    if run_standard:
+        summery_difference("standard_fuel")
+        summery_difference("standard_moisture")
+        summery_difference("standard_ignitions")
+        summery_difference("standard_suppression")
+        
 
