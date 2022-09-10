@@ -22,8 +22,8 @@ from pdb import set_trace as browser
 
 datDir       =  "isimip3a/driving_data/GSWP3-W5E5/Global/inference_data/"
 param_outpath = "isimip3a/driving_data/GSWP3-W5E5/params-for_sampling/"
-param_file = "with_ancils"
-sample_pc = 20
+param_file = "with_ancils_alldats"
+sample_pc = 1
 nChains = 2
 
 
@@ -79,10 +79,7 @@ def openDat(datPath):
     BA[BA < 10e-9] = 10e-9
     
     BA = npLogit(BA)
-    fd["fireObs"].values[:] = BA[:] 
-    
-    vpd = fd['vpd'].values  
-    vpd[vpd < 0.0] = 0.0 
+    fd["fireObs"].values[:] = BA[:]
     
     return fd
 
@@ -109,23 +106,23 @@ def make_zero_inflated_normal(x, mu, sigma, pz):
 def runInference(fd, outfile):
 
     with pm.Model() as fire_error:
-        
-
         params = {"fuel_x0": pm.Normal     ('fuel_x0'     , 0.5, 0.25),
                   "fuel_k": pm.Exponential('fuel_k'      , 1.0      ),
                   "c_cveg":  pm.Lognormal ('c_cveg'      , 0.0, 1.0 ),
                   "c_csoil":  pm.Lognormal ('c_csoil'      , 0.0, 1.0 ),
-                  "c_vpd":  pm.Lognormal ('c_vpd'      , 0.0, 1.0 ),
                   "moisture_x0": pm.Normal     ('moisture_x0' , 0.5, 0.25),
                   "moisture_k": pm.Exponential('moisture_k'  , 1.0      ),
-                  "wd_pg": pm.Exponential('wd_pg'       , 1.0      ),
-                  "k_vpd1": pm.LogitNormal('k_vpd1' , 0.0, 1.0),
-                  "k_vpd2": pm.LogitNormal('k_vpd2' , 0.0, 1.0),
+                  "wd_pg": pm.Exponential('wd_pg', 1.0),
+                  "k_vpd1": pm.LogitNormal('k_vpd1', 0.0, 1.0),
+                  "k_vpd2": pm.LogitNormal('k_vpd2', 0.0, 1.0),
                   "kM": pm.LogitNormal('kM' , 0.0, 1.0),
-                  "pT": pm.Lognormal  ('pT' , 0.0, 1.0),
-                  "c_emc": pm.Lognormal  ('c_emc', 0.0, 1.0 ),
-                  "c_trees": pm.Lognormal  ('c_trees', 0.0, 1.0 ),
-                  "ignition_x0": pm.Normal     ('ignition_x0', 1000.0, 50.0),
+                  "pT": pm.Lognormal('pT' , 0.0, 1.0),
+                  "c_vpd": pm.Lognormal('c_vpd', 0.0, 1.0 ),
+                  "c_precip": pm.Lognormal ('c_precip', 0.0, 1.0 ),
+                  "c_humid": pm.Lognormal ('c_humid', 0.0, 1.0 ),
+                  "c_emc": pm.Lognormal('c_emc', 0.0, 1.0 ),
+                  "c_trees": pm.Lognormal('c_trees', 0.0, 1.0 ),
+                  "ignition_x0": pm.Normal('ignition_x0', 1000.0, 50.0),
                   "ignition_k": pm.Exponential('ignition_k' , 100.0),
                   "c_pas1": pm.Lognormal('c_pas1', 0.0, 1.0),
                   "c_crop": pm.Lognormal('c_crop', 0.0, 1.0),
@@ -133,9 +130,9 @@ def runInference(fd, outfile):
                   "suppression_x0": pm.Normal ('suppression_x0'  , 0.5, 0.25),
                   "suppression_k": pm.Exponential('suppression_k', 1.0     ),
                   "c_pas2": pm.Lognormal('c_pas2', 0.0, 1.0),
-                  "c_popDens2": pm.Exponential('c_popDens2', 1.0),
-                  "k_popDens": pm.LogitNormal('k_popDens' , -4.0, 1.0),
-                  "max_f": pm.LogitNormal('max_f'           , 0.0, 1.0)}        
+                  "c_popDens2": pm.Exponential('c_popDens2', 0.001),
+                  "k_popDens": pm.LogitNormal('k_popDens' , -4.0, 1.0)}
+                  #"max_f": pm.LogitNormal('max_f'           , 0.0, 1.0)}        
         p0 = pm.Uniform('p0', 0.0, 1.0)
         p1 = pm.Lognormal('p1', 0.0, 1.0)
         sigma = pm.Lognormal('sigma', 0.0, 1.0)

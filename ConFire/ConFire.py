@@ -35,9 +35,11 @@ class ConFire(object):
         
 
         self.moisture = self.control_moisture(data['soilM'],
-                                              self.emcw, data['trees'], data['vpd'],
+                                              self.emcw, data['trees'], data['vpd'], data['precip'], 
+                                              data['humid'],
                                               self.params['c_emc'], self.params['c_trees'], 
-                                              self.params['c_vpd'], 
+                                              self.params['c_vpd'], self.params['c_precip'], 
+                                              self.params['c_humid'],
                                               self.params['k_vpd1'], self.params['k_vpd2'],
                                               self.params['kM'],  self.params['pT'])
         
@@ -66,10 +68,9 @@ class ConFire(object):
         
         
         
-        ## burnt area us just limitation of each control muliplied together.
+        ## burnt area us just limitation of each control muliplied together. 
         self.burnt_area_mode = self.standard_fuel * self.standard_moisture * \
-                               self.standard_ignitions *  self.standard_suppression * \
-                               self.params['max_f']
+                               self.standard_ignitions *  self.standard_suppression
         
         if not inference:
             self.error = self.params['sigma']
@@ -173,8 +174,8 @@ class ConFire(object):
             emcw.data = emcw.data + (1.0 - emcw.data) * emc.data
         return(emcw)
 
-    def control_moisture(self, soilM, emc, treeCover, vpd, 
-                         c_emc, c_trees, c_vpd, k_vpd1, k_vpd2, kM, pT):
+    def control_moisture(self, soilM, emc, treeCover, vpd, precip, humid, 
+                         c_emc, c_trees, c_vpd, c_precip, c_humid, k_vpd1, k_vpd2, kM, pT):
         """
         Definition to describe moisture
         """
@@ -217,10 +218,10 @@ class ConFire(object):
             popDensC = 1.0 - self.numPCK.exp(-k_popDens * popDens) 
         else:
             popDensC = popDens.copy()
-            popDensC.data = 1.0 - self.numPCK.exp(-k_popDens * popDensC.data) 
+            popDensC.data = 1.0 - self.numPCK.exp(-k_popDens * popDensC.data)   
         
-
-        return(c_pas2 * pasture + c_popDens2 * popDensC + cropland)
+        return(c_pas2 * pasture + c_popDens2 * popDensC + cropland)/ \
+                (1.0 + c_pas2 + c_popDens2)
         """
         Defines potential limitation for each control in turn
         """
