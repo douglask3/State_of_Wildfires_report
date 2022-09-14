@@ -195,7 +195,7 @@ class ConFire(object):
         else:
             vpdc = vpd.copy()
             vpdc.data = 1.0 - self.numPCK.exp(k_vpd1 * vpdc.data) 
-            vpdc.data = self.numPCK.exp(k_vpd2 * vpdc.data) 
+            #vpdc.data = self.numPCK.exp(k_vpd2 * vpdc.data) 
             treeCoverc = treeCover.copy()
             treeCoverc.data = self.pow(treeCoverc.data,pT)
             precipc = precip.copy()

@@ -22,8 +22,8 @@ from pdb import set_trace as browser
 
 datDir       =  "isimip3a/driving_data/GSWP3-W5E5/Global/inference_data/"
 param_outpath = "isimip3a/driving_data/GSWP3-W5E5/params-for_sampling/"
-param_file = "with_ancils_alldats-newVPD-pow"
-sample_pc = 5
+param_file = "with_ancils_alldats-newVPD-pow-normal"
+sample_pc = 0.2
 nChains = 2
 
 
@@ -78,8 +78,8 @@ def openDat(datPath):
     BA = fd["fireObs"].values
     BA[BA < 10e-9] = 10e-9
     
-    BA = npLogit(BA)
-    fd["fireObs"].values[:] = BA[:]
+    #BA = npLogit(BA)
+    #fd["fireObs"].values[:] = BA[:]
     
     return fd
 
@@ -146,7 +146,7 @@ def runInference(fd, outfile):
         
                
         pz = 1.0 - (prediction**p1) * (1.0 - p0)
-        prediction = ttLogit(prediction)
+        #prediction = ttLogit(prediction)
         
         error = pm.DensityDist("error", prediction, sigma, pz, 
                                logp = make_zero_inflated_normal, 
