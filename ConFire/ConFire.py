@@ -35,13 +35,15 @@ class ConFire(object):
         
 
         self.moisture = self.control_moisture(data['soilM'],
-                                              self.emcw, data['trees'], data['vpd'], data['precip'], 
-                                              data['humid'],
+                                              self.emcw, data['trees'], data['vpd'], data['tas'],
+                                              data['precip'], data['humid'],
                                               self.params['c_emc'], self.params['c_trees'], 
-                                              self.params['c_vpd'], self.params['c_precip'], 
-                                              self.params['c_humid'],
+                                              self.params['c_vpd'], self.params['c_tas'], 
+                                              self.params['c_precip'], self.params['c_humid'],
                                               self.params['k_vpd1'], self.params['k_vpd2'],
-                                              self.params['kM'],  self.params['pT'])
+                                              self.params['k_tas1'], self.params['k_tas2'],
+                                              self.params['k_precip'],
+                                              self.params['kM'], self.params['pT'])
         
         self.ignitions = self.control_ignitions(data['lightn'], data['pas'],  data['crop'], 
                                                 data['popDens'],
@@ -66,12 +68,18 @@ class ConFire(object):
                                                   self.params['suppression_x0'], 
                                                  -self.params['suppression_k'])
         
-        
-        
         ## burnt area us just limitation of each control muliplied together. 
         self.burnt_area_mode = self.standard_fuel * self.standard_moisture * \
-                               self.standard_ignitions *  self.standard_suppression
+                                        self.standard_ignitions *  self.standard_suppression
+                                        #self.params['Detect_efficanceyP'])
         
+
+        #if not inference: self.burnt_area_mode = self.burnt_area_mode_preCorrect.copy()
+        #self.burnt_area_mode = self.burnt_area_mode_preCorrect * \
+        #                      (self.params['Detect_efficancey0'] + \
+        #                       self.pow(self.burnt_area_mode_preCorrect, self.params['Detect_efficanceyP']) * \
+        #                      (1.0 - self.params['Detect_efficancey0']))
+        #self.browser()
         if not inference:
             self.error = self.params['sigma']
             ## find the mean burnt area
@@ -174,23 +182,29 @@ class ConFire(object):
             emcw.data = emcw.data + (1.0 - emcw.data) * emc.data
         return(emcw)
 
-    def control_moisture(self, soilM, emc, treeCover, vpd, precip, humid, 
-                         c_emc, c_trees, c_vpd, c_precip, c_humid, k_vpd1, k_vpd2, kM, pT):
+    def control_moisture(self, soilM, emc, treeCover, vpd, tas, precip, humid,
+                         c_emc, c_trees, c_vpd, c_tas, c_precip, c_humid, k_vpd1, k_vpd2, k_tas1, k_tas2, k_precip, kM, pT):
         """
         Definition to describe moisture
         """
         if self.inference:
             vpdc = 1.0 - self.numPCK.exp(k_vpd1 * vpd) 
-            vpdc = self.numPCK.exp(k_vpd2 * vpdc) 
+            #vpdc = self.numPCK.exp(k_vpd2 * vpdc) 
             treeCoverc = self.pow(treeCover,pT)
+            precipc = 1.0 - self.numPCK.exp(-k_precip * precip) 
         else:
             vpdc = vpd.copy()
             vpdc.data = 1.0 - self.numPCK.exp(k_vpd1 * vpdc.data) 
             vpdc.data = self.numPCK.exp(k_vpd2 * vpdc.data) 
             treeCoverc = treeCover.copy()
             treeCoverc.data = self.pow(treeCoverc.data,pT)
+            precipc = precip.copy()
+            precipc.data = 1.0 - self.numPCK.exp(-k_precip * precip.data) 
         
-        moist = (c_emc * emc + c_trees * treeCoverc +  c_vpd * vpdc + soilM)/(1.0 + c_emc + c_trees + c_vpd)        #
+    
+        tas = self.sigmoid(tas, k_tas1, k_tas2)
+        moist = (c_emc * emc + c_trees * treeCoverc +  c_vpd * vpdc + c_tas * tas + \
+                 c_humid * humid + c_precip * precipc + soilM)/(1.0 + c_emc + c_trees + c_vpd)        #
 
         if self.inference:
             moist = 1 - self.numPCK.log(1 - moist*kM)
@@ -274,7 +288,7 @@ class ConFire(object):
         return f1
 
 
-    def sigmoid(self, x, x0,k):
+    def sigmoid(self, x, x0, k):
         """
         Sigmoid function to describe limitation using tensor
         """

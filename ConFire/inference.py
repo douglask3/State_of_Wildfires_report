@@ -22,8 +22,8 @@ from pdb import set_trace as browser
 
 datDir       =  "isimip3a/driving_data/GSWP3-W5E5/Global/inference_data/"
 param_outpath = "isimip3a/driving_data/GSWP3-W5E5/params-for_sampling/"
-param_file = "with_ancils_alldats"
-sample_pc = 1
+param_file = "with_ancils_alldats-newVPD-pow"
+sample_pc = 5
 nChains = 2
 
 
@@ -115,9 +115,13 @@ def runInference(fd, outfile):
                   "wd_pg": pm.Exponential('wd_pg', 1.0),
                   "k_vpd1": pm.LogitNormal('k_vpd1', 0.0, 1.0),
                   "k_vpd2": pm.LogitNormal('k_vpd2', 0.0, 1.0),
+                  "k_tas1": pm.Normal('k_tas1', 273.15, 50.0),
+                  "k_tas2": pm.Exponential('k_tas2', 10.0),
+                  "k_precip": pm.LogNormal('k_precip', 10.0, 1.0),
                   "kM": pm.LogitNormal('kM' , 0.0, 1.0),
                   "pT": pm.Lognormal('pT' , 0.0, 1.0),
                   "c_vpd": pm.Lognormal('c_vpd', 0.0, 1.0 ),
+                  "c_tas": pm.Lognormal('c_tas', 0.0, 1.0 ),
                   "c_precip": pm.Lognormal ('c_precip', 0.0, 1.0 ),
                   "c_humid": pm.Lognormal ('c_humid', 0.0, 1.0 ),
                   "c_emc": pm.Lognormal('c_emc', 0.0, 1.0 ),
@@ -131,11 +135,13 @@ def runInference(fd, outfile):
                   "suppression_k": pm.Exponential('suppression_k', 1.0     ),
                   "c_pas2": pm.Lognormal('c_pas2', 0.0, 1.0),
                   "c_popDens2": pm.Exponential('c_popDens2', 0.001),
-                  "k_popDens": pm.LogitNormal('k_popDens' , -4.0, 1.0)}
+                  "k_popDens": pm.LogitNormal('k_popDens' , -4.0, 1.0),
+                  #"Detect_efficancey0": pm.LogitNormal('Detect_efficancey0', 1, 1)}#,
+                  "Detect_efficanceyP": pm.LogitNormal('Detect_efficanceyP', 1, 1)}
                   #"max_f": pm.LogitNormal('max_f'           , 0.0, 1.0)}        
         p0 = pm.Uniform('p0', 0.0, 1.0)
         p1 = pm.Lognormal('p1', 0.0, 1.0)
-        sigma = pm.Lognormal('sigma', 0.0, 1.0)
+        sigma = pm.HalfNormal('sigma', 0.1)
         prediction = ConFire(fd, params, True).burnt_area_mode
         
                
