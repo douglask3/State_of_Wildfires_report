@@ -11,9 +11,9 @@ library(rgdal)
 #SA_ste <- readOGR(dsn = "data/South_America", layer = "South_America")
 #rivers <- readOGR(dsn = "data/majorrivers_0_0", layer = "MajorRivers")
 
-StandardLegend <- function(cols, limits, dat, rightx = 0.95, extend_max = TRUE, oneSideLabels = TRUE, add = FALSE, ...) {
+StandardLegend <- function(cols, limits, dat, rightx = 0.9, extend_max = TRUE, oneSideLabels = TRUE, add = FALSE, ...) {
     if (add)        
-        plot_loc = c(0.41, rightx, 0.1, 0.13)
+        plot_loc = c(0.41, rightx, 0.05, 0.08)
     else 
         plot_loc = c(0.01, rightx, 0.3, 0.56)
     add_raster_legend2(cols, limits, dat = dat, add = add,
