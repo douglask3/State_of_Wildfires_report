@@ -69,16 +69,17 @@ class ConFire(object):
                                                  -self.params['suppression_k'])
         
         ## burnt area us just limitation of each control muliplied together. 
-        self.burnt_area_mode = self.standard_fuel * self.standard_moisture * \
+        self.burnt_area_mode_preCorrect = self.standard_fuel * self.standard_moisture * \
                                         self.standard_ignitions *  self.standard_suppression
                                         #self.params['Detect_efficanceyP'])
         
 
-        #if not inference: self.burnt_area_mode = self.burnt_area_mode_preCorrect.copy()
-        #self.burnt_area_mode = self.burnt_area_mode_preCorrect * \
-        #                      (self.params['Detect_efficancey0'] + \
-        #                       self.pow(self.burnt_area_mode_preCorrect, self.params['Detect_efficanceyP']) * \
-        #                      (1.0 - self.params['Detect_efficancey0']))
+        if not inference: self.burnt_area_mode = self.burnt_area_mode_preCorrect.copy()
+        self.burnt_area_mode = self.burnt_area_mode_preCorrect * \
+                              (self.params['Detect_efficancey0'] + \
+                               self.pow(self.burnt_area_mode_preCorrect, 
+                               self.params['Detect_efficanceyP']) * \
+                              (1.0 - self.params['Detect_efficancey0']))
         #self.browser()
         if not inference:
             self.error = self.params['sigma']
@@ -187,6 +188,7 @@ class ConFire(object):
         """
         Definition to describe moisture
         """
+        
         if self.inference:
             vpdc = 1.0 - self.numPCK.exp(k_vpd1 * vpd) 
             #vpdc = self.numPCK.exp(k_vpd2 * vpdc) 
@@ -206,10 +208,10 @@ class ConFire(object):
         moist = (c_emc * emc + c_trees * treeCoverc +  c_vpd * vpdc + c_tas * tas + \
                  c_humid * humid + c_precip * precipc + soilM)/(1.0 + c_emc + c_trees + c_vpd)        #
 
-        if self.inference:
-            moist = 1 - self.numPCK.log(1 - moist*kM)
-        else:
-            moist.data = 1 - self.numPCK.log(1 - moist.data*kM)
+        #if self.inference:
+        #    moist = 1 - self.numPCK.log(1 - moist*kM)
+        #else:
+        #    moist.data = 1 - self.numPCK.log(1 - moist.data*kM)
         return(moist)
 
    

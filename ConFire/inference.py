@@ -22,7 +22,7 @@ from pdb import set_trace as browser
 
 datDir       =  "isimip3a/driving_data/GSWP3-W5E5/Global/inference_data/"
 param_outpath = "isimip3a/driving_data/GSWP3-W5E5/params-for_sampling/"
-param_file = "with_ancils_alldats-newVPD-pow-normal"
+param_file = "with_ancils_alldats-newVPD-pow-normal-noMoistT-DE"
 sample_pc = 0.2
 nChains = 2
 
@@ -136,7 +136,7 @@ def runInference(fd, outfile):
                   "c_pas2": pm.Lognormal('c_pas2', 0.0, 1.0),
                   "c_popDens2": pm.Exponential('c_popDens2', 0.001),
                   "k_popDens": pm.LogitNormal('k_popDens' , -4.0, 1.0),
-                  #"Detect_efficancey0": pm.LogitNormal('Detect_efficancey0', 1, 1)}#,
+                  "Detect_efficancey0": pm.LogitNormal('Detect_efficancey0', 1, 1),
                   "Detect_efficanceyP": pm.LogitNormal('Detect_efficanceyP', 1, 1)}
                   #"max_f": pm.LogitNormal('max_f'           , 0.0, 1.0)}        
         p0 = pm.Uniform('p0', 0.0, 1.0)
