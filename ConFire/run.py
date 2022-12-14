@@ -35,26 +35,27 @@ import iris.quickplot as qplt
 import matplotlib.pyplot as plt
 
 input_dir = "isimip3a/driving_data/GSWP3-W5E5/Global/"
-output_dir = "isimip3a/outputs/test-alldat-noMT/"
+output_dir = "isimip3a/outputs/test-alldat-noMT-DE/"
 identfier = "historic_TS"
-experiments = ["obsclim/", "counterclim/"]
+experiments = ["counterclim/", "obsclim/"]
 
 param_file = "isimip3a/driving_data/GSWP3-W5E5/params-for_sampling/with_ancils-GSWP5.csv-2-1.csv"
 param_file = "isimip3a/driving_data/GSWP3-W5E5/params-for_sampling/with_ancils_alldats-newVPD-pow-GSWP5.csv-2-0.1.csv"
 
 param_file = "isimip3a/driving_data/GSWP3-W5E5/params-for_sampling/with_ancils_alldats-newVPD-pow-normal-GSWP5.csv-2-0.2.csv"
+param_file = "isimip3a/driving_data/GSWP3-W5E5/params-for_sampling/with_ancils_alldats-newVPD-pow-normal-noMoistT-DE-GSWP5.csv-2-0.2.csv"
 periods = fnmatch.filter(os.listdir(input_dir), 'hist*')
 periods = sorted(periods, reverse = True)
 
 output = ["controls", "standard", "potential", "sensitivity", "Bootstraps"]
-output = ["controls", "standard", "Bootstraps"]
+output = ["controls", "standard"]#, "Bootstraps"]
 
 n_posterior_sample = 10
 nBootstrap = 10
 
 qs = np.array([1, 5, 10, 25, 50, 75, 90, 95, 99])
 
-ignore_lock_samples = True
+ignore_lock_samples = False
 ignore_lock_summery = False
 ################################################################################
 ## Run period and experiment                                                  ##
