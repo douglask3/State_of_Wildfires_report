@@ -18,9 +18,10 @@ histDir = "/hpc//data/d00/hadea/jules_output/u-cc669_isimip3a_es/GSWP3-W5E5/"
 soilFile = '/hpc//data/d00/hadea/isimip3a/jules_ancils/qrparm.soil.latlon_fixed.nc'
 popDir = "/hpc//data/d00/hadea/isimip3a/InputData/socioeconomic/pop/histsoc/"
 lightFile = "/hpc/data/d00/hadea/isimip2b/ancils/lightning/lightning_cloud2ground.nc"
-runYrLen = 10
+runYrLen = 20
 
 Syears = seq(1880, 2010, by = runYrLen)
+#Syears = seq(1880, 2000, by = runYrLen)
 names = paste('historic_TS', Syears, Syears+runYrLen-1, sep = '_')
 years = lapply(Syears, function(i) i:(i+runYrLen-1))
 names(years) = names
@@ -39,11 +40,11 @@ fileIDs = c(cover = "ilamb", soilM = "ilamb", cveg = "ilamb", cs_gb = "ilamb", s
 varnames =  c(cover = "frac", soilM = "smc_tot", cveg = "cv", cs_gb = "cs_gb", spres = "pstar",
               precip = "precip", humid = "q1p5m_gb", tas = "t1p5m_gb")
 
-models = c("obsclim", "counterclim")
+models = c("counterclim", "obsclim")
 
 temp_dir = '/data/users/dkelley/ConFIRE_ISIMIP_temp/-makeISIMIP3ins'
 temp_dir_mem = '/data/users/dkelley/ConFIRE_ISIMIP_temp/memSafe/'
-out_dir  = 'isimip3a/driving_data/GSWP3-W5E5/'
+out_dir  = 'isimip3a/driving_data/GSWP3-W5E5-20yrs/'
 
 coverTypes = list(trees = c(1:7), totalVeg = c(1:13), crop = c(10, 12), pas = c(11, 13))
 
