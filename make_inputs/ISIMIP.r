@@ -20,7 +20,7 @@ popDir = "/hpc//data/d00/hadea/isimip3a/InputData/socioeconomic/pop/histsoc/"
 lightFile = "/hpc/data/d00/hadea/isimip2b/ancils/lightning/lightning_cloud2ground.nc"
 runYrLen = 20
 
-Syears = seq(1880, 2010, by = runYrLen)
+Syears = seq(2000, 2010, by = runYrLen)
 #Syears = seq(1880, 2000, by = runYrLen)
 names = paste('historic_TS', Syears, Syears+runYrLen-1, sep = '_')
 years = lapply(Syears, function(i) i:(i+runYrLen-1))
@@ -32,7 +32,7 @@ names(dirs) = names
 sm_sat = raster(soilFile, varname = "sm_sat")
 
 
-countries = c(Global = NA)
+countries = c(Global = NA, Brazil = 'Brazil')
 
 fileIDs = c(cover = "ilamb", soilM = "ilamb", cveg = "ilamb", cs_gb = "ilamb", spres = "ilamb",
             precip = "ilamb", humid = "ilamb", tas = "ilamb")
