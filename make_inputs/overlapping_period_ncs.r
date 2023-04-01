@@ -1,37 +1,48 @@
 library(raster)
+source("../gitProjectExtras/gitBasedProjects/R/makeDir.r")
 
 inDir = 'isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/historic_TS_2000_2019/obsclim/'
-outDir = 'isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2010/'
+outDirs = paste0('isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/', 
+                 c('AllConFire_2000_2009/', 'AllConFire_2010_2019/', 'AllConFire_2010_2016/'))
 files = list.files(inDir)
 
-layers_default = 1:120
+layers_defaults = list(1:120, 121:240, 121:204)
+layers_fires = list(37:156, NULL, 157:240)
 
-fire_file = "../fireMIPbenchmarking/data/benchmarkData/GFED4s_v2.nc"
+fire_file = "/home/h01/cburton/GitHub/ISIMIP3a/Observations/GFED4.1s_Burned_Fraction.nc"
 
-processFile <- function(file, dir = inDir, layers = layers_default, template = NULL) {
-    if(substr(file, nchar(file)-2, nchar(file)) != '.nc') return()
-    r = brick(paste0(dir, file))[[layers_default]]
-   
-   #nms =  as.Date(paste(rep(years, each = 12), 1:12, 15, sep = '-'))
-    if (is.null(template)) {
-        nms = substr(names(r), 2, nchar(names(r)[1]))
-        nms = sapply(nms, function(i)
-                            paste(strsplit(i, '.', fixed = TRUE)[[1]], collapse = '-'))
-        nms = as.Date(nms)
-    } else {
-        nms = template[[2]]
-        r = raster::crop(r, template[[1]][[1]])
-        r = raster::resample(r, template[[1]][[1]])
+forPeriod <- function(outDir, layers_default, layers_fires) {
+    makeDir(outDir)
+    processFile <- function(file, dir = inDir, 
+                            layers = layers_default, template = NULL) {
+        print(file)
+        if(substr(file, nchar(file)-2, nchar(file)) != '.nc') return()
+        r = brick(paste0(dir, file))[[layers_default]]
+        
+        #nms =  as.Date(paste(rep(years, each = 12), 1:12, 15, sep = '-'))
+        if (is.null(template)) {
+            nms = substr(names(r), 2, nchar(names(r)[1]))
+            nms = sapply(nms, function(i)
+                                paste(strsplit(i, '.', fixed = TRUE)[[1]], collapse = '-'))
+            nms = as.Date(nms)
+        } else {
+            nms = template[[2]]
+            r = raster::crop(r, template[[1]][[1]])
+            r = raster::resample(r, template[[1]][[1]])
+        }
+        names(r) = nms
+        r = setZ(r, nms, 'Date')
+        
+        if (exists("maskRaster")) r[maskRaster] = NaN
+        else maskRaster <<- is.na(r[[1]])
+        
+        writeRaster(r, file = paste0(outDir, tail(strsplit(file, '/')[[1]], 1)), 
+                    overwrite = TRUE)
+        return(list(r, nms))
     }
-    names(r) = nms
-    r = setZ(r, nms, 'Date')
     
-    writeRaster(r, file = paste0(outDir, tail(strsplit(file, '/')[[1]], 1)), overwrite = TRUE)
-    return(list(r, nms))
+    template = lapply(files, processFile)[[1]]
+    processFile(fire_file, '', layers_fire, template = template)
+    #fireObs = brick()[[25:204]]
 }
-
-template = lapply(files, processFile)[[1]]
-processFile(fire_file, '', layers_default + 25, template = template)
-#fireObs = brick()[[25:204]]
-
-
+mapply(forPeriod, outDirs, layers_defaults, layers_fires)
