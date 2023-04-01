@@ -73,7 +73,7 @@ plotStandardMap <- function(r, cols, limits, e = NULL, add_legend = FALSE,
                            transpose = FALSE, srt = 0, oneSideLabels= FALSE,
                            plot_loc = c(0.35, 0.99, 0.09, 0.12),  ylabposScling=0.8, ...)
     }
-    grid()
+   # grid()
 }
 
 addCoastlineAndIce2map <- function() {
