@@ -10,9 +10,9 @@ options(error=recover)
 abcd <- function() source("make_inputs/ISIMIP.r")
 countriesMap = raster('../ConFIRE_ISIMIP/data/countries.nc')
 ckey = read.csv("../ConFIRE_ISIMIP/data/countries_key.csv")[,2]
-genVarID = "genVar-C-cover2-FfsoilM-soilC-VDP"
+genVarID = "genVar-C-cover2-FfsoilM-soilC-VDP-time"
 #
-overwrite_outputs = FALSE
+overwrite_outputs = TRUE
 
 histDir = "/hpc//data/d00/hadea/jules_output/u-cc669_isimip3a_es/GSWP3-W5E5/"
 soilFile = '/hpc//data/d00/hadea/isimip3a/jules_ancils/qrparm.soil.latlon_fixed.nc'
@@ -133,7 +133,7 @@ makeDat <- function(id, dir, years, out_dir, mask,  extent, country) {
                 
                 for (i in cv[-1]) 
                     out = out + i               
-                out = writeRaster(out, ctfile, overwrite = TRUE)
+                out = writeRaster.Standard(out, ctfile, overwrite = TRUE)
                 return(out)
             }
             coverTy = layer.apply(cover, group)
