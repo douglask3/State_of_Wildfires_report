@@ -1,5 +1,7 @@
 library(raster)
 source("../gitProjectExtras/gitBasedProjects/R/makeDir.r")
+source("../gitProjectExtras/gitBasedProjects/R/sourceAllLibs.r")
+sourceAllLibs("../gitProjectExtras/gitBasedProjects/R/")
 
 inDir = 'isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/historic_TS_2000_2019/obsclim/'
 outDirs = paste0('isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/', 
@@ -31,12 +33,16 @@ forPeriod <- function(outDir, layers_default, layers_fires) {
             r = raster::resample(r, template[[1]][[1]])
         }
         names(r) = nms
-        r = setZ(r, nms, 'Date')
+        #browser()
+        r = setZ(r, as.Date(nms), 'Date')
         
         if (exists("maskRaster")) r[maskRaster] = NaN
         else maskRaster <<- is.na(r[[1]])
+        r = setZ(r, as.Date(nms), 'Date')
+        fout = paste0(outDir, tail(strsplit(file, '/')[[1]], 1))
+        print(fout)
         
-        writeRaster.Standard(r, file = paste0(outDir, tail(strsplit(file, '/')[[1]], 1)))
+        writeRaster.Standard(r, file = fout)
         return(list(r, nms))
     }
     
