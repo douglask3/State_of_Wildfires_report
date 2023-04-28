@@ -36,8 +36,7 @@ forPeriod <- function(outDir, layers_default, layers_fires) {
         if (exists("maskRaster")) r[maskRaster] = NaN
         else maskRaster <<- is.na(r[[1]])
         
-        writeRaster(r, file = paste0(outDir, tail(strsplit(file, '/')[[1]], 1)), 
-                    overwrite = TRUE)
+        writeRaster.Standard(r, file = paste0(outDir, tail(strsplit(file, '/')[[1]], 1)))
         return(list(r, nms))
     }
     
