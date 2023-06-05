@@ -1,5 +1,5 @@
 import multiprocessing as mp 
-mp.set_start_method('forkserver')
+#mp.set_start_method('forkserver')
 
 import sys
 
@@ -12,7 +12,7 @@ from   io     import StringIO
 import numpy  as np
 import math
 
-import pymc  as pm
+import pymc  as pm 
 from   aesara import tensor as tt
 
 import matplotlib.pyplot as plt
@@ -55,7 +55,7 @@ def fire_model(betas, X, inference = False):
 	no. rows in X of burnt area/fire probabilities.
     """
     if inference: 
-        numPCK =  __import__('numpy') #numPCK =  __import__('aesara').tensor
+        numPCK =  __import__('aesara').tensor #numPCK =  __import__('numpy') 
     else:
         numPCK = __import__('numpy')
     
@@ -121,7 +121,8 @@ def fit_MaxEnt_probs_to_data(Y, X, niterations,
 
 if __name__=="__main__":
     #dir = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
-    dir = "/gws/nopw/j04/jules/mbarbosa/driving_and_obs_overlap/AllConFire_2000_2009/"
+    #dir = "/gws/nopw/j04/jules/mbarbosa/driving_and_obs_overlap/AllConFire_2000_2009/"
+    dir = "D:/Doutorado/Sanduiche/research/maxent-test/driving_and_obs_overlap/AllConFire_2000_2009/"
     y_filen = "GFED4.1s_Burned_Fraction.nc"
     
     x_filen_list=["precip.nc", "lightn.nc", "crop.nc"] 
