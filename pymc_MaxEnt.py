@@ -1,4 +1,5 @@
-import multiprocessing as mp 
+
+#import multiprocessing as mp 
 #mp.set_start_method('forkserver')
 
 import sys
@@ -12,8 +13,10 @@ from   io     import StringIO
 import numpy  as np
 import math
 
-import pymc  as pm 
-from   aesara import tensor as tt
+import pymc  as pm
+import pytensor
+import pytensor.tensor as tt
+#from   aesara import tensor as tt
 
 import matplotlib.pyplot as plt
 import re
@@ -35,7 +38,7 @@ def MaxEnt_on_prob(x, mu):
     mu = tt.switch(
         tt.lt(mu, 0.0000000000000000001),
         0.0000000000000000001, mu)
-    return tt.log(mu**x) + tt.log((1-mu)**(1.0-x))
+    return x*tt.log(mu) + (1.0-x)*tt.log((1-mu))
     
 
 def fire_model(betas, X, inference = False):
@@ -55,7 +58,8 @@ def fire_model(betas, X, inference = False):
 	no. rows in X of burnt area/fire probabilities.
     """
     if inference: 
-        numPCK =  __import__('aesara').tensor #numPCK =  __import__('numpy') 
+
+        numPCK =  __import__('pytensor').tensor
     else:
         numPCK = __import__('numpy')
     
@@ -67,7 +71,7 @@ def fire_model(betas, X, inference = False):
    
 
 def fit_MaxEnt_probs_to_data(Y, X, niterations, 
-                             out_dir = 'outputs/', filename = '', grab_old_trace = True):
+                             out_dir = 'outputs/', filename = '', grab_old_trace = False):
     """ Bayesian inerence routine that fits independant variables, X, to dependant, Y.
         Based on the MaxEnt solution of probabilities. 
     Arguments:
@@ -105,30 +109,33 @@ def fit_MaxEnt_probs_to_data(Y, X, niterations,
                           initval =np.repeat(0.5, X.shape[1]))
         ## build model
         mu = fire_model(betas, X, inference = True)   
-    
+        #sigma = pm.HalfCauchy("sigma", beta=10)
+        
         ## define error measurement
         error = pm.DensityDist("error", mu, logp = MaxEnt_on_prob, observed = Y)
-
+        #error = pm.Normal("y", mu=mu, sigma=sigma, observed=Y)        
         ## sample model
-        step = pm.Metropolis()
-        trace = pm.sample(niterations, return_inferencedata=True, njobs = 1, step = step, cores = 1, chains = 1)
 
-        
+        trace = pm.sample(niterations, return_inferencedata=True)
         ## save trace file
         trace.to_netcdf(trace_file)
     return trace
 
 
 if __name__=="__main__":
+
     #dir = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
     #dir = "/gws/nopw/j04/jules/mbarbosa/driving_and_obs_overlap/AllConFire_2000_2009/"
     dir = "D:/Doutorado/Sanduiche/research/maxent-test/driving_and_obs_overlap/AllConFire_2000_2009/"
+
     y_filen = "GFED4.1s_Burned_Fraction.nc"
     
-    x_filen_list=["precip.nc", "lightn.nc", "crop.nc"] 
-    '''"humid.nc",#"vpd.nc", "csoil.nc", 
+
+    x_filen_list=["precip.nc", "lightn.nc", "crop.nc", "humid.nc"] 
+    ''',"vpd.nc", "csoil.nc", 
                   "lightn.nc", "rhumid.nc", "cveg.nc", "pas.nc", "soilM.nc", 
                    "totalVeg.nc", "popDens.nc", "trees.nc"]'''
+
 
     niterations = 100
     sample_for_plot = 20
