@@ -61,7 +61,8 @@ def read_variable_from_netcdf(filename, dir = '', subset_function = None,
     return dataset
 
 def read_all_data_from_netcdf(y_filename, x_filename_list, add_1s_columne = False, 
-                              y_threshold = None, check_mask = True, *args, **kw):
+                              y_threshold = None, x_normalise_by_max = False,
+                              check_mask = True, *args, **kw):
     """Read data from netCDF files 
         
     Arguments:
@@ -96,6 +97,7 @@ def read_all_data_from_netcdf(y_filename, x_filename_list, add_1s_columne = Fals
     
     for i, filename in enumerate(x_filename_list):
         X[:, i]=read_variable_from_netcdf(filename, make_flat = True, *args, **kw)
+        
 
     if add_1s_columne: 
         X = np.column_stack((X, np.ones(len(X)))) # add a column of ones to X 
@@ -104,6 +106,12 @@ def read_all_data_from_netcdf(y_filename, x_filename_list, add_1s_columne = Fals
         cells_we_want = np.array([np.all(rw > -9e9) for rw in np.column_stack((X, Y))])
         Y = Y[cells_we_want]
         X = X[cells_we_want, :]
+    
+    if x_normalise_by_max:
+        scalers = np.max(X, axis=0)
+        X = X / scalers
+        if check_mask: return Y, X, cells_we_want, scalers
 
-        return Y, X, cells_we_want
+    if check_mask: return Y, X, cells_we_want
+
     return Y, X
