@@ -24,7 +24,7 @@ import sys
 import arviz as az
 
 
-def MaxEnt_on_prob(x, mu):
+def MaxEnt_on_prob(BA, fx):
     """calculates the log-transformed continuous logit likelihood for x given mu when x 
        and mu are probabilities between 0-1. 
        Works with tensor variables.   
@@ -34,10 +34,10 @@ def MaxEnt_on_prob(x, mu):
     Returns:
         1-d tensor array of liklihoods.
     """
-    mu = tt.switch(
-        tt.lt(mu, 0.0000000000000000001),
-        0.0000000000000000001, mu)
-    return x*tt.log(mu) + (1.0-x)*tt.log((1-mu))
+    fx = tt.switch(
+        tt.lt(fx, 0.0000000000000000001),
+        0.0000000000000000001, fx)
+    return BA*tt.log(fx) + (1.0-BA)*tt.log((1-fx))
     
 
 def fire_model(betas, X, inference = False):
@@ -121,34 +121,40 @@ def fit_MaxEnt_probs_to_data(Y, X, niterations,
 
 if __name__=="__main__":
     dir = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
+    dir_outputs = 'outputs/'
+    grab_old_trace = True
     #dir = "/gws/nopw/j04/jules/mbarbosa/driving_and_obs_overlap/AllConFire_2000_2009/"
     y_filen = "GFED4.1s_Burned_Fraction.nc"
     
 
-    x_filen_list=["precip.nc", "lightn.nc", "crop.nc", "humid.nc"] 
-    ''',"vpd.nc", "csoil.nc", 
+    x_filen_list=["precip.nc", "lightn.nc", "crop.nc", "humid.nc","vpd.nc", "csoil.nc", 
                   "lightn.nc", "rhumid.nc", "cveg.nc", "pas.nc", "soilM.nc", 
-                   "totalVeg.nc", "popDens.nc", "trees.nc"]'''
+                   "totalVeg.nc", "popDens.nc", "trees.nc"]
 
-
+    
     niterations = 100
     sample_for_plot = 20
 
-    levels = [0, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100] 
+    levels = [0, 0.1, 1, 2, 5, 10, 20, 50, 100] 
     cmap = 'OrRd'
 
     months_of_year = [7]
 
-    Y, X, lmask = read_all_data_from_netcdf(y_filen, x_filen_list, 
-                                           add_1s_columne = True, dir = dir, 
+    Y, X, lmask, scalers = read_all_data_from_netcdf(y_filen, x_filen_list, 
+                                           add_1s_columne = True, dir = dir,
+                                           x_normalise_by_max = True, 
                                            subset_function = sub_year_months, 
                                            subset_function_args = {'months_of_year': months_of_year})
+    
     
     filename = '_'.join([file[:-3] for file in x_filen_list]) + '-Month_' + \
                '_'.join([str(mn) for mn in months_of_year])
     
-    trace = fit_MaxEnt_probs_to_data(Y, X, filename = filename,  niterations = niterations)
+    trace = fit_MaxEnt_probs_to_data(Y, X, out_dir = dir_outputs, filename = filename, 
+                                     niterations = niterations, grab_old_trace = grab_old_trace)
     
+    az.plot_trace(trace)
+    plt.savefig('figs/' + filename + '-traces.png')
     Obs = read_variable_from_netcdf(y_filen, dir, subset_function = sub_year_months, 
                                      subset_function_args = {'months_of_year': months_of_year})
 
@@ -181,5 +187,18 @@ if __name__=="__main__":
     plot_map(Obs, "Observtations", 1)
     plot_map(insert_sim_into_cube(Sim[0,:]), "Simulation - 10%", 2)
     plot_map(insert_sim_into_cube(Sim[1,:]), "Simulation - 90%", 3)
+    plt.gcf().set_size_inches(8, 6)
+    plt.savefig('figs/' + filename + '-maps.png')
     
+    '''
+    #Run the model with first iteration
+    simulation1 = fire_model(trace.posterior['betas'].values[0,0,:], X, False)
+
+    #Plot against observations (Y)
+    plt.plot(Y, simulation1, '.')
+    plt.show()
+
+    #when developing plots, use betas = trace.posterior['betas'].values[0,0,:]
+    and run with model with fire_model(betas, X, False)
+    '''
     set_trace()
