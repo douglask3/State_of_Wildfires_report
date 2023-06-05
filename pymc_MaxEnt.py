@@ -69,7 +69,7 @@ def fire_model(betas, X, inference = False):
    
 
 def fit_MaxEnt_probs_to_data(Y, X, niterations, 
-                             out_dir = 'outputs/', filename = '', grab_old_trace = False):
+                             out_dir = 'outputs/', filename = '', grab_old_trace = True):
     """ Bayesian inerence routine that fits independant variables, X, to dependant, Y.
         Based on the MaxEnt solution of probabilities. 
     Arguments:
@@ -107,13 +107,12 @@ def fit_MaxEnt_probs_to_data(Y, X, niterations,
                           initval =np.repeat(0.5, X.shape[1]))
         ## build model
         mu = fire_model(betas, X, inference = True)   
-        #sigma = pm.HalfCauchy("sigma", beta=10)
+        
         
         ## define error measurement
         error = pm.DensityDist("error", mu, logp = MaxEnt_on_prob, observed = Y)
-        #error = pm.Normal("y", mu=mu, sigma=sigma, observed=Y)        
+                
         ## sample model
-
         trace = pm.sample(niterations, return_inferencedata=True)
         ## save trace file
         trace.to_netcdf(trace_file)
