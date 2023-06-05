@@ -7,7 +7,7 @@
 import iris
 import iris.coord_categorisation as icc
 import cartopy.io.shapereader as shpreader
-from ascend import shape
+#from ascend import shape
 import numpy as np
 import cartopy.crs as ccrs
 import geopandas as gp
