@@ -204,18 +204,11 @@ if __name__=="__main__":
                                          subset_function, subset_function_args,
                                          niterations, cores, grab_old_trace)
 
-    
-    
-    
     predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir, filename,
                          subset_function, subset_function_args,
                          sample_for_plot)
     
 
-   
-    
-    
-    
     '''
     #Run the model with first iteration
     simulation1 = fire_model(trace.posterior['betas'].values[0,0,:], X, False)
