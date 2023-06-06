@@ -1,6 +1,49 @@
+import pymc
 import numpy as np
 import matplotlib.pyplot as plt
-'''
+import os
+from   io     import StringIO
+import numpy  as np
+import math
+
+import pymc  as pm
+import pytensor
+import pytensor.tensor as tt
+
+from pdb import set_trace as browser
+class MaxEntFire(object):
+    def __init__(betas, inference = False):
+        """base fire model which takes indepedant variables and coefficants. 
+            At the moment, just a linear model fed through a logistic function to convert to 
+            burnt area/fire probablity. But we'll adapt that.   
+        Arguments:
+            betas -- numpy or tensor 1-d array of coefficants in linear model
+                    y = betas[1] + X[:,1] + betas[2] + X[:,2] + .....
+	    X -- numpy or tensor 2d array of indepenant variables, each columne a different 
+                    variable, no. columns (no. variables) is same as length of betas.
+	    inference -- boolean.   If True, then used in bayesian inference and uses 
+                                        tensor maths. 
+			            If False, used in normal mode or prior/posterior sampling 
+                                        and uses numpy.
+        Returns:
+            numpy or tensor (depdaning on 'inference' option) 1 d array of length equal to 
+	    no. rows in X of burnt area/fire probabilities.
+        """
+ 
+        if self.inference:
+            self.numPCK =  __import__('pytensor').tensor
+        else:
+            self.numPCK =  __import__('numpy')
+        
+        self.betas = betas
+
+    def fire_model(X):
+        y = numPCK.dot(X, betas)
+
+        BA = 1.0/(1.0 + numPCK.exp(-y))
+    
+        return BA
+'''     
 def hinge_1(x0, y0, a, b):
 
     """ fits a hinge curve function
@@ -57,7 +100,7 @@ print("y = ", hin2)
 plt.plot(x, hin2)
 plt.show()
 '''
-
+'''
 def exp(x, p):
     
     y = x**p
@@ -73,7 +116,7 @@ e = exp(x,2)
 print(e)
 plt.plot(x, e)
 plt.show()
-
+'''
 
 
 
