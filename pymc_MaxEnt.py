@@ -94,6 +94,76 @@ def fit_MaxEnt_probs_to_data(Y, X, niterations,
         trace.to_netcdf(trace_file)
     return trace
 
+def train_MaxEnt_model(y_filen, x_filen_list, dir = '', filename_out = '',
+                       frac_random_sample = 1.0,
+                       subset_function = None, subset_function_args = None,
+                       niterations = 100, cores = 4, grab_old_trace = False):
+    
+
+    Y, X, lmask, scalers = read_all_data_from_netcdf(y_filen, x_filen_list, 
+                                                     add_1s_columne = True, dir = dir,
+                                                     x_normalise01 = True, 
+                                                     frac_random_sample = frac_random_sample,
+                                                     subset_function = subset_function, 
+                                                     subset_function_args = subset_function_args)
+    
+    trace = fit_MaxEnt_probs_to_data(Y, X, out_dir = dir_outputs, filename = filename, 
+                                     niterations = niterations, cores = cores,
+                                     grab_old_trace = grab_old_trace)
+    
+    az.plot_trace(trace)
+    plt.savefig('figs/' + filename + '-traces.png')
+    return trace, scalers
+
+def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '', filename_out = '',
+                         subset_functionm = None, subset_function_args = None,
+                         sample_for_plot = 1):
+
+    Y, X, lmask, scalers = read_all_data_from_netcdf(y_filen, x_filen_list, 
+                                                     add_1s_columne = True, dir = dir,
+                                                     x_normalise01 = True, scalers = scalers,
+                                                     subset_function = subset_function, 
+                                                     subset_function_args = subset_function_args)
+    
+    Obs = read_variable_from_netcdf(y_filen, dir, subset_function = subset_function, 
+                                    subset_function_args = subset_function_args)
+
+    def select_post_param(name): 
+        out = trace.posterior[name].values
+        A = out.shape[0]
+        B = out.shape[1]
+        new_shape = ((A * B), *out.shape[2:])
+        return np.reshape(out, new_shape)
+
+    def sample_model(i): 
+        powers =select_post_param('powers')[i,:]
+        betas =select_post_param('betas')[i,:]
+        return MaxEntFire(betas, powers).fire_model(X)
+
+    nits = np.prod(trace.posterior['betas'].values.shape[0:2])
+    idx = range(0, nits, int(np.floor(nits/sample_for_plot)))
+
+    Sim = np.array(list(map(sample_model, idx)))
+    Sim = np.percentile(Sim, q = [10, 90], axis = 0)
+
+    def insert_sim_into_cube(x):
+        Pred = Obs.copy()
+        pred = Pred.data.copy().flatten()
+        
+        pred[lmask] = x
+        Pred.data = pred.reshape(Pred.data.shape)
+        return(Pred)
+
+    def plot_map(cube, plot_name, plot_n):
+        plot_annual_mean(cube, levels, cmap, plot_name = plot_name, scale = 100*12, 
+                     Nrows = 1, Ncols = 3, plot_n = plot_n)
+  
+    plot_map(Obs, "Observtations", 1)
+    plot_map(insert_sim_into_cube(Sim[0,:]), "Simulation - 10%", 2)
+    plot_map(insert_sim_into_cube(Sim[1,:]), "Simulation - 90%", 3)
+    plt.gcf().set_size_inches(8, 6)
+    plt.savefig('figs/' + filename_out + '-maps.png')
+
 
 if __name__=="__main__":
     dir = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
@@ -121,67 +191,30 @@ if __name__=="__main__":
 
     cores = 4
 
-    def read_data_to_cols(frac_random_sample, *args, **kw):
-        return read_all_data_from_netcdf(y_filen, x_filen_list, 
-                                         add_1s_columne = True, dir = dir,
-                                         x_normalise01 = True, 
-                                         frac_random_sample = frac_random_sample,
-                                         subset_function = sub_year_months, 
-                                         subset_function_args = {'months_of_year': 
-                                                                 months_of_year})
+    #### runs
+    subset_function = sub_year_months
+    subset_function_args = {'months_of_year': months_of_year}
 
-    Y, X, lmask, scalers = read_data_to_cols(fraction_data_for_sample)
-    
     filename = '_'.join([file[:-3] for file in x_filen_list]) + \
               '-frac_points_' + str(fraction_data_for_sample) + \
               '-Month_' +  '_'.join([str(mn) for mn in months_of_year])
+
+    trace, scalers = train_MaxEnt_model(y_filen, x_filen_list, dir, filename,
+                                         fraction_data_for_sample,
+                                         subset_function, subset_function_args,
+                                         niterations, cores, grab_old_trace)
+
     
-    trace = fit_MaxEnt_probs_to_data(Y, X, out_dir = dir_outputs, filename = filename, 
-                                     niterations = niterations, cores = cores,
-                                     grab_old_trace = grab_old_trace)
     
-    az.plot_trace(trace)
-    plt.savefig('figs/' + filename + '-traces.png')
-
-    Y, X, lmask, scalers = read_data_to_cols(1.0)
-    Obs = read_variable_from_netcdf(y_filen, dir, subset_function = sub_year_months, 
-                                     subset_function_args = {'months_of_year': months_of_year})
-
-    def select_post_param(name): 
-        out = trace.posterior[name].values
-        A = out.shape[0]
-        B = out.shape[1]
-        new_shape = ((A * B), *out.shape[2:])
-        return np.reshape(out, new_shape)
-
-    def sample_model(i): 
-        powers =select_post_param('powers')[i,:]
-        betas =select_post_param('betas')[i,:]
-        return MaxEntFire(betas, powers).fire_model(X)
-
-    nits = np.prod(trace.posterior['betas'].values.shape[0:2])
-    idx = range(0, nits, int(np.floor(nits/sample_for_plot)))
-
-    Sim = np.array(list(map(sample_model, idx)))
-    Sim = np.percentile(Sim, q = [10, 90], axis = 0)
     
-    def insert_sim_into_cube(x):
-        Pred = Obs.copy()
-        pred = Pred.data.copy().flatten()
-        
-        pred[lmask] = x
-        Pred.data = pred.reshape(Pred.data.shape)
-        return(Pred)
+    predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir, filename,
+                         subset_function, subset_function_args,
+                         sample_for_plot)
+    
 
-    def plot_map(cube, plot_name, plot_n):
-        plot_annual_mean(cube, levels, cmap, plot_name = plot_name, scale = 100*12, 
-                     Nrows = 1, Ncols = 3, plot_n = plot_n)
-  
-    plot_map(Obs, "Observtations", 1)
-    plot_map(insert_sim_into_cube(Sim[0,:]), "Simulation - 10%", 2)
-    plot_map(insert_sim_into_cube(Sim[1,:]), "Simulation - 90%", 3)
-    plt.gcf().set_size_inches(8, 6)
-    plt.savefig('figs/' + filename + '-maps.png')
+   
+    
+    
     
     '''
     #Run the model with first iteration
