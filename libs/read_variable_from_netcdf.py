@@ -61,7 +61,7 @@ def read_variable_from_netcdf(filename, dir = '', subset_function = None,
     return dataset
 
 def read_all_data_from_netcdf(y_filename, x_filename_list, add_1s_columne = False, 
-                              y_threshold = None, x_normalise_by_max = False,
+                              y_threshold = None, x_normalise01 = False, scalers = None,
                               check_mask = True, *args, **kw):
     """Read data from netCDF files 
         
@@ -71,11 +71,15 @@ def read_all_data_from_netcdf(y_filename, x_filename_list, add_1s_columne = Fals
         x_filename_list -- a python list of filename containing the feature variables
         y_threshold -- if converting y into boolean, the threshold we use to spit into 
             0's and 1's
-        add_1s_columne --useful for if using for regressions. Adds a variable of 
+        add_1s_columne -- useful for if using for regressions. Adds a variable of 
             just 1's t rperesent y = SUM(a_i * x_i) + c
+        x_normalise01 -- Boolean. If True, then X's are normalised between 0 and 1.
+        scalers -- None or numpy array of shape 2 by n. columns of X.
+            Defines what scalers (min and max) to apply to each X column. 
+            If None, doesn't appky anything.
         check_mask -- Boolean. If True, simple checks if there are any large negtaive numbers 
-            and makes them out. Assunes that values < -9E9, you dont want. This could be different 
-            in some circumstances
+            and makes them out. Assunes that values < -9E9, you dont want. 
+            This could be different in some circumstances
         see read_variable_from_netcdf comments for *arg and **kw.
     Returns:
         Y - a numpy array of the target variable
@@ -107,9 +111,9 @@ def read_all_data_from_netcdf(y_filename, x_filename_list, add_1s_columne = Fals
         Y = Y[cells_we_want]
         X = X[cells_we_want, :]
     
-    if x_normalise_by_max:
-        scalers = np.max(X, axis=0)
-        X = X / scalers
+    if x_normalise01: scalers = np.array([np.min(X, axis=0), np.max(X, axis=0)])
+    if scalers is not None:
+        X = (X-scalers[0, :]) / (scalers[1, :] - scalers[0, :])
         if check_mask: return Y, X, cells_we_want, scalers
 
     if check_mask: return Y, X, cells_we_want

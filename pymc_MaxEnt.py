@@ -121,9 +121,10 @@ def fit_MaxEnt_probs_to_data(Y, X, niterations,
 
 if __name__=="__main__":
     dir = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
+    #dir = "/gws/nopw/j04/jules/mbarbosa/driving_and_obs_overlap/AllConFire_2000_2009/"
+    
     dir_outputs = 'outputs/'
     grab_old_trace = True
-    #dir = "/gws/nopw/j04/jules/mbarbosa/driving_and_obs_overlap/AllConFire_2000_2009/"
     y_filen = "GFED4.1s_Burned_Fraction.nc"
     
 
@@ -142,7 +143,7 @@ if __name__=="__main__":
 
     Y, X, lmask, scalers = read_all_data_from_netcdf(y_filen, x_filen_list, 
                                            add_1s_columne = True, dir = dir,
-                                           x_normalise_by_max = True, 
+                                           x_normalise01 = True, 
                                            subset_function = sub_year_months, 
                                            subset_function_args = {'months_of_year': months_of_year})
     
