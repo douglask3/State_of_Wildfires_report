@@ -1,4 +1,3 @@
-import pymc
 import numpy as np
 import matplotlib.pyplot as plt
 import os
@@ -12,13 +11,16 @@ import pytensor.tensor as tt
 
 from pdb import set_trace as browser
 class MaxEntFire(object):
-    def __init__(betas, inference = False):
-        """base fire model which takes indepedant variables and coefficants. 
-            At the moment, just a linear model fed through a logistic function to convert to 
-            burnt area/fire probablity. But we'll adapt that.   
+    """
+    Maximum Entropy fire model which takes indepedant variables and coefficants. 
+    At the moment, just a linear model fed through a logistic function to convert to 
+    burnt area/fire probablity. But we'll adapt that.  
+    """ 
+    def __init__(self, betas, inference = False):
+        """
+        Sets up the model based on betas and repsonse curve pararameters (response curve 
+            not yet implmented
         Arguments:
-            betas -- numpy or tensor 1-d array of coefficants in linear model
-                    y = betas[1] + X[:,1] + betas[2] + X[:,2] + .....
 	    X -- numpy or tensor 2d array of indepenant variables, each columne a different 
                     variable, no. columns (no. variables) is same as length of betas.
 	    inference -- boolean.   If True, then used in bayesian inference and uses 
@@ -26,10 +28,9 @@ class MaxEntFire(object):
 			            If False, used in normal mode or prior/posterior sampling 
                                         and uses numpy.
         Returns:
-            numpy or tensor (depdaning on 'inference' option) 1 d array of length equal to 
-	    no. rows in X of burnt area/fire probabilities.
+            callable functions. 'fire_model' (below) is the main one to use.
         """
- 
+        self.inference = inference
         if self.inference:
             self.numPCK =  __import__('pytensor').tensor
         else:
@@ -37,10 +38,20 @@ class MaxEntFire(object):
         
         self.betas = betas
 
-    def fire_model(X):
-        y = numPCK.dot(X, betas)
+    def fire_model(self, X):
+        """calculated predicted burnt area based on indepedant variables. 
+            At the moment, just a linear model fed through a logistic function to convert to 
+            burnt area/fire probablity. But we'll adapt that.   
+        Arguments:
+	    X -- numpy or tensor 2d array of indepenant variables, each columne a different 
+                    variable, no. columns (no. variables) is same as length of betas.
+        Returns:
+            numpy or tensor (depdaning on 'inference' option) 1 d array of length equal to 
+	    no. rows in X of burnt area/fire probabilities.
+        """
+        y = self.numPCK.dot(X, self.betas)
 
-        BA = 1.0/(1.0 + numPCK.exp(-y))
+        BA = 1.0/(1.0 + self.numPCK.exp(-y))
     
         return BA
 '''     

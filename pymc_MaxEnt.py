@@ -1,12 +1,13 @@
 #import multiprocessing as mp 
 #mp.set_start_method('forkserver')
-
 import sys
-
+sys.path.append('fire_model/')
 sys.path.append('libs/')
+
+from MaxEntFire import MaxEntFire
+
 from read_variable_from_netcdf import *
 from plot_maps import *
-
 import os
 from   io     import StringIO
 import numpy  as np
@@ -40,7 +41,7 @@ def MaxEnt_on_prob(BA, fx):
     return BA*tt.log(fx) + (1.0-BA)*tt.log((1-fx))
     
 
-def fire_model(betas, X, inference = False):
+def fire_model_old(betas, X, inference = False):
     """base fire model which takes indepedant variables and coefficants. 
         At the moment, just a linear model fed through a logistic function to convert to 
         burnt area/fire probablity. But we'll adapt that.   
@@ -106,11 +107,12 @@ def fit_MaxEnt_probs_to_data(Y, X, niterations,
         betas = pm.Normal('betas', mu = 0, sigma = 1, shape = X.shape[1], 
                           initval =np.repeat(0.5, X.shape[1]))
         ## build model
-        mu = fire_model(betas, X, inference = True)   
+        
+        prediction = MaxEntFire(betas, inference = True).fire_model(X)  
         
         
         ## define error measurement
-        error = pm.DensityDist("error", mu, logp = MaxEnt_on_prob, observed = Y)
+        error = pm.DensityDist("error", prediction, logp = MaxEnt_on_prob, observed = Y)
                 
         ## sample model
         trace = pm.sample(niterations, return_inferencedata=True)
@@ -124,7 +126,7 @@ if __name__=="__main__":
     #dir = "/gws/nopw/j04/jules/mbarbosa/driving_and_obs_overlap/AllConFire_2000_2009/"
     
     dir_outputs = 'outputs/'
-    grab_old_trace = True
+    grab_old_trace = False
     y_filen = "GFED4.1s_Burned_Fraction.nc"
     
 
