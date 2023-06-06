@@ -38,36 +38,7 @@ def MaxEnt_on_prob(BA, fx):
     fx = tt.switch(
         tt.lt(fx, 0.0000000000000000001),
         0.0000000000000000001, fx)
-    return BA*tt.log(fx) + (1.0-BA)*tt.log((1-fx))
-    
-
-def fire_model_old(betas, X, inference = False):
-    """base fire model which takes indepedant variables and coefficants. 
-        At the moment, just a linear model fed through a logistic function to convert to 
-        burnt area/fire probablity. But we'll adapt that.   
-    Arguments:
-        betas -- numpy or tensor 1-d array of coefficants in linear model
-                y = betas[1] + X[:,1] + betas[2] + X[:,2] + .....
-	X -- numpy or tensor 2d array of indepenant variables, each columne a different 
-                variable, no. columns (no. variables) is same as length of betas.
-	inference -- boolean. If True, then used in bayesian inference and uses tensor maths. 
-			      If False, used in normal mode or prior/posterior sampling and 
-                                uses numpy.
-    Returns:
-        numpy or tensor (depdaning on 'inference' option) 1 d array of length equal to 
-	no. rows in X of burnt area/fire probabilities.
-    """
-    if inference: 
-        numPCK =  __import__('pytensor').tensor
-    else:
-        numPCK = __import__('numpy')
-    
-    y = numPCK.dot(X, betas)
-
-    BA = 1.0/(1.0 + numPCK.exp(-y))
-    
-    return BA
-   
+    return BA*tt.log(fx) + (1.0-BA)*tt.log((1-fx))   
 
 def fit_MaxEnt_probs_to_data(Y, X, niterations, 
                              out_dir = 'outputs/', filename = '', grab_old_trace = True):
