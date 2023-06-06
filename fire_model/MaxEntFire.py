@@ -9,14 +9,14 @@ import pymc  as pm
 import pytensor
 import pytensor.tensor as tt
 
-from pdb import set_trace as browser
+from pdb import set_trace
 class MaxEntFire(object):
     """
     Maximum Entropy fire model which takes indepedant variables and coefficants. 
     At the moment, just a linear model fed through a logistic function to convert to 
     burnt area/fire probablity. But we'll adapt that.  
     """ 
-    def __init__(self, betas, inference = False):
+    def __init__(self, betas, powers = None, inference = False):
         """
         Sets up the model based on betas and repsonse curve pararameters (response curve 
             not yet implmented
@@ -37,6 +37,7 @@ class MaxEntFire(object):
             self.numPCK =  __import__('numpy')
         
         self.betas = betas
+        self.powers = powers
 
     def fire_model(self, X):
         """calculated predicted burnt area based on indepedant variables. 
@@ -49,85 +50,50 @@ class MaxEntFire(object):
             numpy or tensor (depdaning on 'inference' option) 1 d array of length equal to 
 	    no. rows in X of burnt area/fire probabilities.
         """
-        y = self.numPCK.dot(X, self.betas)
+        def dot_fun(x, p): return self.numPCK.dot(x, p)
+        
+        y = dot_fun(X, self.betas)
+
+        if self.powers is not None:
+            X_powers = self.power_response_curve(X)
+            y = y + dot_fun(X_powers, self.powers[0,:])        
 
         BA = 1.0/(1.0 + self.numPCK.exp(-y))
     
         return BA
-'''     
-def hinge_1(x0, y0, a, b):
-
-    """ fits a hinge curve function
-    x -- numpy array 
-     -- hinge point
-    """
+     
+    def hinge_1(x0, y0, a, b):
+        """ fits a hinge curve function
+        x -- numpy array 
+        -- hinge point
+        """
     
-    if np.all(x1 > x0):
-        y = a*x1 + b
-   
-    else:
-        y = y0
-    
-    return y
-   
-
-#calling the function
-
-x1 = np.round(np.linspace(0, 1, num=10), decimals=1)
-
-hin1 = hinge_1(0.5, 0.7, 2, 3)
-
-print(hin1)
- 
-#notes
- 
-# np.linspace is a function from NumPy that generates a sequence of evenly spaced numbers within a specified range
-'''
-'''
-def hinge_2(x, a1, b1, a2, b2):
-
-    
-    x0 = (b2-b1)/(a1-a2)
-    print("x0 = ", x0)
-    y=[]
-    
-    for xi in x:
-        if xi > x0:
-            yi = a2*xi + b2
-   
+        if np.all(x1 > x0):
+            y = a*x1 + b   
         else:
-            yi = a1*xi + b1
+            y = y0
     
-        y.append(yi)
-    return y
+        return y
+   
 
-#calling the function
-
-x = np.linspace(0, 1, num=100)
-print(x)
-hin2 = hinge_2(x, -1, 1, 2, 0.5)
-
-print("y = ", hin2)
-plt.plot(x, hin2)
-plt.show()
-'''
-'''
-def exp(x, p):
+    def hinge_2(self, x, a1, b1, a2, b2):
+  
+        x0 = (b2-b1)/(a1-a2)
+        print("x0 = ", x0)
+        y=[]
     
-    y = x**p
+        for xi in x:
+            if xi > x0:
+                yi = a2*xi + b2   
+            else:
+                yi = a1*xi + b1
     
-    return y
- 
+            y.append(yi)
+        return y
 
-#calling the function
-
-x = np.linspace(0, 1, num=100)
-e = exp(x,2)
-
-print(e)
-plt.plot(x, e)
-plt.show()
-'''
+#
+    def power_response_curve(self, X):  
+        return X**self.powers[1,:]
 
 
 

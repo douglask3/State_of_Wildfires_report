@@ -77,9 +77,11 @@ def fit_MaxEnt_probs_to_data(Y, X, niterations,
         ## set priorts
         betas = pm.Normal('betas', mu = 0, sigma = 1, shape = X.shape[1], 
                           initval =np.repeat(0.5, X.shape[1]))
+
+        powers = pm.Normal('powers', mu = 0, sigma = 1, shape = [2, X.shape[1]])
         ## build model
         
-        prediction = MaxEntFire(betas, inference = True).fire_model(X)  
+        prediction = MaxEntFire(betas, powers, inference = True).fire_model(X)  
         
         
         ## define error measurement
