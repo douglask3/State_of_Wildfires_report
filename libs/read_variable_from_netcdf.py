@@ -111,7 +111,12 @@ def read_all_data_from_netcdf(y_filename, x_filename_list, add_1s_columne = Fals
         Y = Y[cells_we_want]
         X = X[cells_we_want, :]
     
-    if x_normalise01: scalers = np.array([np.min(X, axis=0), np.max(X, axis=0)])
+    if x_normalise01: 
+        scalers = np.array([np.min(X, axis=0), np.max(X, axis=0)])
+        test = scalers[1,:] == scalers[0,:]
+        scalers[0,test] = 0.0
+        scalers[1,test] = 1.0
+        
     if scalers is not None:
         X = (X-scalers[0, :]) / (scalers[1, :] - scalers[0, :])
         if check_mask: return Y, X, cells_we_want, scalers
