@@ -62,7 +62,7 @@ def read_variable_from_netcdf(filename, dir = '', subset_function = None,
 
 def read_all_data_from_netcdf(y_filename, x_filename_list, add_1s_columne = False, 
                               y_threshold = None, x_normalise01 = False, scalers = None,
-                              check_mask = True, *args, **kw):
+                              check_mask = True, frac_random_sample = 1.0, *args, **kw):
     """Read data from netCDF files 
         
     Arguments:
@@ -80,6 +80,7 @@ def read_all_data_from_netcdf(y_filename, x_filename_list, add_1s_columne = Fals
         check_mask -- Boolean. If True, simple checks if there are any large negtaive numbers 
             and makes them out. Assunes that values < -9E9, you dont want. 
             This could be different in some circumstances
+        frac_random_sample -- fraction of data to be returned
         see read_variable_from_netcdf comments for *arg and **kw.
     Returns:
         Y - a numpy array of the target variable
@@ -106,11 +107,12 @@ def read_all_data_from_netcdf(y_filename, x_filename_list, add_1s_columne = Fals
     if add_1s_columne: 
         X = np.column_stack((X, np.ones(len(X)))) # add a column of ones to X 
     
+    
     if check_mask:
         cells_we_want = np.array([np.all(rw > -9e9) for rw in np.column_stack((X, Y))])
         Y = Y[cells_we_want]
         X = X[cells_we_want, :]
-    
+        
     if x_normalise01: 
         scalers = np.array([np.min(X, axis=0), np.max(X, axis=0)])
         squidge = (scalers[1,:]-scalers[0,:])/(X.shape[0])
@@ -120,11 +122,17 @@ def read_all_data_from_netcdf(y_filename, x_filename_list, add_1s_columne = Fals
         test = scalers[1,:] == scalers[0,:]
         scalers[0,test] = 0.0
         scalers[1,test] = 1.0
+    
+    if frac_random_sample is not None and frac_random_sample < 1:
+        M = X.shape[0]
+        selected_rows = np.random.choice(M, size = int(M * frac_random_sample), replace=False)
+        Y = Y[selected_rows]
+        X = X[selected_rows, :]
         
     if scalers is not None:
         X = (X-scalers[0, :]) / (scalers[1, :] - scalers[0, :])
         if check_mask: return Y, X, cells_we_want, scalers
 
-    if check_mask: return Y, X, cells_we_want
+    if check_mask or frac_random_sample: return Y, X, cells_we_want
 
     return Y, X

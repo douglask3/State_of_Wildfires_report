@@ -41,7 +41,8 @@ def MaxEnt_on_prob(BA, fx):
     return BA*tt.log(fx) + (1.0-BA)*tt.log((1-fx))   
 
 def fit_MaxEnt_probs_to_data(Y, X, niterations, 
-                             out_dir = 'outputs/', filename = '', grab_old_trace = True):
+                             out_dir = 'outputs/', filename = '', grab_old_trace = True,
+                             *arg, **kw):
     """ Bayesian inerence routine that fits independant variables, X, to dependant, Y.
         Based on the MaxEnt solution of probabilities. 
     Arguments:
@@ -67,7 +68,7 @@ def fit_MaxEnt_probs_to_data(Y, X, niterations,
     """
 
     trace_file = out_dir + '/' + filename + '-nvariables_' + '-ncells_' + str(X.shape[0]) + \
-                str(X.shape[1]) + '-niterations_' + str(niterations) + '.nc'
+                str(X.shape[1]) + '-niterations_' + str(niterations * cores) + '.nc'
     
     ## check if trace file exsts and return if wanted
     if os.path.isfile(trace_file) and grab_old_trace: 
@@ -88,7 +89,7 @@ def fit_MaxEnt_probs_to_data(Y, X, niterations,
         error = pm.DensityDist("error", prediction, logp = MaxEnt_on_prob, observed = Y)
                 
         ## sample model
-        trace = pm.sample(niterations, return_inferencedata=True)
+        trace = pm.sample(niterations, return_inferencedata=True, *arg, **kw)
         ## save trace file
         trace.to_netcdf(trace_file)
     return trace
@@ -99,7 +100,7 @@ if __name__=="__main__":
     #dir = "/gws/nopw/j04/jules/mbarbosa/driving_and_obs_overlap/AllConFire_2000_2009/"
     
     dir_outputs = 'outputs/'
-    grab_old_trace = False
+    grab_old_trace = True
     y_filen = "GFED4.1s_Burned_Fraction.nc"
     
 
@@ -107,7 +108,9 @@ if __name__=="__main__":
                   "lightn.nc", "rhumid.nc", "cveg.nc", "pas.nc", "soilM.nc", 
                    "totalVeg.nc", "popDens.nc", "trees.nc"]
 
-    
+
+    fraction_data_for_sample = 0.1    
+
     niterations = 100
     sample_for_plot = 20
 
@@ -116,31 +119,45 @@ if __name__=="__main__":
 
     months_of_year = [7]
 
-    Y, X, lmask, scalers = read_all_data_from_netcdf(y_filen, x_filen_list, 
-                                           add_1s_columne = True, dir = dir,
-                                           x_normalise01 = True, 
-                                           subset_function = sub_year_months, 
-                                           subset_function_args = {'months_of_year': months_of_year})
+    cores = 4
+
+    def read_data_to_cols(frac_random_sample, *args, **kw):
+        return read_all_data_from_netcdf(y_filen, x_filen_list, 
+                                         add_1s_columne = True, dir = dir,
+                                         x_normalise01 = True, 
+                                         frac_random_sample = frac_random_sample,
+                                         subset_function = sub_year_months, 
+                                         subset_function_args = {'months_of_year': 
+                                                                 months_of_year})
+
+    Y, X, lmask, scalers = read_data_to_cols(fraction_data_for_sample)
     
-    
-    filename = '_'.join([file[:-3] for file in x_filen_list]) + '-Month_' + \
-               '_'.join([str(mn) for mn in months_of_year])
+    filename = '_'.join([file[:-3] for file in x_filen_list]) + \
+              '-frac_points_' + str(fraction_data_for_sample) + \
+              '-Month_' +  '_'.join([str(mn) for mn in months_of_year])
     
     trace = fit_MaxEnt_probs_to_data(Y, X, out_dir = dir_outputs, filename = filename, 
-                                     niterations = niterations, grab_old_trace = grab_old_trace)
+                                     niterations = niterations, cores = cores,
+                                     grab_old_trace = grab_old_trace)
     
     az.plot_trace(trace)
     plt.savefig('figs/' + filename + '-traces.png')
+
+    Y, X, lmask, scalers = read_data_to_cols(1.0)
     Obs = read_variable_from_netcdf(y_filen, dir, subset_function = sub_year_months, 
                                      subset_function_args = {'months_of_year': months_of_year})
 
     def select_post_param(name): 
         out = trace.posterior[name].values
-        return out.reshape((-1, out.shape[-1]))
+        A = out.shape[0]
+        B = out.shape[1]
+        new_shape = ((A * B), *out.shape[2:])
+        return np.reshape(out, new_shape)
 
     def sample_model(i): 
+        powers =select_post_param('powers')[i,:]
         betas =select_post_param('betas')[i,:]
-        return fire_model(betas, X)
+        return MaxEntFire(betas, powers).fire_model(X)
 
     nits = np.prod(trace.posterior['betas'].values.shape[0:2])
     idx = range(0, nits, int(np.floor(nits/sample_for_plot)))
