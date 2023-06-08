@@ -16,7 +16,6 @@ import math
 import pymc  as pm
 import pytensor
 import pytensor.tensor as tt
-#from   aesara import tensor as tt
 
 import matplotlib.pyplot as plt
 import re
@@ -74,6 +73,16 @@ def fit_MaxEnt_probs_to_data(Y, X, niterations,
     if os.path.isfile(trace_file) and grab_old_trace: 
         return az.from_netcdf(trace_file)
 
+    trace_callback = None
+    try:
+        if "SLURM_JOB_ID" in os.environ:
+            def trace_callback(trace, draw):        
+                if len(trace) % 10 == 0:
+                    print('chain' + str(draw[0]))
+                    print('trace' + str(len(trace)))
+    except:
+        pass        
+
     with pm.Model() as max_ent_model:
         ## set priorts
         betas = pm.Normal('betas', mu = 0, sigma = 1, shape = X.shape[1], 
@@ -89,7 +98,9 @@ def fit_MaxEnt_probs_to_data(Y, X, niterations,
         error = pm.DensityDist("error", prediction, logp = MaxEnt_on_prob, observed = Y)
                 
         ## sample model
-        trace = pm.sample(niterations, return_inferencedata=True, *arg, **kw)
+        
+        trace = pm.sample(niterations, return_inferencedata=True, 
+                          callback = trace_callback, *arg, **kw)
         ## save trace file
         trace.to_netcdf(trace_file)
     return trace
@@ -99,7 +110,7 @@ def train_MaxEnt_model(y_filen, x_filen_list, dir = '', filename_out = '',
                        subset_function = None, subset_function_args = None,
                        niterations = 100, cores = 4, grab_old_trace = False):
     
-
+   
     Y, X, lmask, scalers = read_all_data_from_netcdf(y_filen, x_filen_list, 
                                                      add_1s_columne = True, dir = dir,
                                                      x_normalise01 = True, 
@@ -170,7 +181,7 @@ if __name__=="__main__":
     #dir = "/gws/nopw/j04/jules/mbarbosa/driving_and_obs_overlap/AllConFire_2000_2009/"
     
     dir_outputs = 'outputs/'
-    grab_old_trace = True
+    grab_old_trace = False
     y_filen = "GFED4.1s_Burned_Fraction.nc"
     
 
@@ -179,7 +190,7 @@ if __name__=="__main__":
                    "totalVeg.nc", "popDens.nc", "trees.nc"]
 
 
-    fraction_data_for_sample = 0.1    
+    fraction_data_for_sample = 0.1
 
     niterations = 100
     sample_for_plot = 20
@@ -191,7 +202,7 @@ if __name__=="__main__":
 
     cores = 4
 
-    #### runs
+    #### RUN STUFF
     subset_function = sub_year_months
     subset_function_args = {'months_of_year': months_of_year}
 
@@ -199,11 +210,15 @@ if __name__=="__main__":
               '-frac_points_' + str(fraction_data_for_sample) + \
               '-Month_' +  '_'.join([str(mn) for mn in months_of_year])
 
+    #### Optimize
     trace, scalers = train_MaxEnt_model(y_filen, x_filen_list, dir, filename,
                                          fraction_data_for_sample,
                                          subset_function, subset_function_args,
                                          niterations, cores, grab_old_trace)
 
+
+    #### Predict
+    dir = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2010_2019/"
     predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir, filename,
                          subset_function, subset_function_args,
                          sample_for_plot)
