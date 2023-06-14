@@ -11,7 +11,7 @@ import cartopy.io.shapereader as shpreader
 import numpy as np
 import cartopy.crs as ccrs
 import geopandas as gp
-import regionmask
+#import regionmask
 from pdb import set_trace
 import iris.quickplot as qplt
 import matplotlib.pyplot as plt
