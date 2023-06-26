@@ -181,7 +181,7 @@ if __name__=="__main__":
     #dir = "/gws/nopw/j04/jules/mbarbosa/driving_and_obs_overlap/AllConFire_2000_2009/"
     
     dir_outputs = 'outputs/'
-    grab_old_trace = False
+    grab_old_trace = True
     y_filen = "GFED4.1s_Burned_Fraction.nc"
     
 
