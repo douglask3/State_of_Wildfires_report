@@ -106,6 +106,7 @@ def fit_MaxEnt_probs_to_data(Y, X, niterations,
     return trace
 
 def train_MaxEnt_model(y_filen, x_filen_list, dir = '', filename_out = '',
+                       dir_outputs = '',
                        frac_random_sample = 1.0,
                        subset_function = None, subset_function_args = None,
                        niterations = 100, cores = 4, grab_old_trace = False):
@@ -123,10 +124,15 @@ def train_MaxEnt_model(y_filen, x_filen_list, dir = '', filename_out = '',
                                      grab_old_trace = grab_old_trace)
     
     az.plot_trace(trace)
-    plt.savefig('figs/' + filename + '-traces.png')
+    fig_dir = dir_outputs + '/figs/'
+    if not os.path.exists(fig_dir): os.makedirs(fig_dir)
+
+    plt.savefig(fig_dir + filename + '-traces.png')
+    
     return trace, scalers
 
-def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '', filename_out = '',
+def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '', 
+                         dir_outputs = '', filename_out = '',
                          subset_functionm = None, subset_function_args = None,
                          sample_for_plot = 1):
 
@@ -136,7 +142,8 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '', filena
                                                      subset_function = subset_function, 
                                                      subset_function_args = subset_function_args)
     
-    Obs = read_variable_from_netcdf(y_filen, dir, subset_function = subset_function, 
+    Obs = read_variable_from_netcdf(y_filen, dir,
+                                    subset_function = subset_function, 
                                     subset_function_args = subset_function_args)
 
     def select_post_param(name): 
@@ -173,36 +180,80 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '', filena
     plot_map(insert_sim_into_cube(Sim[0,:]), "Simulation - 10%", 2)
     plot_map(insert_sim_into_cube(Sim[1,:]), "Simulation - 90%", 3)
     plt.gcf().set_size_inches(8, 6)
-    plt.savefig('figs/' + filename_out + '-maps.png')
+    
+    fig_dir = dir_outputs + '/figs/'
+    if not os.path.exists(fig_dir): os.makedirs(fig_dir)
+    plt.savefig(fig_dir + filename_out + '-maps.png')
 
 
 if __name__=="__main__":
-    dir = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
-    #dir = "/gws/nopw/j04/jules/mbarbosa/driving_and_obs_overlap/AllConFire_2000_2009/"
+    """ Running optimization and basic analysis. 
+    Variables that need setting:
+    For Optimization:
+        dir_training -- The directory of the training data inclduing 
+            dependant and independant variables
+        y_filen -- filename of dependant variable (i.e burnt area)
+        x_filen_list -- filanames of independant variables
+            (ie bioclimate, landscape metrics etc)
+        cores - how many chains to start (confusiong name, I know).
+            When running on slurm, also number of cores
+        fraction_data_for_sample -- fraction of gridcells used for optimization
+        niterations -- number of iterations or samples )after warm-up) in optimixation for each
+            chain. Equilivent to number of ensemble members.
+        months_of_year --- which months to extact on training and projecting
+        grab_old_trace -- Boolean. If True and there's an appripritate looking old trace file, 
+            then  optimisation is skipped that file is loaded instead. 
+            This isn't totally infalable, so if doing a final run and in doubt, set to False
+    For Projection/evaluating:
+        dir_outputs -- where stuff gets outputted
+        dir_projecting -- The directory of the data used for prjections. 
+            Should contain same files for independant varibales as dir_training 
+            (though you should be able to adpated this easily if required). 
+            Doesnt need dependant variable, but if there, this will (once
+            we've implmented it) attempt some evaluation.
+        sample_for_plot -- how many iterations (samples) from optimixation should be used 
+            for plotting and evaluation.
+        levels -- levels on teh colourbar on observtation and prodiction maps
+        cmap -- levels on teh colourbar on observtation and prodiction maps
+    Returns:
+        trace file, maps, etc (to be added too)
+    """
+
+    """ 
+        SETPUT 
+    """
+    """ optimization """
+    dir_training = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
+     #dir_training = "/gws/nopw/j04/jules/mbarbosa/driving_and_obs_overlap/AllConFire_2000_2009/"
     
-    dir_outputs = 'outputs/'
-    grab_old_trace = True
     y_filen = "GFED4.1s_Burned_Fraction.nc"
-    
 
     x_filen_list=["precip.nc", "lightn.nc", "crop.nc", "humid.nc","vpd.nc", "csoil.nc", 
                   "lightn.nc", "rhumid.nc", "cveg.nc", "pas.nc", "soilM.nc", 
                    "totalVeg.nc", "popDens.nc", "trees.nc"]
 
-
+    grab_old_trace = True
+    cores = 4
     fraction_data_for_sample = 0.1
-
     niterations = 100
+
+    months_of_year = [7]
+    
+    """ Projection/evaluating """
+    dir_outputs = 'outputs/'
+
+    dir_projecting = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2010_2019/"
+    #dir_training = "/gws/nopw/j04/jules/mbarbosa/driving_and_obs_overlap/AllConFire_2000_2009/"
+
     sample_for_plot = 20
 
     levels = [0, 0.1, 1, 2, 5, 10, 20, 50, 100] 
     cmap = 'OrRd'
 
-    months_of_year = [7]
-
-    cores = 4
-
-    #### RUN STUFF
+    
+    """ 
+        RUN optimization 
+    """
     subset_function = sub_year_months
     subset_function_args = {'months_of_year': months_of_year}
 
@@ -211,15 +262,19 @@ if __name__=="__main__":
               '-Month_' +  '_'.join([str(mn) for mn in months_of_year])
 
     #### Optimize
-    trace, scalers = train_MaxEnt_model(y_filen, x_filen_list, dir, filename,
-                                         fraction_data_for_sample,
-                                         subset_function, subset_function_args,
-                                         niterations, cores, grab_old_trace)
+    trace, scalers = train_MaxEnt_model(y_filen, x_filen_list, dir_training, 
+                                        filename, dir_outputs,
+                                        fraction_data_for_sample,
+                                        subset_function, subset_function_args,
+                                        niterations, cores, grab_old_trace)
 
 
-    #### Predict
+    """ 
+        RUN projection 
+    """
     dir = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2010_2019/"
-    predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir, filename,
+    predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir_projecting,
+                         dir_outputs, filename,
                          subset_function, subset_function_args,
                          sample_for_plot)
     
