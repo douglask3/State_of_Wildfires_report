@@ -1,5 +1,3 @@
-#import multiprocessing as mp 
-#mp.set_start_method('forkserver')
 import sys
 sys.path.append('fire_model/')
 sys.path.append('libs/')
@@ -20,7 +18,6 @@ import pytensor.tensor as tt
 import matplotlib.pyplot as plt
 import re
 
-import sys
 import arviz as az
 
 
@@ -145,7 +142,7 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '',
     Obs = read_variable_from_netcdf(y_filen, dir,
                                     subset_function = subset_function, 
                                     subset_function_args = subset_function_args)
-
+    
     def select_post_param(name): 
         out = trace.posterior[name].values
         A = out.shape[0]
@@ -243,7 +240,7 @@ if __name__=="__main__":
     dir_outputs = 'outputs/'
 
     dir_projecting = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2010_2019/"
-    #dir_training = "/gws/nopw/j04/jules/mbarbosa/driving_and_obs_overlap/AllConFire_2000_2009/"
+    #dir_projecting = "/gws/nopw/j04/jules/mbarbosa/driving_and_obs_overlap/AllConFire_2010_2019/"
 
     sample_for_plot = 20
 
