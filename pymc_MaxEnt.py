@@ -225,9 +225,10 @@ if __name__=="__main__":
     
     y_filen = "GFED4.1s_Burned_Fraction.nc"
 
-    x_filen_list=["precip.nc", "lightn.nc", "crop.nc", "humid.nc","vpd.nc", "csoil.nc", 
+    x_filen_list=["pr_mean.nc", "dry_days.nc", "consec_dry_mean.nc", "lightn.nc", "crop.nc", 
+                  "humid.nc","vpd.nc", "csoil.nc", "tas.nc", "tas_max.nc",
                   "lightn.nc", "rhumid.nc", "cveg.nc", "pas.nc", "soilM.nc", 
-                   "totalVeg.nc", "popDens.nc", "trees.nc"]
+                  "totalVeg.nc", "popDens.nc", "trees.nc"]
 
     grab_old_trace = True
     cores = 4
