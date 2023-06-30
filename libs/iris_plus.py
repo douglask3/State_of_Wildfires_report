@@ -15,7 +15,11 @@ def sort_time(cube, field, filename):
     cube.add_dim_coord(tcoord, 0) # might need to find this dimension
     iris.coord_categorisation.add_year(cube, 'time')
     iris.coord_categorisation.add_month(cube, 'time')
-
+    
+    try:
+        del cube.attributes["history"]
+    except:
+        pass
     return(cube)
 
 

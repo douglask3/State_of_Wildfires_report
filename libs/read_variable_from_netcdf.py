@@ -40,15 +40,23 @@ def read_variable_from_netcdf(filename, dir = '', subset_function = None,
         else:
             dataset = iris.load_cube(dir + filename[0], filename[1], callback=sort_time)
     except:
+        print("==============\nERROR!")
+        print("can't open data.")
+        print("Check directory (''" + dir + "''), filename (''" + filename + \
+              "'') or file format")
+        print("==============")
         set_trace()
+    if dataset is None: return None
     if units is not None: dataset.units = units
     if subset_function is not None:
         if isinstance(subset_function, list):
             for FUN, args in zip(subset_function, subset_function_args):
-                dataset = FUN(dataset, **args)
-        else: dataset = subset_function(dataset, **subset_function_args)     
-        
-    
+                try:
+                    dataset = FUN(dataset, **args)
+                except:
+                    print("Warning! function: " + FUN.__name__ + " not applied to file: " + \
+                          dir + filename)
+        else: dataset = subset_function(dataset, **subset_function_args)  
     if make_flat: 
         if time_series is not None: years = dataset.coord('year').points
         dataset = dataset.data.flatten()
