@@ -47,6 +47,11 @@ def read_variable_from_netcdf(filename, dir = '', subset_function = None,
         print("==============")
         set_trace()
     if dataset is None: return None
+    
+    if np.all(dataset.coord("month").points == 1):
+    months_array = np.tile(np.arange(1, 13), len(dataset.coord("time").points))
+    dataset = dataset.interpolate([('time', months_array)], iris.analysis.Linear())
+    
     if units is not None: dataset.units = units
     if subset_function is not None:
         if isinstance(subset_function, list):
