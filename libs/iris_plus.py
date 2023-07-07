@@ -14,7 +14,8 @@ def sort_time(cube, field, filename):
     cube.remove_coord("time")
     cube.add_dim_coord(tcoord, 0) # might need to find this dimension
     iris.coord_categorisation.add_year(cube, 'time')
-    iris.coord_categorisation.add_month(cube, 'time')
+    iris.coord_categorisation.add_month_number(cube, 'time', name='month')
+    #iris.coord_categorisation.add_month(cube, 'time')
     
     try:
         del cube.attributes["history"]
