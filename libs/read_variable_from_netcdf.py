@@ -46,25 +46,28 @@ def read_variable_from_netcdf(filename, dir = '', subset_function = None,
         print("Check directory (''" + dir + "''), filename (''" + filename + \
               "'') or file format")
         print("==============")
+        set_trace()
         
     if dataset is None: return None
     if time_points is not None: 
         dataset = dataset.interpolate([('time', time_points)], iris.analysis.Linear())
-    
+        
     if units is not None: dataset.units = units
     if subset_function is not None:
         if isinstance(subset_function, list):
             for FUN, args in zip(subset_function, subset_function_args):
-                try:
+                try:    
                     dataset = FUN(dataset, **args)
                 except:
                     print("Warning! function: " + FUN.__name__ + " not applied to file: " + \
                           dir + filename)
-        else: dataset = subset_function(dataset, **subset_function_args) 
+        else:      
+            dataset = subset_function(dataset, **subset_function_args) 
     if return_time_points: time_points = dataset.coord('time').points 
     
     if make_flat: 
         if time_series is not None: years = dataset.coord('year').points
+        
         dataset = dataset.data.flatten()
         if time_series is not None:
             if not years[ 0] == time_series[0]:

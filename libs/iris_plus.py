@@ -20,8 +20,10 @@ def sort_time(cube, field, filename):
     except:
         pass
 
-    try:
-        iris.coord_categorisation.add_month(cube, 'time')
+    
+    try:               
+        cube.remove_coord("month")
+        iris.coord_categorisation.add_month_number(cube, 'time', name='month')
     except:
         pass
 
