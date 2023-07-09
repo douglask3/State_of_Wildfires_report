@@ -10,6 +10,7 @@ def read_variable_from_netcdf(filename, dir = '', subset_function = None,
                               make_flat = False, units = None, 
                               subset_function_args = None,
                               time_series = None, 
+                              time_points = None, return_time_points = False,
                               *args, **kw):
     """Read data from a netCDF file 
         Assumes that the variables in the netcdf file all have the name "variable"
@@ -45,12 +46,10 @@ def read_variable_from_netcdf(filename, dir = '', subset_function = None,
         print("Check directory (''" + dir + "''), filename (''" + filename + \
               "'') or file format")
         print("==============")
-        set_trace()
+        
     if dataset is None: return None
-    
-    if np.all(dataset.coord("month").points == 1):
-        months_array = np.tile(np.arange(1, 13), len(dataset.coord("time").points))
-        dataset = dataset.interpolate([('time', months_array)], iris.analysis.Linear())
+    if time_points is not None: 
+        dataset = dataset.interpolate([('time', time_points)], iris.analysis.Linear())
     
     if units is not None: dataset.units = units
     if subset_function is not None:
@@ -61,7 +60,9 @@ def read_variable_from_netcdf(filename, dir = '', subset_function = None,
                 except:
                     print("Warning! function: " + FUN.__name__ + " not applied to file: " + \
                           dir + filename)
-        else: dataset = subset_function(dataset, **subset_function_args)  
+        else: dataset = subset_function(dataset, **subset_function_args) 
+    if return_time_points: time_points = dataset.coord('time').points 
+    
     if make_flat: 
         if time_series is not None: years = dataset.coord('year').points
         dataset = dataset.data.flatten()
@@ -70,7 +71,9 @@ def read_variable_from_netcdf(filename, dir = '', subset_function = None,
                 dataset = np.append(np.repeat(np.nan, years[ 0]-time_series[0]), dataset)
             if not years[-1] == time_series[1]:
                 dataset = np.append(dataset, np.repeat(np.nan, time_series[1]-years[-1]))
-    
+            if return_time_points: set_trace()
+        
+    if return_time_points: dataset = (dataset, time_points)
     return dataset
 
 def read_all_data_from_netcdf(y_filename, x_filename_list, add_1s_columne = False, 
@@ -99,7 +102,7 @@ def read_all_data_from_netcdf(y_filename, x_filename_list, add_1s_columne = Fals
         Y - a numpy array of the target variable
         X - an n-D numpy array of the feature variables 
     """
-    Y = read_variable_from_netcdf(y_filename, make_flat = True, *args, **kw)
+    Y, time_points = read_variable_from_netcdf(y_filename, make_flat = True, *args, return_time_points = True, **kw)
    
     # Create a new categorical variable based on the threshold
     if y_threshold is not None:
@@ -114,7 +117,8 @@ def read_all_data_from_netcdf(y_filename, x_filename_list, add_1s_columne = Fals
     X = np.zeros([n,m])
     
     for i, filename in enumerate(x_filename_list):
-        X[:, i]=read_variable_from_netcdf(filename, make_flat = True, *args, **kw)
+        X[:, i]=read_variable_from_netcdf(filename, make_flat = True, time_points = time_points,
+                                          *args, **kw)
         
 
     if add_1s_columne: 
