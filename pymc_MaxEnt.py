@@ -274,7 +274,6 @@ if __name__=="__main__":
     """ 
         RUN projection 
     """
-    dir = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2010_2019/"
     predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir_projecting,
                          dir_outputs, filename,
                          subset_function, subset_function_args,
