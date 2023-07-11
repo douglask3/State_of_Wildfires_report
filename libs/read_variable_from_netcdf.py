@@ -129,7 +129,7 @@ def read_all_data_from_netcdf(y_filename, x_filename_list, add_1s_columne = Fals
     
     
     if check_mask:
-        cells_we_want = np.array([np.all(rw > -9e9) for rw in np.column_stack((X, Y))])
+        cells_we_want = np.array([np.all(rw > -9e9) and np.all(rw < 9e9) for rw in np.column_stack((X, Y))])
         Y = Y[cells_we_want]
         X = X[cells_we_want, :]
         
@@ -142,7 +142,7 @@ def read_all_data_from_netcdf(y_filename, x_filename_list, add_1s_columne = Fals
         test = scalers[1,:] == scalers[0,:]
         scalers[0,test] = 0.0
         scalers[1,test] = 1.0
-    
+    #set_trace()
     if frac_random_sample is not None and frac_random_sample < 1:
         M = X.shape[0]
         selected_rows = np.random.choice(M, size = int(M * frac_random_sample), replace=False)
