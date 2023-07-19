@@ -88,8 +88,8 @@ def fit_MaxEnt_probs_to_data(Y, X, niterations,
 
         powers = pm.Normal('powers', mu = 0, sigma = 1, shape = [2, X.shape[1]])
         ## build model
-        
-        prediction = MaxEntFire(betas, powers, inference = True).fire_model(X)  
+        model = MaxEntFire(betas, powers, inference = True)
+        prediction = model.fire_model(X)  
         
         
         ## define error measurement
@@ -134,17 +134,6 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '',
                          dir_outputs = '', filename_out = '',
                          subset_functionm = None, subset_function_args = None,
                          sample_for_plot = 1):
-
-    Y, X, lmask, scalers = read_all_data_from_netcdf(y_filen, x_filen_list, 
-                                                     add_1s_columne = True, dir = dir,
-                                                     x_normalise01 = True, scalers = scalers,
-                                                     subset_function = subset_function, 
-                                                     subset_function_args = subset_function_args)
-    
-    Obs = read_variable_from_netcdf(y_filen, dir,
-                                    subset_function = subset_function, 
-                                    subset_function_args = subset_function_args)
-    
     def select_post_param(name): 
         out = trace.posterior[name].values
         A = out.shape[0]
@@ -155,13 +144,41 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '',
     def sample_model(i): 
         powers =select_post_param('powers')[i,:]
         betas =select_post_param('betas')[i,:]
-        return MaxEntFire(betas, powers).fire_model(X)
-
+        model = MaxEntFire(betas, powers)
+        return model.fire_model(X)
+    
     nits = np.prod(trace.posterior['betas'].values.shape[0:2])
     idx = range(0, nits, int(np.floor(nits/sample_for_plot)))
+                         
+    Obs = read_variable_from_netcdf(y_filen, dir,
+                                    subset_function = subset_function, 
+                                    subset_function_args = subset_function_args)
 
+    Y, X, lmask, scalers = read_all_data_from_netcdf(y_filen, x_filen_list, 
+                                                     add_1s_columne = True, dir = dir,
+                                                     x_normalise01 = True, scalers = scalers,
+                                                     subset_function = subset_function, 
+                                                     subset_function_args = subset_function_args)
+    x_copy = X[:, 1].copy()
+    
     Sim = np.array(list(map(sample_model, idx)))
-    Sim = np.percentile(Sim, q = [10, 90], axis = 0)
+    #Sim = np.percentile(Sim, q = [10, 90], axis = 0)
+    
+    X[:, 1] = 0
+    
+    Sim2 = np.array(list(map(sample_model, idx)))
+    #Sim2=  np.percentile(Sim2, q = [10, 90], axis = 0)
+    
+    fig, ax = plt.subplots()
+    
+    for rw in range(Sim.shape[0]):
+        ax.plot(x_copy, (Sim[rw,:] / Sim2[rw,:]), '.')
+    
+    
+    plt.show()
+    
+    
+    set_trace()
 
     def insert_sim_into_cube(x):
         Pred = Obs.copy()
@@ -175,7 +192,7 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '',
         plot_annual_mean(cube, levels, cmap, plot_name = plot_name, scale = 100*12, 
                      Nrows = 1, Ncols = 3, plot_n = plot_n)
   
-    plot_map(Obs, "Observtations", 1)
+    plot_map(Obs, "Observations", 1)
     plot_map(insert_sim_into_cube(Sim[0,:]), "Simulation - 10%", 2)
     plot_map(insert_sim_into_cube(Sim[1,:]), "Simulation - 90%", 3)
     plt.gcf().set_size_inches(8, 6)
@@ -222,17 +239,21 @@ if __name__=="__main__":
         SETPUT 
     """
     """ optimization """
-    dir_training = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
-     #dir_training = "/gws/nopw/j04/jules/mbarbosa/driving_and_obs_overlap/AllConFire_2000_2009/"
+    #dir_training = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
+    #dir_training = "/gws/nopw/j04/jules/mbarbosa/driving_and_obs_overlap/AllConFire_2000_2009/"
+    dir_training = "D:/Doutorado/Sanduiche/research/maxent-variables/2002-2011/"
     
     y_filen = "GFED4.1s_Burned_Fraction.nc"
+    #y_filen = "Area_burned_NAT.nc"
+    #"MPA.nc", "TCA.nc", "E_density.nc"
 
 
-    x_filen_list=["Forest.nc", "pr_mean.nc", "dry_days.nc", "consec_dry_mean.nc", "lightn.nc", 
-                  "crop.nc", 
+    x_filen_list=["Forest.nc", "dry_days.nc", "consec_dry_mean.nc", "lightn.nc", 
+                  "crop.nc", "Savanna.nc", "Grassland.nc", "N_patches.nc", "MPA.nc",
+                  "TCA.nc", "E_density.nc",
                   "humid.nc","vpd.nc", "csoil.nc", "tas.nc", "tas_max.nc",
                   "lightn.nc", "rhumid.nc", "cveg.nc", "pas.nc", "soilM.nc", 
-                  "totalVeg.nc", "popDens.nc"]
+                  "popDens.nc"]
 
     grab_old_trace = True
     cores = 4
@@ -244,8 +265,9 @@ if __name__=="__main__":
     """ Projection/evaluating """
     dir_outputs = 'outputs/'
 
-    dir_projecting = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2010_2019/"
+    #dir_projecting = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2010_2019/"
     #dir_projecting = "/gws/nopw/j04/jules/mbarbosa/driving_and_obs_overlap/AllConFire_2010_2019/"
+    dir_projecting = "D:/Doutorado/Sanduiche/research/maxent-variables/2012-2021/"
 
     sample_for_plot = 20
 
