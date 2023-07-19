@@ -10,6 +10,7 @@ import os
 from   io     import StringIO
 import numpy  as np
 import math
+from scipy.special import logit, expit
 
 import pymc  as pm
 import pytensor
@@ -20,6 +21,7 @@ import re
 
 import arviz as az
 
+from scipy.stats import wilcoxon
 
 def MaxEnt_on_prob(BA, fx):
     """calculates the log-transformed continuous logit likelihood for x given mu when x 
@@ -38,7 +40,8 @@ def MaxEnt_on_prob(BA, fx):
 
 
 def fit_MaxEnt_probs_to_data(Y, X, niterations, 
-                             out_dir = 'outputs/', filename = '', grab_old_trace = True,
+                             out_dir = 'outputs/', filename = '',
+                             grab_old_trace = True,
                              *arg, **kw):
     """ Bayesian inerence routine that fits independant variables, X, to dependant, Y.
         Based on the MaxEnt solution of probabilities. 
@@ -83,13 +86,14 @@ def fit_MaxEnt_probs_to_data(Y, X, niterations,
 
     with pm.Model() as max_ent_model:
         ## set priorts
+        q = pm.LogNormal('q', mu = 0.0, sigma = 1.0)
         betas = pm.Normal('betas', mu = 0, sigma = 1, shape = X.shape[1], 
                           initval =np.repeat(0.5, X.shape[1]))
 
         powers = pm.Normal('powers', mu = 0, sigma = 1, shape = [2, X.shape[1]])
         ## build model
         
-        prediction = MaxEntFire(betas, powers, inference = True).fire_model(X)  
+        prediction = MaxEntFire(q, betas, powers, inference = True).burnt_area_uninflated(X)  
         
         
         ## define error measurement
@@ -108,7 +112,7 @@ def train_MaxEnt_model(y_filen, x_filen_list, dir = '', filename_out = '',
                        dir_outputs = '',
                        frac_random_sample = 1.0,
                        subset_function = None, subset_function_args = None,
-                       niterations = 100, cores = 4, grab_old_trace = False):
+                       niterations = 100, cores = 4, model_title = '', grab_old_trace = False):
     
    
     Y, X, lmask, scalers = read_all_data_from_netcdf(y_filen, x_filen_list, 
@@ -118,32 +122,33 @@ def train_MaxEnt_model(y_filen, x_filen_list, dir = '', filename_out = '',
                                                      subset_function = subset_function, 
                                                      subset_function_args = subset_function_args)
     
+    dir_outputs = dir_outputs + '/' +  model_title
+    if not os.path.exists(dir_outputs): os.makedirs(dir_outputs)
+
     trace = fit_MaxEnt_probs_to_data(Y, X, out_dir = dir_outputs, filename = filename, 
                                      niterations = niterations, cores = cores,
                                      grab_old_trace = grab_old_trace)
     
-    az.plot_trace(trace)
-    fig_dir = dir_outputs + '/figs/'
-    if not os.path.exists(fig_dir): os.makedirs(fig_dir)
-
-    plt.savefig(fig_dir + filename + '-traces.png')
-    
     return trace, scalers
 
 def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '', 
-                         dir_outputs = '', filename_out = '',
+                         dir_outputs = '', model_title = '', filename_out = '',
                          subset_functionm = None, subset_function_args = None,
-                         sample_for_plot = 1):
+                         sample_for_plot = 1,
+                         run_evaluation = False, run_projection = False):
+
+    if not run_evaluation and not run_projection:
+        return 
 
     Y, X, lmask, scalers = read_all_data_from_netcdf(y_filen, x_filen_list, 
                                                      add_1s_columne = True, dir = dir,
                                                      x_normalise01 = True, scalers = scalers,
                                                      subset_function = subset_function, 
                                                      subset_function_args = subset_function_args)
-    
-    Obs = read_variable_from_netcdf(y_filen, dir,
-                                    subset_function = subset_function, 
-                                    subset_function_args = subset_function_args)
+    if run_evaluation:
+        Obs = read_variable_from_netcdf(y_filen, dir,
+                                        subset_function = subset_function, 
+                                        subset_function_args = subset_function_args)
     
     def select_post_param(name): 
         out = trace.posterior[name].values
@@ -155,35 +160,111 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '',
     def sample_model(i): 
         powers =select_post_param('powers')[i,:]
         betas =select_post_param('betas')[i,:]
-        return MaxEntFire(betas, powers).fire_model(X)
+        q =select_post_param('q')[i]
+        return MaxEntFire(q, betas, powers).burnt_area(X)
 
     nits = np.prod(trace.posterior['betas'].values.shape[0:2])
     idx = range(0, nits, int(np.floor(nits/sample_for_plot)))
 
     Sim = np.array(list(map(sample_model, idx)))
-    Sim = np.percentile(Sim, q = [10, 90], axis = 0)
 
-    def insert_sim_into_cube(x):
-        Pred = Obs.copy()
-        pred = Pred.data.copy().flatten()
-        
-        pred[lmask] = x
-        Pred.data = pred.reshape(Pred.data.shape)
-        return(Pred)
+    dir_outputs = dir_outputs + '/' + model_title + '/'
+    if not os.path.exists(dir_outputs): os.makedirs(dir_outputs)
+
+    if run_evaluation:
+        evaluate_model(filename_out, dir_outputs, Obs, Sim, lmask, levels, cmap)
+
+    if run_projection:
+        project_model(filename_out, dir_outputs, Sim, lmask, levels, cmap, eg_cube = Obs)
+
+def insert_sim_into_cube(x, eg_cube, mask):
+    Pred = eg_cube.copy()
+    pred = Pred.data.copy().flatten()
+    #set_trace()
+    try:        
+        pred[mask] = x
+    except:
+        set_trace()
+    Pred.data = pred.reshape(Pred.data.shape)
+    return(Pred)
+
+def plot_model_maps(Sim, lmask, levels, cmap, Obs = None, eg_cube = None, Nrows = 1, Ncols = 2):
+    Sim = np.percentile(Sim, q = [10, 90], axis = 0)
 
     def plot_map(cube, plot_name, plot_n):
         plot_annual_mean(cube, levels, cmap, plot_name = plot_name, scale = 100*12, 
-                     Nrows = 1, Ncols = 3, plot_n = plot_n)
+                     Nrows = Nrows, Ncols = Ncols, plot_n = plot_n)
   
-    plot_map(Obs, "Observtations", 1)
-    plot_map(insert_sim_into_cube(Sim[0,:]), "Simulation - 10%", 2)
-    plot_map(insert_sim_into_cube(Sim[1,:]), "Simulation - 90%", 3)
-    plt.gcf().set_size_inches(8, 6)
+    if eg_cube is None: eg_cube = Obs
+    if Obs is not None: plot_map(Obs, "Observtations", 1)
+    plot_map(insert_sim_into_cube(Sim[0,:], eg_cube, lmask), "Simulation - 10%", Ncols - 1)
+    plot_map(insert_sim_into_cube(Sim[1,:], eg_cube, lmask), "Simulation - 90%", Ncols)
     
+
+def BayesScatter(X, Y, logXmin = None, logYmin = None, ax = None):
+    
+    if logXmin is not None: X = logXmin + X
+    if logYmin is not None: Y = logYmin + Y
+    if ax is None: fig, ax = plt.subplots()
+    
+    ncols = int(Y.shape[1]/2)
+    line_widths = np.linspace(0.2, 2, ncols)
+
+    for i in range(ncols):        
+        ax.vlines(X, ymin = Y[:,i], ymax = Y[:, -i-1], 
+                  linewidth = line_widths[i],
+                  alpha = 0.01, color = 'black')
+    
+    vals = [min(np.min(X), np.min(Y)),  max(np.max(X), np.max(Y))]
+    ax.plot(vals, vals, color = 'blue', linestyle = '--')
+    ax.scatter(X, Y[:, ncols + 1], s = 0.2, color = 'red')
+    if logYmin is not None: ax.set_yscale('log')
+    if logXmin is not None: ax.set_xscale('log')
+
+def evaluate_model(filename_out, dir_outputs, Obs, Sim, lmask, levels, cmap):
+    qSim = np.percentile(Sim, q = np.arange(5, 100, 5), axis = 0)
+    
+    ax = plt.subplot(2, 3, 4)
+    BayesScatter(Obs.data.flatten()[lmask], qSim.T, 0.000001, 0.000001, ax)
+    plot_model_maps(Sim, lmask, levels, cmap, Obs, Nrows = 2, Ncols = 3)
+
+    Y = Sim.reshape([Sim.shape[0], Obs.shape[0], int(Sim.shape[1]/Obs.shape[0])])
+    X = Obs.data.flatten()[lmask].reshape([Obs.shape[0], Y.shape[2]])
+    Yi = Y[:,:,0]
+    Xi = X[:,0]
+
+    pos = np.mean(X[np.newaxis, :, :] > Y, axis = 0)
+    _, p_value = wilcoxon(pos - 0.5, axis = 0)
+    apos = np.mean(pos, axis = 0)
+    
+    mask = lmask.reshape([ X.shape[0], int(lmask.shape[0]/X.shape[0])])[0]
+    apos_cube = insert_sim_into_cube(apos, Obs[0], mask)
+    p_value_cube = insert_sim_into_cube(p_value, Obs[0], mask)
+    
+    
+    plot_annual_mean(apos_cube,[0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], 
+                     'RdYlBu_r',  plot_name = "mean bias",  Nrows = 2, Ncols = 3, plot_n = 5)
+
+    plot_annual_mean(p_value_cube, np.array([0, 0.01, 0.05, 0.1, 0.5, 1.0]), 'copper',   
+                     plot_name = "mean bias p-value",   Nrows = 2, Ncols = 3, plot_n = 6)
+    
+    plt.gcf().set_size_inches(8, 8)
+
     fig_dir = dir_outputs + '/figs/'
     if not os.path.exists(fig_dir): os.makedirs(fig_dir)
-    plt.savefig(fig_dir + filename_out + '-maps.png')
 
+    plt.savefig(fig_dir + filename_out + '-evaluation.png')
+
+    az.plot_trace(trace)
+    plt.savefig(fig_dir + filename + '-traces.png')
+
+def project_model(filename_out, dir_outputs, *arg, **kw):
+    plot_model_maps(*arg, **kw)
+
+    plt.gcf().set_size_inches(8*2/3, 6)
+    fig_dir = dir_outputs + '/figs/'
+    if not os.path.exists(fig_dir): os.makedirs(fig_dir)
+    plt.savefig(fig_dir + filename_out + '-projections.png')
 
 if __name__=="__main__":
     """ Running optimization and basic analysis. 
@@ -222,13 +303,17 @@ if __name__=="__main__":
         SETPUT 
     """
     """ optimization """
+
+    model_title = 'MaxEfire-BAinflate'
+    model_title = 'MaxEfire-BAinflate-corrected'
+
     dir_training = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
      #dir_training = "/gws/nopw/j04/jules/mbarbosa/driving_and_obs_overlap/AllConFire_2000_2009/"
     
     y_filen = "GFED4.1s_Burned_Fraction.nc"
 
 
-    x_filen_list=["Forest.nc", "MPA.nc", "pr_mean.nc", "dry_days.nc", "consec_dry_mean.nc", 
+    x_filen_list=["Forest.nc", "pr_mean.nc", "dry_days.nc", "consec_dry_mean.nc", 
                   "lightn.nc", 
                   "crop.nc", 
                   "humid.nc","vpd.nc", "csoil.nc", "tas.nc", "tas_max.nc",
@@ -245,7 +330,7 @@ if __name__=="__main__":
     """ Projection/evaluating """
     dir_outputs = 'outputs/'
 
-    dir_projecting = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2010_2019/"
+    dir_projecting = dir_training#"../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2010_2019/"
     #dir_projecting = "/gws/nopw/j04/jules/mbarbosa/driving_and_obs_overlap/AllConFire_2010_2019/"
 
     sample_for_plot = 20
@@ -253,7 +338,9 @@ if __name__=="__main__":
     levels = [0, 0.1, 1, 2, 5, 10, 20, 50, 100] 
     cmap = 'OrRd'
 
-    
+    run_evaluation = True
+    run_projection = True
+     
     """ 
         RUN optimization 
     """
@@ -269,18 +356,19 @@ if __name__=="__main__":
                                         filename, dir_outputs,
                                         fraction_data_for_sample,
                                         subset_function, subset_function_args,
-                                        niterations, cores, grab_old_trace)
+                                        niterations, cores, model_title, grab_old_trace)
 
 
     """ 
         RUN projection 
     """
     predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir_projecting,
-                         dir_outputs, filename,
+                         dir_outputs, model_title, filename,
                          subset_function, subset_function_args,
-                         sample_for_plot)
+                         sample_for_plot, 
+                         run_evaluation = run_evaluation, run_projection = run_projection)
     
-
+    
     '''
     #Run the model with first iteration
     simulation1 = fire_model(trace.posterior['betas'].values[0,0,:], X, False)

@@ -16,7 +16,7 @@ class MaxEntFire(object):
     At the moment, just a linear model fed through a logistic function to convert to 
     burnt area/fire probablity. But we'll adapt that.  
     """ 
-    def __init__(self, betas, powers = None, inference = False):
+    def __init__(self, q, betas, powers = None, inference = False):
         """
         Sets up the model based on betas and repsonse curve pararameters (response curve 
             not yet implmented
@@ -36,10 +36,11 @@ class MaxEntFire(object):
         else:
             self.numPCK =  __import__('numpy')
         
+        self.q = q
         self.betas = betas
         self.powers = powers
 
-    def fire_model(self, X):
+    def burnt_area(self, X):
         """calculated predicted burnt area based on indepedant variables. 
             At the moment, just a linear model fed through a logistic function to convert to 
             burnt area/fire probablity. But we'll adapt that.   
@@ -59,8 +60,12 @@ class MaxEntFire(object):
             y = y + dot_fun(X_powers, self.powers[0,:])        
 
         BA = 1.0/(1.0 + self.numPCK.exp(-y))
-    
+        
         return BA
+    
+    def burnt_area_uninflated(self, X):
+        BA = self.burnt_area(X)
+        return BA / (1 + self.q * (1 - BA))
      
     def hinge_1(x0, y0, a, b):
         """ fits a hinge curve function
