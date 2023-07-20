@@ -44,3 +44,16 @@ def add_bounds(cube):
             #if not cube.coord(coord).has_bounds():
             
     return(cube)
+
+
+def insert_sim_into_cube(x, eg_cube, mask):
+    Pred = eg_cube.copy()
+    pred = Pred.data.copy().flatten()
+
+    try:        
+        pred[mask] = x
+    except:
+        set_trace()
+    Pred.data = pred.reshape(Pred.data.shape)
+    return(Pred)
+

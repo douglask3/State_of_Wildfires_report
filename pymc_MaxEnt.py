@@ -192,16 +192,6 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '',
     if run_projection:
         project_model(filename_out, dir_outputs, Sim, lmask, levels, cmap, eg_cube = Obs)
 
-def insert_sim_into_cube(x, eg_cube, mask):
-    Pred = eg_cube.copy()
-    pred = Pred.data.copy().flatten()
-    #set_trace()
-    try:        
-        pred[mask] = x
-    except:
-        set_trace()
-    Pred.data = pred.reshape(Pred.data.shape)
-    return(Pred)
 
 def plot_model_maps(Sim, lmask, levels, cmap, Obs = None, eg_cube = None, Nrows = 1, Ncols = 2):
     Sim = np.percentile(Sim, q = [10, 90], axis = 0)
