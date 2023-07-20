@@ -85,22 +85,19 @@ def fit_MaxEnt_probs_to_data(Y, X, niterations,
         pass        
 
     with pm.Model() as max_ent_model:
-        ## set priorts
+        ## set priors
         params = {#"q":     pm.LogNormal('q', mu = 0.0, sigma = 1.0),
                   "betas": pm.Normal('betas', mu = 0, sigma = 1, shape = X.shape[1], 
                                       initval =np.repeat(0.5, X.shape[1])),
                    "powers": pm.Normal('powers', mu = 0, sigma = 1, shape = [2, X.shape[1]])
                  }
-        ## build model
-        
+        ## run model
         prediction = MaxEntFire(params, inference = True).burnt_area_uninflated(X)  
-        
         
         ## define error measurement
         error = pm.DensityDist("error", prediction, logp = MaxEnt_on_prob, observed = Y)
                 
         ## sample model
-        
         attempts = 1
         while attempts <= 10:
             try:
@@ -313,8 +310,7 @@ if __name__=="__main__":
     """
     """ optimization """
 
-    model_title = 'MaxEfire-BAinflate2'
-    #model_title = 'MaxEfire-BAinflate-corrected2'
+    model_title = 'Example_model'
 
     dir_training = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
      #dir_training = "/gws/nopw/j04/jules/mbarbosa/driving_and_obs_overlap/AllConFire_2000_2009/"
@@ -323,9 +319,9 @@ if __name__=="__main__":
 
     x_filen_list=["Forest.nc", "pr_mean.nc", "dry_days.nc", "consec_dry_mean.nc", 
                   "lightn.nc", 
-                  "crop.nc", 
-                  "humid.nc","vpd.nc", "csoil.nc", "tas.nc", "tas_max.nc",
-                  "lightn.nc", "rhumid.nc", "cveg.nc", "pas.nc", "soilM.nc", 
+                  "crop.nc", "pas.nc", 
+                  "humid.nc", "vpd.nc", "csoil.nc", "tas.nc", "tas_max.nc",
+                  "rhumid.nc", "cveg.nc", "pas.nc", "soilM.nc", 
                   "totalVeg.nc", "popDens.nc"]
 
     grab_old_trace = True
@@ -377,15 +373,3 @@ if __name__=="__main__":
                          run_evaluation = run_evaluation, run_projection = run_projection)
     
     
-    '''
-    #Run the model with first iteration
-    simulation1 = fire_model(trace.posterior['betas'].values[0,0,:], X, False)
-
-    #Plot against observations (Y)
-    plt.plot(Y, simulation1, '.')
-    plt.show()
-
-    #when developing plots, use betas = trace.posterior['betas'].values[0,0,:]
-    and run with model with fire_model(betas, X, False)
-    '''
-    set_trace()
