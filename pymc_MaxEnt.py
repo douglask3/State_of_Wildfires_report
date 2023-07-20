@@ -89,7 +89,8 @@ def fit_MaxEnt_probs_to_data(Y, X, niterations,
         params = {#"q":     pm.LogNormal('q', mu = 0.0, sigma = 1.0),
                   "betas": pm.Normal('betas', mu = 0, sigma = 1, shape = X.shape[1], 
                                       initval =np.repeat(0.5, X.shape[1])),
-                   "powers": pm.Normal('powers', mu = 0, sigma = 1, shape = [2, X.shape[1]])
+                   "powers": pm.Normal('powers', mu = 0, sigma = 1, shape = [2, X.shape[1]]),
+                   "x2s": pm.Normal('x2s', mu = 0, sigma = 1, shape = [2, X.shape[1]])
                  }
         ## run model
         prediction = MaxEntFire(params, inference = True).burnt_area_uninflated(X)  
@@ -339,7 +340,7 @@ if __name__=="__main__":
     """
     """ optimization """
 
-    model_title = 'Example_model'
+    model_title = 'Example_model-X2'
 
     dir_training = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
 

@@ -46,6 +46,7 @@ class MaxEntFire(object):
         self.q = select_key_or_defualt(params, 'q', 0.0)
         self.betas = params['betas']
         self.powers = select_key_or_defualt(params, 'powers', None)
+        self.x2s = select_key_or_defualt(params, 'x2s', None)
         
 
     def burnt_area(self, X):
@@ -63,9 +64,14 @@ class MaxEntFire(object):
         
         y = dot_fun(X, self.betas)
 
-        if self.powers is not None:
-            X_powers = self.power_response_curve(X)
-            y = y + dot_fun(X_powers, self.powers[0,:])        
+        def add_response_curve(params, FUN, y):
+            if params is not None:
+                XR = FUN(X)
+                y = y + dot_fun(XR, params[0,:]) 
+            return(y)
+
+        y = add_response_curve(self.powers, self.power_response_curve, y)
+        y = add_response_curve(self.x2s, self.X2_response_curve, y)
 
         BA = 1.0/(1.0 + self.numPCK.exp(-y))
         
@@ -108,6 +114,9 @@ class MaxEntFire(object):
 #
     def power_response_curve(self, X):  
         return X**self.powers[1,:]
+
+    def X2_response_curve(self, X):  
+        return (X - self.x2s[1,:])**2.0
 
 
 
