@@ -47,7 +47,8 @@ if __name__=="__main__":
     output_dir = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_"
     output_years = ['2000_2009', '2010_2019']
 
-    example_cube = '../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/GFED4.1s_Burned_Fraction.nc'
+    #example_cube = '../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/GFED4.1s_Burned_Fraction.nc'
+    example_cube = "D:/Doutorado/Sanduiche/research/maxent-variables/2002-2011/GFED4.1s_Burned_Fraction.nc"
 
 
     process = ['tas', 'pr']

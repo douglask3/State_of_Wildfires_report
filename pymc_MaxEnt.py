@@ -165,8 +165,7 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '',
     params_names = params.keys()
     params = [select_post_param(var) for var in params_names]
     
-    def sample_model(i): 
-        
+    def sample_model(i):         
         param_in = [param[i] if param.ndim == 1 else param[i,:] for param in params]
         param_in = dict(zip(params_names, param_in))
         #dict(zip(sample_model, out))
@@ -177,8 +176,36 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '',
 
     nits = np.prod(trace.posterior['betas'].values.shape[0:2])
     idx = range(0, nits, int(np.floor(nits/sample_for_plot)))
+                         
+    Obs = read_variable_from_netcdf(y_filen, dir,
+                                    subset_function = subset_function, 
+                                    subset_function_args = subset_function_args)
 
+    Y, X, lmask, scalers = read_all_data_from_netcdf(y_filen, x_filen_list, 
+                                                     add_1s_columne = True, dir = dir,
+                                                     x_normalise01 = True, scalers = scalers,
+                                                     subset_function = subset_function, 
+                                                     subset_function_args = subset_function_args)
+    x_copy = X[:, 1].copy()
+    
     Sim = np.array(list(map(sample_model, idx)))
+    #Sim = np.percentile(Sim, q = [10, 90], axis = 0)
+    
+    X[:, 1] = 0
+    
+    Sim2 = np.array(list(map(sample_model, idx)))
+    #Sim2=  np.percentile(Sim2, q = [10, 90], axis = 0)
+    
+    fig, ax = plt.subplots()
+    
+    for rw in range(Sim.shape[0]):
+        ax.plot(x_copy, (Sim[rw,:] / Sim2[rw,:]), '.')
+    
+    
+    plt.show()
+    
+    
+    set_trace()
 
     dir_outputs = dir_outputs + '/' + model_title + '/'
     if not os.path.exists(dir_outputs): os.makedirs(dir_outputs)
@@ -197,6 +224,7 @@ def plot_model_maps(Sim, lmask, levels, cmap, Obs = None, eg_cube = None, Nrows 
         plot_annual_mean(cube, levels, cmap, plot_name = plot_name, scale = 100*12, 
                      Nrows = Nrows, Ncols = Ncols, plot_n = plot_n)
   
+
     if eg_cube is None: eg_cube = Obs
     if Obs is not None: plot_map(Obs, "Observtations", 1)
     plot_map(insert_data_into_cube(Sim[0,:], eg_cube, lmask), "Simulation - 10%", Ncols - 1)
@@ -313,16 +341,16 @@ if __name__=="__main__":
     model_title = 'Example_model'
 
     dir_training = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
-     #dir_training = "/gws/nopw/j04/jules/mbarbosa/driving_and_obs_overlap/AllConFire_2000_2009/"
-    
-    y_filen = "GFED4.1s_Burned_Fraction.nc"
 
+    y_filen = "GFED4.1s_Burned_Fraction.nc"
+    
     x_filen_list=["Forest.nc", "pr_mean.nc", "dry_days.nc", "consec_dry_mean.nc", 
                   "lightn.nc", 
                   "crop.nc", "pas.nc", 
                   "humid.nc", "vpd.nc", "csoil.nc", "tas.nc", "tas_max.nc",
                   "rhumid.nc", "cveg.nc", "pas.nc", "soilM.nc", 
                   "totalVeg.nc", "popDens.nc"]
+
 
     grab_old_trace = True
     cores = 4
@@ -334,8 +362,7 @@ if __name__=="__main__":
     """ Projection/evaluating """
     dir_outputs = 'outputs/'
 
-    dir_projecting = dir_training#"../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2010_2019/"
-    #dir_projecting = "/gws/nopw/j04/jules/mbarbosa/driving_and_obs_overlap/AllConFire_2010_2019/"
+    dir_projecting = dir_training
 
     sample_for_plot = 20
 
