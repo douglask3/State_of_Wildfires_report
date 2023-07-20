@@ -191,7 +191,7 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '',
     Sim = np.array(list(map(sample_model, idx)))
     #Sim = np.percentile(Sim, q = [10, 90], axis = 0)
     
-    X[:, 1] = 0
+    '''X[:, 1] = 1
     
     Sim2 = np.array(list(map(sample_model, idx)))
     #Sim2=  np.percentile(Sim2, q = [10, 90], axis = 0)
@@ -206,6 +206,7 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '',
     
     
     set_trace()
+    '''
 
     dir_outputs = dir_outputs + '/' + model_title + '/'
     if not os.path.exists(dir_outputs): os.makedirs(dir_outputs)
