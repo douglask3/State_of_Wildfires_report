@@ -202,8 +202,8 @@ def plot_model_maps(Sim, lmask, levels, cmap, Obs = None, eg_cube = None, Nrows 
   
     if eg_cube is None: eg_cube = Obs
     if Obs is not None: plot_map(Obs, "Observtations", 1)
-    plot_map(insert_sim_into_cube(Sim[0,:], eg_cube, lmask), "Simulation - 10%", Ncols - 1)
-    plot_map(insert_sim_into_cube(Sim[1,:], eg_cube, lmask), "Simulation - 90%", Ncols)
+    plot_map(insert_data_into_cube(Sim[0,:], eg_cube, lmask), "Simulation - 10%", Ncols - 1)
+    plot_map(insert_data_into_cube(Sim[1,:], eg_cube, lmask), "Simulation - 90%", Ncols)
     
 
 def BayesScatter(X, Y, logXmin = None, logYmin = None, ax = None):
@@ -247,8 +247,8 @@ def evaluate_model(filename_out, dir_outputs, Obs, Sim, lmask, levels, cmap):
     apos = np.mean(pos, axis = 0)
     
     mask = lmask.reshape([ X.shape[0], int(lmask.shape[0]/X.shape[0])])[0]
-    apos_cube = insert_sim_into_cube(apos, Obs[0], mask)
-    p_value_cube = insert_sim_into_cube(p_value, Obs[0], mask)
+    apos_cube = insert_data_into_cube(apos, Obs[0], mask)
+    p_value_cube = insert_data_into_cube(p_value, Obs[0], mask)
     
     
     plot_annual_mean(apos_cube,[0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], 
