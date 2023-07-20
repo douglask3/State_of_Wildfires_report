@@ -86,14 +86,14 @@ def fit_MaxEnt_probs_to_data(Y, X, niterations,
 
     with pm.Model() as max_ent_model:
         ## set priorts
-        q = pm.LogNormal('q', mu = 0.0, sigma = 1.0)
-        betas = pm.Normal('betas', mu = 0, sigma = 1, shape = X.shape[1], 
-                          initval =np.repeat(0.5, X.shape[1]))
-
-        powers = pm.Normal('powers', mu = 0, sigma = 1, shape = [2, X.shape[1]])
+        params = {#"q":     pm.LogNormal('q', mu = 0.0, sigma = 1.0),
+                  "betas": pm.Normal('betas', mu = 0, sigma = 1, shape = X.shape[1], 
+                                      initval =np.repeat(0.5, X.shape[1])),
+                   "powers": pm.Normal('powers', mu = 0, sigma = 1, shape = [2, X.shape[1]])
+                 }
         ## build model
         
-        prediction = MaxEntFire(q, betas, powers, inference = True).burnt_area_uninflated(X)  
+        prediction = MaxEntFire(params, inference = True).burnt_area_uninflated(X)  
         
         
         ## define error measurement
@@ -101,8 +101,15 @@ def fit_MaxEnt_probs_to_data(Y, X, niterations,
                 
         ## sample model
         
-        trace = pm.sample(niterations, return_inferencedata=True, 
-                          callback = trace_callback, *arg, **kw)
+        attempts = 1
+        while attempts <= 10:
+            try:
+                trace = pm.sample(niterations, return_inferencedata=True, 
+                                  callback = trace_callback, *arg, **kw)
+                attempts = 100
+            except:
+                print("sampling attempt " + str(attempts) + " failed. Trying a max of 10 times")
+                attempts += 1
         ## save trace file
         trace.to_netcdf(trace_file)
     return trace
@@ -157,11 +164,19 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '',
         new_shape = ((A * B), *out.shape[2:])
         return np.reshape(out, new_shape)
 
+    params = trace.to_dict()['posterior']
+    params_names = params.keys()
+    params = [select_post_param(var) for var in params_names]
+    
     def sample_model(i): 
-        powers =select_post_param('powers')[i,:]
-        betas =select_post_param('betas')[i,:]
-        q =select_post_param('q')[i]
-        return MaxEntFire(q, betas, powers).burnt_area(X)
+        
+        param_in = [param[i] if param.ndim == 1 else param[i,:] for param in params]
+        param_in = dict(zip(params_names, param_in))
+        #dict(zip(sample_model, out))
+        #powers = select_post_param('powers')[i,:]
+        #betas  = select_post_param('betas')[i,:]
+        #q =select_post_param('q')[i]
+        return MaxEntFire(param_in).burnt_area(X)
 
     nits = np.prod(trace.posterior['betas'].values.shape[0:2])
     idx = range(0, nits, int(np.floor(nits/sample_for_plot)))
@@ -220,6 +235,10 @@ def BayesScatter(X, Y, logXmin = None, logYmin = None, ax = None):
     ax.scatter(X, Y[:, ncols + 1], s = 0.2, color = 'red')
     if logYmin is not None: ax.set_yscale('log')
     if logXmin is not None: ax.set_xscale('log')
+
+    plt.xlabel("Observation")
+    plt.ylabel("Simulation")
+    
 
 def evaluate_model(filename_out, dir_outputs, Obs, Sim, lmask, levels, cmap):
     qSim = np.percentile(Sim, q = np.arange(5, 100, 5), axis = 0)
@@ -304,14 +323,13 @@ if __name__=="__main__":
     """
     """ optimization """
 
-    model_title = 'MaxEfire-BAinflate'
-    model_title = 'MaxEfire-BAinflate-corrected'
+    model_title = 'MaxEfire-BAinflate2'
+    #model_title = 'MaxEfire-BAinflate-corrected2'
 
     dir_training = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
      #dir_training = "/gws/nopw/j04/jules/mbarbosa/driving_and_obs_overlap/AllConFire_2000_2009/"
     
     y_filen = "GFED4.1s_Burned_Fraction.nc"
-
 
     x_filen_list=["Forest.nc", "pr_mean.nc", "dry_days.nc", "consec_dry_mean.nc", 
                   "lightn.nc", 

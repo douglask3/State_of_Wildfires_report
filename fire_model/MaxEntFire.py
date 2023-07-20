@@ -10,13 +10,20 @@ import pytensor
 import pytensor.tensor as tt
 
 from pdb import set_trace
+
+def select_key_or_defualt(dirc, key, default):
+    if key in dirc:
+        return dirc[key]
+    else:
+        return default
+
 class MaxEntFire(object):
     """
     Maximum Entropy fire model which takes indepedant variables and coefficants. 
     At the moment, just a linear model fed through a logistic function to convert to 
     burnt area/fire probablity. But we'll adapt that.  
     """ 
-    def __init__(self, q, betas, powers = None, inference = False):
+    def __init__(self, params, inference = False):
         """
         Sets up the model based on betas and repsonse curve pararameters (response curve 
             not yet implmented
@@ -35,10 +42,11 @@ class MaxEntFire(object):
             self.numPCK =  __import__('pytensor').tensor
         else:
             self.numPCK =  __import__('numpy')
+       
+        self.q = select_key_or_defualt(params, 'q', 0.0)
+        self.betas = params['betas']
+        self.powers = select_key_or_defualt(params, 'powers', None)
         
-        self.q = q
-        self.betas = betas
-        self.powers = powers
 
     def burnt_area(self, X):
         """calculated predicted burnt area based on indepedant variables. 
@@ -65,6 +73,7 @@ class MaxEntFire(object):
     
     def burnt_area_uninflated(self, X):
         BA = self.burnt_area(X)
+        if self.q == 0.0: return BA
         return BA / (1 + self.q * (1 - BA))
      
     def hinge_1(x0, y0, a, b):
