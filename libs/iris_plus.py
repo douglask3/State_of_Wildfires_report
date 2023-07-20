@@ -62,7 +62,7 @@ def insert_data_into_cube(x, eg_cube, mask = None):
     Pred = eg_cube.copy()
     pred = Pred.data.copy().flatten()
 
-    if mask on None:
+    if mask is None:
         pred[:] = x
     else:
         pred[mask] = x
