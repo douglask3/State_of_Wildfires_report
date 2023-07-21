@@ -1,63 +1,3 @@
-'''import numpy as np
-
-class DummyModel:
-    def __init__(self):
-        self.coefficients = None
-
-    def fit(self, X, y):
-        # Compute some random coefficients
-        n_features = X.shape[1]
-        self.coefficients = np.random.randn(n_features)
-
-    def predict(self, X):
-        # Compute the dot product of the coefficients and the input features
-        return np.dot(X, self.coefficients)
-
-import numpy as np
-from sklearn.linear_model import LinearRegression
-from pdb import set_trace
-import matplotlib.pyplot as plt
-
-# Generate random data
-np.random.seed(0)
-n_samples = 100
-n_features = 5
-
-x = np.random.randn(n_samples, n_features)
-x_o = x[:, 0].copy()  # Explanatory variables
-
-#set_trace()
-#coefficients = np.random.randn(n_features)  # coefficients
-y = np.random.normal(0, 1, n_samples)  # Response variable
-
-# Create a dummy model and fit the data
-model = LinearRegression()
-model.fit(x, y)
-predictions = model.predict(x)
-
-print("Predictions:", predictions)
-
-x[:, 0] = 0
-
-predictions2 = model.predict(x)
-print("Predictions2:", predictions2)
-
-new_X = np.random.randn(10, n_features)  # New explanatory variables
-new_X[:, 0] = 0
-predictions = model.predict(new_X)
-
-print("P2 - P1:", predictions2 - predictions)
-
-
-plt.plot(x_o, (predictions2/predictions), '.')
-plt.show()
-
-#print("Predictions:", predictions)
-#set_trace()
-
-#calculate the difference for all and plot all the variables in one big plot side by side'''
-
-
 import sys
 sys.path.append('fire_model/')
 sys.path.append('libs/')
@@ -222,7 +162,7 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '',
                                                      
         
                                                      
-    #fig, axes = plt.subplots(3, X.shape[1], figsize=(12, 4))  # Create subplots for each variable
+    #fig, axes = plt.subplots(3, X.shape[1], figsize=(12, 4)) 
     
     for col in range(X.shape[1]):
         x_copy = X[:, col].copy()  # Copy the values of the current column
@@ -232,7 +172,12 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '',
         X[:, col] = 0  # Set the current column to 0
         
         Sim2 = np.array(list(map(sample_model, idx)))  # Sample model for the modified column
-    
+        
+        #fcol = math.sqrt(X.shape[1])
+        #frw = X.shape[1]/fcol
+        
+        #ax = plt.subplot(frw,fcol, col + 1)
+        
         ax = plt.subplot(6,4, col + 1)  # Select the corresponding subplot
         #if col == 20:
             #set_trace()
