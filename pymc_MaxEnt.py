@@ -86,14 +86,22 @@ def fit_MaxEnt_probs_to_data(Y, X, niterations,
 
     with pm.Model() as max_ent_model:
         ## set priors
-        params = {#"q":     pm.LogNormal('q', mu = 0.0, sigma = 1.0),
+        priors = {#"q":     pm.LogNormal('q', mu = 0.0, sigma = 1.0),
                   "betas": pm.Normal('betas', mu = 0, sigma = 1, shape = X.shape[1], 
                                       initval =np.repeat(0.5, X.shape[1])),
                    "powers": pm.Normal('powers', mu = 0, sigma = 1, shape = [2, X.shape[1]]),
                    "x2s": pm.Normal('x2s', mu = 0, sigma = 1, shape = [2, X.shape[1]])
+                    # Maria: Add response curve priors
                  }
+            # Will get used as follows:
+            # y = beta[0] * X[:,0] + beta[1] * X[:,1] + beta[2] *X[:,2] + ....
+            #           + powers[0,0] * X[:,0]^powers[0,1] + powers[1,0] * X[:,1]^powers[1,1] + powers[2,0] * X[:,2]^powers[2,1]
+            #           + x2s[0,0] * (X2s[0,1] + X[:,0])^2 + x2s[1,0] * (X2s[1,1] + X[:,1])^2 + ...
+            #           + Maria: response curve .....
+        
         ## run model
-        prediction = MaxEntFire(params, inference = True).burnt_area_uninflated(X)  
+        model = MaxEntFire(priors, inference = True)
+        prediction = model.burnt_area(X)  
         
         ## define error measurement
         error = pm.DensityDist("error", prediction, logp = MaxEnt_on_prob, observed = Y)
@@ -326,7 +334,7 @@ if __name__=="__main__":
             we've implmented it) attempt some evaluation.
         sample_for_plot -- how many iterations (samples) from optimixation should be used 
             for plotting and evaluation.
-        levels -- levels on teh colourbar on observtation and prodiction maps
+        levels -- levels on the colourbar on observtation and prodiction maps
         cmap -- levels on teh colourbar on observtation and prodiction maps
     Returns:
         trace file, maps, etc (to be added too)
@@ -340,20 +348,20 @@ if __name__=="__main__":
     model_title = 'Example_model-X2'
 
     dir_training = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
+    #dir_training = "/gws/nopw/j04/jules/mbarbosa/driving_and_obs_overlap/AllConFire_2000_2009/"
 
     y_filen = "GFED4.1s_Burned_Fraction.nc"
     
-    x_filen_list=["Forest.nc", "pr_mean.nc", "dry_days.nc", "consec_dry_mean.nc", 
-                  "lightn.nc", 
+    x_filen_list=["trees.nc", "pr_mean.nc", "consec_dry_mean.nc", 
+                  "lightn.nc", "popDens.nc",
                   "crop.nc", "pas.nc", 
-                  "humid.nc", "vpd.nc", "csoil.nc", "tas.nc", "tas_max.nc",
-                  "rhumid.nc", "cveg.nc", "pas.nc", "soilM.nc", 
-                  "totalVeg.nc", "popDens.nc"]
+                  "humid.nc", "csoil.nc", "tas_max.nc",
+                  "totalVeg.nc"]
 
 
-    grab_old_trace = True
-    cores = 4
-    fraction_data_for_sample = 0.1
+    grab_old_trace = False
+    cores = 2
+    fraction_data_for_sample = 0.05
     niterations = 100
 
     months_of_year = [7]

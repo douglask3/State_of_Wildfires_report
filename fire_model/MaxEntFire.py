@@ -47,6 +47,7 @@ class MaxEntFire(object):
         self.betas = params['betas']
         self.powers = select_key_or_defualt(params, 'powers', None)
         self.x2s = select_key_or_defualt(params, 'x2s', None)
+        #Maria: add your response curve parameter selection thing
         
 
     def burnt_area(self, X):
@@ -60,18 +61,19 @@ class MaxEntFire(object):
             numpy or tensor (depdaning on 'inference' option) 1 d array of length equal to 
 	    no. rows in X of burnt area/fire probabilities.
         """
-        def dot_fun(x, p): return self.numPCK.dot(x, p)
         
-        y = dot_fun(X, self.betas)
+        y = self.numPCK.dot(X, self.betas)
 
         def add_response_curve(params, FUN, y):
             if params is not None:
                 XR = FUN(X)
-                y = y + dot_fun(XR, params[0,:]) 
+                y = y + self.numPCK.dot(XR, params[0,:]) 
             return(y)
 
         y = add_response_curve(self.powers, self.power_response_curve, y)
         y = add_response_curve(self.x2s, self.X2_response_curve, y)
+        # y = add_response_curve(paramers, function, y)
+        # Maria: add yours here 
 
         BA = 1.0/(1.0 + self.numPCK.exp(-y))
         
@@ -118,5 +120,9 @@ class MaxEntFire(object):
     def X2_response_curve(self, X):  
         return (X - self.x2s[1,:])**2.0
 
+
+    #def Marias_response_curve (self, X):
+    #
+    #
 
 
