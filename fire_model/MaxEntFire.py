@@ -10,13 +10,20 @@ import pytensor
 import pytensor.tensor as tt
 
 from pdb import set_trace
+
+def select_key_or_defualt(dirc, key, default):
+    if key in dirc:
+        return dirc[key]
+    else:
+        return default
+
 class MaxEntFire(object):
     """
     Maximum Entropy fire model which takes independent variables and coefficients. 
     At the moment, just a linear model fed through a logistic function to convert to 
     burnt area/fire probablity. But we'll adapt that.  
     """ 
-    def __init__(self, betas, powers = None, inference = False):
+    def __init__(self, params, inference = False):
         """
         Sets up the model based on betas and repsonse curve pararameters (response curve 
             not yet implmented
@@ -35,11 +42,14 @@ class MaxEntFire(object):
             self.numPCK =  __import__('pytensor').tensor
         else:
             self.numPCK =  __import__('numpy')
+       
+        self.q = select_key_or_defualt(params, 'q', 0.0)
+        self.betas = params['betas']
+        self.powers = select_key_or_defualt(params, 'powers', None)
+        self.x2s = select_key_or_defualt(params, 'x2s', None)
         
-        self.betas = betas
-        self.powers = powers
 
-    def fire_model(self, X):
+    def burnt_area(self, X):
         """calculated predicted burnt area based on indepedant variables. 
             At the moment, just a linear model fed through a logistic function to convert to 
             burnt area/fire probablity. But we'll adapt that.   
@@ -54,13 +64,23 @@ class MaxEntFire(object):
         
         y = dot_fun(X, self.betas)
 
-        if self.powers is not None:
-            X_powers = self.power_response_curve(X)
-            y = y + dot_fun(X_powers, self.powers[0,:])        
+        def add_response_curve(params, FUN, y):
+            if params is not None:
+                XR = FUN(X)
+                y = y + dot_fun(XR, params[0,:]) 
+            return(y)
+
+        y = add_response_curve(self.powers, self.power_response_curve, y)
+        y = add_response_curve(self.x2s, self.X2_response_curve, y)
 
         BA = 1.0/(1.0 + self.numPCK.exp(-y))
-    
+        
         return BA
+    
+    def burnt_area_uninflated(self, X):
+        BA = self.burnt_area(X)
+        if self.q == 0.0: return BA
+        return BA / (1 + self.q * (1 - BA))
      
     def hinge_1(x0, y0, a, b):
         """ fits a hinge curve function
@@ -94,6 +114,9 @@ class MaxEntFire(object):
 #
     def power_response_curve(self, X):  
         return X**self.powers[1,:]
+
+    def X2_response_curve(self, X):  
+        return (X - self.x2s[1,:])**2.0
 
 
 

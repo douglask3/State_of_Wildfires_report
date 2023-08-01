@@ -135,6 +135,7 @@ def read_all_data_from_netcdf(y_filename, x_filename_list, add_1s_columne = Fals
         
     if x_normalise01: 
         scalers = np.array([np.min(X, axis=0), np.max(X, axis=0)])
+        
         squidge = (scalers[1,:]-scalers[0,:])/(X.shape[0])
         scalers[0,:] = scalers[0,:] - squidge
         scalers[1,:] = scalers[1,:] + squidge
