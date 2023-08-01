@@ -342,16 +342,17 @@ if __name__=="__main__":
 
     model_title = 'Example_model-X2'
 
-    dir_training = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
-
+    #dir_training = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
+    dir_training = "D:/Doutorado/Sanduiche/research/maxent-variables/2002-2011/"
+    
     y_filen = "GFED4.1s_Burned_Fraction.nc"
     
-    x_filen_list=["Forest.nc", "pr_mean.nc", "dry_days.nc", "consec_dry_mean.nc", 
-                  "lightn.nc", 
-                  "crop.nc", "pas.nc", 
-                  "humid.nc", "vpd.nc", "csoil.nc", "tas.nc", "tas_max.nc",
-                  "rhumid.nc", "cveg.nc", "pas.nc", "soilM.nc", 
-                  "totalVeg.nc", "popDens.nc"]
+    x_filen_list=["Forest.nc", "dry_days.nc", "consec_dry_mean.nc",  
+                  "crop.nc", "Savanna.nc", "Grassland.nc", "N_patches.nc", "MPA.nc",
+                  "TCA.nc", "E_density.nc",
+                  "humid.nc","vpd.nc", "csoil.nc", "tas.nc", "tas_max.nc",
+                  "lightn.nc", "rhumid.nc", "cveg.nc", "pas.nc", "soilM.nc", 
+                  "popDens.nc"]
 
 
     grab_old_trace = True
@@ -365,7 +366,7 @@ if __name__=="__main__":
     dir_outputs = 'outputs/'
 
     dir_projecting = dir_training
-
+    #dir_projecting = "D:/Doutorado/Sanduiche/research/maxent-variables/2012-2021/"
     sample_for_plot = 20
 
     levels = [0, 0.1, 1, 2, 5, 10, 20, 50, 100] 
