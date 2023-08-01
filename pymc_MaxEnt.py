@@ -169,10 +169,7 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '',
     def sample_model(i):         
         param_in = [param[i] if param.ndim == 1 else param[i,:] for param in params]
         param_in = dict(zip(params_names, param_in))
-        #dict(zip(sample_model, out))
-        #powers = select_post_param('powers')[i,:]
-        #betas  = select_post_param('betas')[i,:]
-        #q =select_post_param('q')[i]
+        
         return MaxEntFire(param_in).burnt_area(X)
 
     nits = np.prod(trace.posterior['betas'].values.shape[0:2])
