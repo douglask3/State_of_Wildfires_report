@@ -10,6 +10,7 @@ from plot_maps import *
 import os
 from   io     import StringIO
 import numpy  as np
+import pandas as pd
 import math
 from scipy.special import logit, expit
 
@@ -19,7 +20,6 @@ import pytensor.tensor as tt
 
 import matplotlib.pyplot as plt
 #import re
-
 import arviz as az
 
 from scipy.stats import wilcoxon
@@ -90,8 +90,8 @@ def fit_MaxEnt_probs_to_data(Y, X, niterations,
         priors = {#"q":     pm.LogNormal('q', mu = 0.0, sigma = 1.0),
                   "betas": pm.Normal('betas', mu = 0, sigma = 1, shape = X.shape[1], 
                                       initval =np.repeat(0.5, X.shape[1])),
-                   "powers": pm.Normal('powers', mu = 0, sigma = 1, shape = [2, X.shape[1]]),
-                   "x2s": pm.Normal('x2s', mu = 0, sigma = 1, shape = [2, X.shape[1]])
+                   "powers": pm.Normal('powers', mu = 0, sigma = 1, shape = [2, X.shape[1]])#,
+                   #"x2s": pm.Normal('x2s', mu = 0, sigma = 1, shape = [2, X.shape[1]])
                     # Maria: Add response curve priors
                  }
             # Will get used as follows:
@@ -147,7 +147,7 @@ def train_MaxEnt_model(y_filen, x_filen_list, dir = '', filename_out = '',
 
 def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '', 
                          dir_outputs = '', model_title = '', filename_out = '',
-                         subset_functionm = None, subset_function_args = None,
+                         subset_function = None, subset_function_args = None,
                          sample_for_plot = 1,
                          run_evaluation = False, run_projection = False):
 
@@ -175,11 +175,22 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '',
     params_names = params.keys()
     params = [select_post_param(var) for var in params_names]
     
-    def sample_model(i):         
+    dir_outputs = dir_outputs + '/' + model_title + '/'
+    if not os.path.exists(dir_outputs): os.makedirs(dir_outputs)
+    dir_samples = dir_outputs + '/samples/' 
+    if not os.path.exists(dir_samples): os.makedirs(dir_samples)
+      
+    def sample_model(i, run_name = 'control'):   
+        file_sample = dir_samples + '/' + run_name + '-' + str(i) + '.nc'
+        
+        if os.path.isfile(file_sample) and grab_old_trace:
+            return pd.read_csv(file_sample).values.T[0]
+           
         param_in = [param[i] if param.ndim == 1 else param[i,:] for param in params]
         param_in = dict(zip(params_names, param_in))
-        
-        return MaxEntFire(param_in).burnt_area(X)
+        out = MaxEntFire(param_in).burnt_area(X)
+        pd.DataFrame(out).to_csv(file_sample, index = False)
+        return out
 
     nits = np.prod(trace.posterior['betas'].values.shape[0:2])
     idx = range(0, nits, int(np.floor(nits/sample_for_plot)))
@@ -195,13 +206,11 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '',
                                                      subset_function_args = subset_function_args)
     x_copy = X[:, 1].copy()
     
-    Sim = np.array(list(map(sample_model, idx)))
-    #Sim = np.percentile(Sim, q = [10, 90], axis = 0)
+    Sim = np.array(list(map(lambda id: sample_model(id, "control"), idx)))
     
     '''X[:, 1] = 1
     
     Sim2 = np.array(list(map(sample_model, idx)))
-    #Sim2=  np.percentile(Sim2, q = [10, 90], axis = 0)
     
     fig, ax = plt.subplots()
     
@@ -215,9 +224,7 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '',
     set_trace()
     '''
 
-    dir_outputs = dir_outputs + '/' + model_title + '/'
-    if not os.path.exists(dir_outputs): os.makedirs(dir_outputs)
-
+    
     if run_evaluation:
         evaluate_model(filename_out, dir_outputs, Obs, Sim, lmask, levels, cmap)
 
@@ -334,6 +341,12 @@ if __name__=="__main__":
                   "lightn.nc", "popDens.nc",
                   "crop.nc", "pas.nc", 
                   "humid.nc", "csoil.nc", "tas_max.nc",
+                  "totalVeg.nc"]
+    
+    x_filen_list=["trees.nc", "consec_dry_mean.nc", 
+                  "lightn.nc", "popDens.nc",
+                  "crop.nc", "pas.nc", 
+                  "tas_max.nc",
                   "totalVeg.nc"]
 
 
