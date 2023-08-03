@@ -179,9 +179,13 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '',
     if not os.path.exists(dir_outputs): os.makedirs(dir_outputs)
     dir_samples = dir_outputs + '/samples/' 
     if not os.path.exists(dir_samples): os.makedirs(dir_samples)
+    dir_samples = dir_samples + filename_out + '/'
+    if not os.path.exists(dir_samples): os.makedirs(dir_samples)
       
     def sample_model(i, run_name = 'control'):   
-        file_sample = dir_samples + '/' + run_name + '-' + filename_out + '-' + str(i) + '.nc'
+        dir_sample =  dir_samples + '/' + run_name + '/'
+        if not os.path.exists(dir_sample): os.makedirs(dir_sample)
+        file_sample = dir_sample + '/sample' + str(i) + '.nc'
         
         if os.path.isfile(file_sample) and grab_old_trace:
             return pd.read_csv(file_sample).values.T[0]
@@ -207,23 +211,37 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '',
     x_copy = X[:, 1].copy()
     
     Sim = np.array(list(map(lambda id: sample_model(id, "control"), idx)))
-    
-    '''X[:, 1] = 1
-    
-    Sim2 = np.array(list(map(sample_model, idx)))
-    
-    fig, ax = plt.subplots()
-    
-    for rw in range(Sim.shape[0]):
-        ax.plot(x_copy, (Sim[rw,:] / Sim2[rw,:]), '.')
-    
-    
+    '''
+    for col in range(X.shape[1]-1):
+        x_copy = X[:, col].copy()  # Copy the values of the current column
+        
+        variable = x_filen_list[col].replace('.nc', '')
+        print(col)#
+        #Sim = np.array(list(map(sample_model, idx)))  # Sample model for the current column
+        
+        X[:, col] = np.mean( X[:, col])  # Set the current column to 0
+        
+        Sim2 = np.array(list(map(lambda id: sample_model(id, variable + '_to_mean-'), 
+                                 idx)))
+#np.array(list(map(sample_model, idx)))  # Sample model for the modified column
+        #fcol = math.sqrt(X.shape[1])
+        #frw = X.shape[1]/fcol
+        
+        #ax = plt.subplot(frw,fcol, col + 1)
+        
+        ax = plt.subplot(6,4, col + 1)  # Select the corresponding subplot
+        #if col == 20:
+            #set_trace()
+        for rw in range(Sim.shape[0]):
+        
+            ax.plot(x_copy, (Sim[rw, :] / Sim2[rw, :]), '.')  # Plot the data for the current variable
+        
+        X[:, col] = x_copy 
+        
     plt.show()
     
-    
-    set_trace()
+    set_trace() 
     '''
-
     
     if run_evaluation:
         evaluate_model(filename_out, dir_outputs, Obs, Sim, lmask, levels, cmap)
