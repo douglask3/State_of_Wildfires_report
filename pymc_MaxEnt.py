@@ -181,7 +181,7 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '',
     if not os.path.exists(dir_samples): os.makedirs(dir_samples)
       
     def sample_model(i, run_name = 'control'):   
-        file_sample = dir_samples + '/' + run_name + '-' + str(i) + '.nc'
+        file_sample = dir_samples + '/' + run_name + '-' + filename_out + '-' + str(i) + '.nc'
         
         if os.path.isfile(file_sample) and grab_old_trace:
             return pd.read_csv(file_sample).values.T[0]
