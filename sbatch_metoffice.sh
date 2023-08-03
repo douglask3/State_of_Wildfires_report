@@ -6,6 +6,6 @@
 #SBATCH --error=/work/scratch-pw2/mbarbosa/error_%j.txt           # Error file (%j expands to job ID)
 #SBATCH --time=22:00:00 
 
-#conda activate pymc5_env
-conda activate maxent
+conda activate pymc5_env
+#conda activate maxent
 python pymc_MaxEnt.py
