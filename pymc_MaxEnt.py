@@ -98,6 +98,9 @@ def fit_MaxEnt_probs_to_data(Y, X, niterations,
                    "powers": pm.Normal('powers', mu = 0, sigma = 1, shape = [2, X.shape[1]])#,
                    #"x2s": pm.Normal('x2s', mu = 0, sigma = 1, shape = [2, X.shape[1]])
                     # Maria: Add response curve priors
+                    #"X0": pm.Normal('X0', mu = 0.5, sigma = 1, shape = X.shape[1])
+                    #"p": pm.Normal('p', mu = 0, sigma = 1 , shape = X.shape[1])
+                    #"gama": pm.Normal('gama', mu = 0 , sigma = 1, shape = X.shape[1])
                  }
             # Will get used as follows:
             # y = beta[0] * X[:,0] + beta[1] * X[:,1] + beta[2] *X[:,2] + ....
@@ -276,7 +279,7 @@ def evaluate_model(filename_out, dir_outputs, Obs, Sim, lmask, levels, cmap):
     X = Obs.data.flatten()[lmask].reshape([Obs.shape[0], Y.shape[2]])
     Yi = Y[:,:,0]
     Xi = X[:,0]
-
+    #set_trace()
     pos = np.mean(X[np.newaxis, :, :] > Y, axis = 0)
     _, p_value = wilcoxon(pos - 0.5, axis = 0)
     apos = np.mean(pos, axis = 0)
@@ -350,9 +353,11 @@ if __name__=="__main__":
 
     dir_training = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
     #dir_training = "/gws/nopw/j04/jules/mbarbosa/driving_and_obs_overlap/AllConFire_2000_2009/"
+    #dir_training = "D:/Doutorado/Sanduiche/research/maxent-variables/2002-2011/"
 
     y_filen = "GFED4.1s_Burned_Fraction.nc"
     
+
     x_filen_list=["trees.nc", "pr_mean.nc", "consec_dry_mean.nc", 
                   "lightn.nc", "popDens.nc",
                   "crop.nc", "pas.nc", 
@@ -366,7 +371,8 @@ if __name__=="__main__":
                   "totalVeg.nc"]
 
 
-    grab_old_trace = True
+    grab_old_trace = True # set to True till you get the code running. Then set to False when you start adding in new response curves
+
     cores = 2
     fraction_data_for_sample = 0.05
     niterations = 100
