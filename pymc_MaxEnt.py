@@ -73,8 +73,9 @@ def fit_MaxEnt_probs_to_data(Y, X, niterations,
         pymc traces, returned and saved to [out_dir]/[filneame]-[metadata].nc
     """
 
-    trace_file = out_dir + '/' + filename + '-nvariables_' + '-ncells_' + str(X.shape[0]) + \
-                str(X.shape[1]) + '-niterations_' + str(niterations * cores) + '.nc'
+    trace_file = out_dir + '/trace-' + filename + '-nvariables_' + \
+                 '-ncells_' + str(X.shape[0]) + \
+                 str(X.shape[1]) + '-niterations_' + str(niterations * cores) + '.nc'
     
     ## check if trace file exsts and return if wanted
     if os.path.isfile(trace_file) and grab_old_trace: 
@@ -92,10 +93,13 @@ def fit_MaxEnt_probs_to_data(Y, X, niterations,
 
     with pm.Model() as max_ent_model:
         ## set priors
+        nvars = X.shape[1]
         priors = {#"q":     pm.LogNormal('q', mu = 0.0, sigma = 1.0),
-                  "betas": pm.Normal('betas', mu = 0, sigma = 1, shape = X.shape[1], 
-                                      initval =np.repeat(0.5, X.shape[1])),
-                   "powers": pm.Normal('powers', mu = 0, sigma = 1, shape = [2, X.shape[1]])#,
+                  "lin_betas": pm.Normal('lin_betas', mu = 0, sigma = 1, shape = nvars),
+                  "pow_betas": pm.Normal('pow_betas', mu = 0, sigma = 1, shape = nvars),
+                  "pow_power": pm.Normal('pow_power', mu = 0, sigma = 1, shape = nvars),
+                  "x2s_betas": pm.Normal('x2s_betas', mu = 0, sigma = 1, shape = nvars),
+                  "x2s_X0"   : pm.Normal('x2s_X0'   , mu = 0, sigma = 1, shape = nvars)
                    #"x2s": pm.Normal('x2s', mu = 0, sigma = 1, shape = [2, X.shape[1]])
                     # Maria: Add response curve priors
                     #"X0": pm.Normal('X0', mu = 0.5, sigma = 1, shape = X.shape[1])
@@ -110,7 +114,7 @@ def fit_MaxEnt_probs_to_data(Y, X, niterations,
         
         ## run model
         model = MaxEntFire(priors, inference = True)
-        prediction = model.burnt_area(X)  
+        prediction = model.burnt_area_uninflated(X)  
         
         ## define error measurement
         error = pm.DensityDist("error", prediction, logp = MaxEnt_on_prob, observed = Y)
@@ -198,8 +202,9 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '',
         out = MaxEntFire(param_in).burnt_area(X)
         pd.DataFrame(out).to_csv(file_sample, index = False)
         return out
-
-    nits = np.prod(trace.posterior['betas'].values.shape[0:2])
+    
+    
+    nits = len(trace.posterior.chain)*len(trace.posterior.draw)
     idx = range(0, nits, int(np.floor(nits/sample_for_plot)))
                          
     Obs = read_variable_from_netcdf(y_filen, dir,
@@ -384,7 +389,7 @@ if __name__=="__main__":
 
     dir_projecting = dir_training
 
-    sample_for_plot = 20
+    sample_for_plot = 50
 
     levels = [0, 0.1, 1, 2, 5, 10, 20, 50, 100] 
     cmap = 'OrRd'
