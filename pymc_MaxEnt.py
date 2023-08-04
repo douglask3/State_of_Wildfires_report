@@ -24,6 +24,11 @@ import arviz as az
 
 from scipy.stats import wilcoxon
 
+def combine_path_and_make_dir(path1, path2):
+    path = path1 + '/'+ path2 + '/'
+    if not os.path.exists(path): os.makedirs(path)
+    return path
+
 def MaxEnt_on_prob(BA, fx):
     """calculates the log-transformed continuous logit likelihood for x given mu when x 
        and mu are probabilities between 0-1. 
@@ -136,8 +141,10 @@ def train_MaxEnt_model(y_filen, x_filen_list, dir = '', filename_out = '',
                                                      subset_function = subset_function, 
                                                      subset_function_args = subset_function_args)
     
-    dir_outputs = dir_outputs + '/' +  model_title
-    if not os.path.exists(dir_outputs): os.makedirs(dir_outputs)
+    dir_outputs = combine_path_and_make_dir(dir_outputs, model_title)
+    
+    #dir_outputs = dir_outputs + '/' +  model_title
+    #if not os.path.exists(dir_outputs): os.makedirs(dir_outputs)
 
     trace = fit_MaxEnt_probs_to_data(Y, X, out_dir = dir_outputs, filename = filename, 
                                      niterations = niterations, cores = cores,
@@ -179,8 +186,10 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '',
     if not os.path.exists(dir_outputs): os.makedirs(dir_outputs)
     dir_samples = dir_outputs + '/samples/' 
     if not os.path.exists(dir_samples): os.makedirs(dir_samples)
-    dir_samples = dir_samples + filename_out + '/'
-    if not os.path.exists(dir_samples): os.makedirs(dir_samples)
+    
+    dir_samples = combine_path_and_make_dir(dir_samples, filename_out)
+   # dir_samples = dir_samples + filename_out + '/'
+    #if not os.path.exists(dir_samples): os.makedirs(dir_samples)
       
     def sample_model(i, run_name = 'control'):   
         dir_sample =  dir_samples + '/' + run_name + '/'
@@ -211,7 +220,7 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '',
     x_copy = X[:, 1].copy()
     
     Sim = np.array(list(map(lambda id: sample_model(id, "control"), idx)))
-    '''
+    
     for col in range(X.shape[1]-1):
         x_copy = X[:, col].copy()  # Copy the values of the current column
         
@@ -241,7 +250,7 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '',
     plt.show()
     
     set_trace() 
-    '''
+    
     
     if run_evaluation:
         evaluate_model(filename_out, dir_outputs, Obs, Sim, lmask, levels, cmap)
