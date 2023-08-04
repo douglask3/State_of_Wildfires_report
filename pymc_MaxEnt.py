@@ -149,11 +149,8 @@ def train_MaxEnt_model(y_filen, x_filen_list, dir = '', filename_out = '',
                                                      frac_random_sample = frac_random_sample,
                                                      subset_function = subset_function, 
                                                      subset_function_args = subset_function_args)
-    
-    
     print("Running trace")
     trace = fit_MaxEnt_probs_to_data(Y, X,niterations = niterations, cores = cores)
-
     
     ## save trace file
     trace.to_netcdf(trace_file)
@@ -206,7 +203,6 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '',
         out = MaxEntFire(param_in).burnt_area(X)
         pd.DataFrame(out).to_csv(file_sample, index = False)
         return out
-    
     
     nits = len(trace.posterior.chain)*len(trace.posterior.draw)
     idx = range(0, nits, int(np.floor(nits/sample_for_plot)))
@@ -268,7 +264,6 @@ def plot_model_maps(Sim, lmask, levels, cmap, Obs = None, eg_cube = None, Nrows 
     def plot_map(cube, plot_name, plot_n):
         plot_annual_mean(cube, levels, cmap, plot_name = plot_name, scale = 100*12, 
                      Nrows = Nrows, Ncols = Ncols, plot_n = plot_n)
-  
 
     if eg_cube is None: eg_cube = Obs
     if Obs is not None: plot_map(Obs, "Observtations", 1)
@@ -296,7 +291,6 @@ def evaluate_model(filename_out, dir_outputs, Obs, Sim, lmask, levels, cmap):
     mask = lmask.reshape([ X.shape[0], int(lmask.shape[0]/X.shape[0])])[0]
     apos_cube = insert_data_into_cube(apos, Obs[0], mask)
     p_value_cube = insert_data_into_cube(p_value, Obs[0], mask)
-    
     
     plot_annual_mean(apos_cube,[0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], 
                      'RdYlBu_r',  plot_name = "mean bias",  Nrows = 2, Ncols = 3, plot_n = 5)
