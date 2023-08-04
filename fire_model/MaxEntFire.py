@@ -43,10 +43,13 @@ class MaxEntFire(object):
         else:
             self.numPCK =  __import__('numpy')
        
+        self.betas = params['lin_betas']
+        self.pow_betas = select_key_or_defualt(params, 'pow_betas', None)
+        self.pow_power = select_key_or_defualt(params, 'pow_power', None)
+        self.x2s_betas = select_key_or_defualt(params, 'x2s_betas', None)
+        self.x2s_X0    = select_key_or_defualt(params, 'x2s_X0'   , 0.0 )
+        
         self.q = select_key_or_defualt(params, 'q', 0.0)
-        self.betas = params['betas']
-        self.powers = select_key_or_defualt(params, 'powers', None)
-        self.x2s = select_key_or_defualt(params, 'x2s', None)
         #Maria: add your response curve parameter selection thing
         
 
@@ -64,14 +67,14 @@ class MaxEntFire(object):
         
         y = self.numPCK.dot(X, self.betas)
 
-        def add_response_curve(params, FUN, y):
-            if params is not None:
+        def add_response_curve(Rbetas, FUN, y):
+            if Rbetas is not None:
                 XR = FUN(X)
-                y = y + self.numPCK.dot(XR, params[0,:]) 
+                y = y + self.numPCK.dot(XR, Rbetas) 
             return(y)
 
-        y = add_response_curve(self.powers, self.power_response_curve, y)
-        y = add_response_curve(self.x2s, self.X2_response_curve, y)
+        y = add_response_curve(self.pow_betas, self.power_response_curve, y)
+        y = add_response_curve(self.x2s_betas, self.X2_response_curve   , y)
         # y = add_response_curve(paramers, function, y)
         # Maria: add yours here 
 
@@ -115,10 +118,10 @@ class MaxEntFire(object):
 
 #
     def power_response_curve(self, X):  
-        return X**self.powers[1,:]
+        return X**self.pow_power
 
     def X2_response_curve(self, X):  
-        return (X - self.x2s[1,:])**2.0
+        return (X - self.x2s_X0)**2.0
 
 
     #def Marias_response_curve (self, X):
