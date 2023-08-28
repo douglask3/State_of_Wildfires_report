@@ -43,13 +43,15 @@ class MaxEntFire(object):
         else:
             self.numPCK =  __import__('numpy')
        
-        self.betas = params['lin_betas']
+        self.lin_betas = params['lin_betas']
         self.pow_betas = select_key_or_defualt(params, 'pow_betas', None)
         self.pow_power = select_key_or_defualt(params, 'pow_power', None)
         self.x2s_betas = select_key_or_defualt(params, 'x2s_betas', None)
         self.x2s_X0    = select_key_or_defualt(params, 'x2s_X0'   , 0.0 )
-        
         self.q = select_key_or_defualt(params, 'q', 0.0)
+        self.comb_betas = select_key_or_defualt(params, 'comb_betas', None)   
+        self.comb_X0 = select_key_or_defualt(params, 'comb_X0', None) 
+        self.comb_p = select_key_or_defualt(params, 'comb_p', None)
         #Maria: add your response curve parameter selection thing
         
 
@@ -65,7 +67,7 @@ class MaxEntFire(object):
 	    no. rows in X of burnt area/fire probabilities.
         """
         
-        y = self.numPCK.dot(X, self.betas)
+        y = self.numPCK.dot(X, self.lin_betas)
 
         def add_response_curve(Rbetas, FUN, y):
             if Rbetas is not None:
@@ -75,6 +77,8 @@ class MaxEntFire(object):
 
         y = add_response_curve(self.pow_betas, self.power_response_curve, y)
         y = add_response_curve(self.x2s_betas, self.X2_response_curve   , y)
+        y = add_response_curve(self.comb_betas, self.linear_combined_response_curve , y)
+        
         # y = add_response_curve(paramers, function, y)
         # Maria: add yours here 
 
@@ -123,7 +127,8 @@ class MaxEntFire(object):
     def X2_response_curve(self, X):  
         return (X - self.x2s_X0)**2.0
 
-
+    def linear_combined_response_curve(self, X):
+        return np.log(((np.exp(X - self.comb_X0)) ** self.comb_p) + 1)
     #def Marias_response_curve (self, X):
     #
     #
