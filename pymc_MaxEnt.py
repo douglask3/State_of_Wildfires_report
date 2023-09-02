@@ -79,7 +79,11 @@ def fit_MaxEnt_probs_to_data(Y, X, niterations, *arg, **kw):
                   "pow_betas": pm.Normal('pow_betas', mu = 0, sigma = 1, shape = nvars),
                   "pow_power": pm.Normal('pow_power', mu = 0, sigma = 1, shape = nvars),
                   "x2s_betas": pm.Normal('x2s_betas', mu = 0, sigma = 1, shape = nvars),
-                  "x2s_X0"   : pm.Normal('x2s_X0'   , mu = 0, sigma = 1, shape = nvars)
+                  "x2s_X0"   : pm.Normal('x2s_X0'   , mu = 0, sigma = 1, shape = nvars),
+                  "comb_betas": pm.Normal('comb_betas', mu = 0, sigma = 1, shape = nvars),
+                  "comb_X0": pm.Normal('comb_X0', mu = 0.5, sigma = 1, shape = nvars),
+                  "comb_p": pm.Normal('comb_p', mu = 0, sigma = 1 , shape = nvars)
+                  
                    #"x2s": pm.Normal('x2s', mu = 0, sigma = 1, shape = [2, X.shape[1]])
                     # Maria: Add response curve priors
                     #"X0": pm.Normal('X0', mu = 0.5, sigma = 1, shape = X.shape[1])
@@ -342,13 +346,21 @@ if __name__=="__main__":
     """
     """ optimization """
 
-    model_title = 'Example_model-X2'
+    model_title = 'Example_model-non'
 
-    dir_training = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
+    #dir_training = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
     #dir_training = "/gws/nopw/j04/jules/mbarbosa/driving_and_obs_overlap/AllConFire_2000_2009/"
-    #dir_training = "D:/Doutorado/Sanduiche/research/maxent-variables/2002-2011/"
+    dir_training = "D:/Doutorado/Sanduiche/research/maxent-variables/2002-2011/"
 
     y_filen = "GFED4.1s_Burned_Fraction.nc"
+    #y_filen = "Area_burned_NAT.nc"
+    #y_filen = "Area_burned_NON2.nc"
+
+    #x_filen_list=["trees.nc", "pr_mean.nc", "consec_dry_mean.nc", 
+                  #"lightn.nc", "popDens.nc",
+                  #"crop.nc", "pas.nc", 
+                  #"humid.nc", "csoil.nc", "tas_max.nc",
+                  #"totalVeg.nc"]
     
 
     x_filen_list=["trees.nc", "pr_mean.nc", "consec_dry_mean.nc", 
@@ -363,8 +375,15 @@ if __name__=="__main__":
                   "tas_max.nc",
                   "totalVeg.nc", "MPA.nc"]
 
+    x_filen_list=["consec_dry_mean.nc", "Savanna.nc", "cveg.nc", "rhumid.nc",
+                  "lightn.nc", "popDens.nc", "Forest.nc", "precip.nc",
+                  "crop.nc", "pas.nc", "Grassland.nc",
+                  "tas_max.nc", "tas_mean.nc",
+                  "totalVeg.nc", "vpd.nc", "csoil.nc"]
 
-    grab_old_trace = True # set to True till you get the code running. Then set to False when you start adding in new response curves
+
+
+    grab_old_trace = False # set to True till you get the code running. Then set to False when you start adding in new response curves
 
     cores = 2
     fraction_data_for_sample = 0.05
