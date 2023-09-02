@@ -161,7 +161,8 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '',
                          dir_outputs = '', model_title = '', filename_out = '',
                          subset_function = None, subset_function_args = None,
                          sample_for_plot = 1,
-                         run_evaluation = False, run_projection = False):
+                         run_evaluation = False, run_projection = False, grab_old_trace = False,
+                         *args, **kw):
 
     if not run_evaluation and not run_projection:
         return 
@@ -171,10 +172,9 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '',
                                                      x_normalise01 = True, scalers = scalers,
                                                      subset_function = subset_function, 
                                                      subset_function_args = subset_function_args)
-    if run_evaluation:
-        Obs = read_variable_from_netcdf(y_filen, dir,
-                                        subset_function = subset_function, 
-                                        subset_function_args = subset_function_args)
+    Obs = read_variable_from_netcdf(y_filen, dir,
+                                    subset_function = subset_function, 
+                                    subset_function_args = subset_function_args)
     
     def select_post_param(name): 
         out = trace.posterior[name].values
@@ -206,20 +206,10 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '',
     
     nits = len(trace.posterior.chain)*len(trace.posterior.draw)
     idx = range(0, nits, int(np.floor(nits/sample_for_plot)))
-                         
-    Obs = read_variable_from_netcdf(y_filen, dir,
-                                    subset_function = subset_function, 
-                                    subset_function_args = subset_function_args)
-
-    Y, X, lmask, scalers = read_all_data_from_netcdf(y_filen, x_filen_list, 
-                                                     add_1s_columne = True, dir = dir,
-                                                     x_normalise01 = True, scalers = scalers,
-                                                     subset_function = subset_function, 
-                                                     subset_function_args = subset_function_args)
-    x_copy = X[:, 1].copy()
-    
+         
     Sim = np.array(list(map(lambda id: sample_model(id, "control"), idx)))
     '''
+    x_copy = X[:, 1].copy()
     for col in range(X.shape[1]-1):
         x_copy = X[:, col].copy()  # Copy the values of the current column
         
@@ -252,10 +242,10 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '',
     '''
     
     if run_evaluation:
-        evaluate_model(filename_out, dir_outputs, Obs, Sim, lmask, levels, cmap)
+        evaluate_model(filename_out, dir_outputs, Obs, Sim, lmask, *args, **kw)
 
     if run_projection:
-        project_model(filename_out, dir_outputs, Sim, lmask, levels, cmap, eg_cube = Obs)
+        project_model(filename_out, dir_outputs, Sim, lmask, eg_cube = Obs, *args, **kw)
 
 
 def plot_model_maps(Sim, lmask, levels, cmap, Obs = None, eg_cube = None, Nrows = 1, Ncols = 2):
@@ -278,7 +268,7 @@ def evaluate_model(filename_out, dir_outputs, Obs, Sim, lmask, levels, cmap):
     ax = plt.subplot(2, 3, 4)
     BayesScatter(Obs.data.flatten()[lmask], qSim.T, 0.000001, 0.000001, ax)
     plot_model_maps(Sim, lmask, levels, cmap, Obs, Nrows = 2, Ncols = 3)
-
+    set_trace()
     Y = Sim.reshape([Sim.shape[0], Obs.shape[0], int(Sim.shape[1]/Obs.shape[0])])
     X = Obs.data.flatten()[lmask].reshape([Obs.shape[0], Y.shape[2]])
     Yi = Y[:,:,0]
@@ -371,7 +361,7 @@ if __name__=="__main__":
                   "lightn.nc", "popDens.nc",
                   "crop.nc", "pas.nc", 
                   "tas_max.nc",
-                  "totalVeg.nc"]
+                  "totalVeg.nc", "MPA.nc"]
 
 
     grab_old_trace = True # set to True till you get the code running. Then set to False when you start adding in new response curves
@@ -420,6 +410,8 @@ if __name__=="__main__":
                          dir_outputs, model_title, filename,
                          subset_function, subset_function_args,
                          sample_for_plot, 
-                         run_evaluation = run_evaluation, run_projection = run_projection)
+                         run_evaluation = run_evaluation, run_projection = run_projection,
+                         grab_old_trace = grab_old_trace,
+                         levels = levels, cmap = cmap)
     
     

@@ -100,5 +100,6 @@ if __name__=="__main__":
                          dir_outputs, model_title, filename,
                          subset_function, subset_function_args,
                          sample_for_plot, 
-                         run_evaluation = run_evaluation, run_projection = run_projection)
-    
+                         run_evaluation = run_evaluation, run_projection = run_projection,
+                         grab_old_trace = grab_old_trace,
+                         levels = levels, cmap = cmap) 
