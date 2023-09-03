@@ -215,7 +215,7 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '',
          
     Sim = np.array(list(map(lambda id: sample_model(id, "control"), idx)))
     
-    
+    '''
     x_copy = X[:, 1].copy()
     for col in range(X.shape[1]-1):
         x_copy = X[:, col].copy()  # Copy the values of the current column
@@ -242,7 +242,7 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '',
         X[:, col] = x_copy 
         
     plt.show()
-    
+    '''
     if run_evaluation:
         evaluate_model(filename_out, dir_outputs, Obs, Sim, lmask, *args, **kw)
 
