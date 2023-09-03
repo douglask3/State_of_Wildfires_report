@@ -200,50 +200,48 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '',
         file_sample = dir_sample + '/sample' + str(i) + '.nc'
         
         if os.path.isfile(file_sample) and grab_old_trace:
-            return pd.read_csv(file_sample).values.T[0]
-           
+            return iris.load_cube(file_sample)
+        print("Generating Sample:" + file_sample)
         param_in = [param[i] if param.ndim == 1 else param[i,:] for param in params]
         param_in = dict(zip(params_names, param_in))
         out = MaxEntFire(param_in).burnt_area(X)
-        pd.DataFrame(out).to_csv(file_sample, index = False)
+        out = insert_data_into_cube(out, Obs, lmask)
+        iris.save(out, file_sample)
+        
         return out
     
     nits = len(trace.posterior.chain)*len(trace.posterior.draw)
     idx = range(0, nits, int(np.floor(nits/sample_for_plot)))
          
     Sim = np.array(list(map(lambda id: sample_model(id, "control"), idx)))
-    '''
+    
+    
     x_copy = X[:, 1].copy()
     for col in range(X.shape[1]-1):
         x_copy = X[:, col].copy()  # Copy the values of the current column
         
         variable = x_filen_list[col].replace('.nc', '')
-        print(col)#
-        #Sim = np.array(list(map(sample_model, idx)))  # Sample model for the current column
+        print(col)
         
-        X[:, col] = np.mean( X[:, col])  # Set the current column to 0
+        X[:, col] = 0.0  # Set the current column to 0
         
-        Sim2 = np.array(list(map(lambda id: sample_model(id, variable + '_to_mean-'), 
-                                 idx)))
-#np.array(list(map(sample_model, idx)))  # Sample model for the modified column
-        #fcol = math.sqrt(X.shape[1])
-        #frw = X.shape[1]/fcol
+        Sim2 = np.array(list(map(lambda id: sample_model(id, variable + '_to_zero-'), 
+                                 idx))) # Sample model for the modified column
         
-        #ax = plt.subplot(frw,fcol, col + 1)
+        fcol = math.floor(math.sqrt(X.shape[1]))
+        frw = math.ceil(X.shape[1]/fcol)
         
-        ax = plt.subplot(6,4, col + 1)  # Select the corresponding subplot
-        #if col == 20:
-            #set_trace()
-        for rw in range(Sim.shape[0]):
+        ax = plt.subplot(frw,fcol, col + 1)  # Select the corresponding subplot
         
-            ax.plot(x_copy, (Sim[rw, :] / Sim2[rw, :]), '.')  # Plot the data for the current variable
+        def non_masked_data(cube):
+            return cube.data[cube.data.mask == False].data
+
+        for rw in range(len(Sim)):
+            ax.plot(x_copy, non_masked_data(Sim[rw]) / non_masked_data(Sim2[rw]), '.')  # Plot the data for the current variable
         
         X[:, col] = x_copy 
         
     plt.show()
-    
-    set_trace() 
-    '''
     
     if run_evaluation:
         evaluate_model(filename_out, dir_outputs, Obs, Sim, lmask, *args, **kw)
@@ -267,6 +265,7 @@ def plot_model_maps(Sim, lmask, levels, cmap, Obs = None, eg_cube = None, Nrows 
     
 
 def evaluate_model(filename_out, dir_outputs, Obs, Sim, lmask, levels, cmap):
+    set_trace()
     qSim = np.percentile(Sim, q = np.arange(5, 100, 5), axis = 0)
     
     ax = plt.subplot(2, 3, 4)
@@ -346,11 +345,11 @@ if __name__=="__main__":
     """
     """ optimization """
 
-    model_title = 'Example_model-non'
+    model_title = 'Example_model'
 
-    #dir_training = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
+    dir_training = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
     #dir_training = "/gws/nopw/j04/jules/mbarbosa/driving_and_obs_overlap/AllConFire_2000_2009/"
-    dir_training = "D:/Doutorado/Sanduiche/research/maxent-variables/2002-2011/"
+    #dir_training = "D:/Doutorado/Sanduiche/research/maxent-variables/2002-2011/"
 
     y_filen = "GFED4.1s_Burned_Fraction.nc"
     #y_filen = "Area_burned_NAT.nc"
@@ -369,21 +368,21 @@ if __name__=="__main__":
                   "humid.nc", "csoil.nc", "tas_max.nc",
                   "totalVeg.nc"]
     
-    x_filen_list=["trees.nc", "consec_dry_mean.nc", 
-                  "lightn.nc", "popDens.nc",
-                  "crop.nc", "pas.nc", 
-                  "tas_max.nc",
-                  "totalVeg.nc", "MPA.nc"]
+    #x_filen_list=["trees.nc", "consec_dry_mean.nc", 
+    #              "lightn.nc", "popDens.nc",
+    #              "crop.nc", "pas.nc", 
+    #              "tas_max.nc",
+    #              "totalVeg.nc", "MPA.nc"]
 
-    x_filen_list=["consec_dry_mean.nc", "Savanna.nc", "cveg.nc", "rhumid.nc",
-                  "lightn.nc", "popDens.nc", "Forest.nc", "precip.nc",
-                  "crop.nc", "pas.nc", "Grassland.nc",
-                  "tas_max.nc", "tas_mean.nc",
-                  "totalVeg.nc", "vpd.nc", "csoil.nc"]
+    #x_filen_list=["consec_dry_mean.nc", "Savanna.nc", "cveg.nc", "rhumid.nc",
+    #              "lightn.nc", "popDens.nc", "Forest.nc", "precip.nc",
+    #              "crop.nc", "pas.nc", "Grassland.nc",
+    #              "tas_max.nc", "tas_mean.nc",
+    #              "totalVeg.nc", "vpd.nc", "csoil.nc"]
 
 
 
-    grab_old_trace = False # set to True till you get the code running. Then set to False when you start adding in new response curves
+    grab_old_trace = True # set to True till you get the code running. Then set to False when you start adding in new response curves
 
     cores = 2
     fraction_data_for_sample = 0.05
