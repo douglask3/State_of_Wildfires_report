@@ -120,18 +120,37 @@ def train_MaxEnt_model(y_filen, x_filen_list, dir = '', filename_out = '',
                        dir_outputs = '',
                        frac_random_sample = 1.0,
                        subset_function = None, subset_function_args = None,
-                       niterations = 100, cores = 4, model_title = '', grab_old_trace = False):
-    '''
-	out_dir --string of path to output location. This is where the traces netcdf file 
-                will be saved.
-        
-	filename_out -- string of the start of the traces output name. Detault is blank. 
+                       niterations = 100, cores = 4, model_title = 'no_name', 
+                       grab_old_trace = False):
+    ''' Opens up traning data and trains and saves Bayesian Inference optimization of model. 
+        see 'fit_MaxEnt_probs_to_data' for details how.
+    Arguments:
+	y_filen -- filename of dependant variable (i.e burnt area)
+        x_filen_list -- filanames of independant variables
+            (ie bioclimate, landscape metrics etc)
+        filename_out -- string of the start of the traces output name. Detault is blank. 
 		Some metadata will be saved in the filename, so even blank will 
                 save a file.
+        dir_outputs --string of path to output location. This is where the traces netcdf file 
+                will be saved.
+        fraction_data_for_sample -- fraction of gridcells used for optimization
+	subset_function -- a list of constrain function useful for constraining and resticting 
+                data to spatial locations and time periods/months. Default is not to 
+                constrain (i.e "None" for no functions")
+        subset_function_args -- list of arguements that feed into subset_function
+        niterations -- number of iterations or samples )after warm-up) in optimixation for each
+                chain. Equilivent to number of ensemble members.
+        cores - how many chains to start (confusiong name, I know).
+                When running on slurm, also number of cores
+        model_title - title of model run. A str default to 'no_name'. Used to initially to name 
+                the dir everythings stored in
 	grab_old_trace -- Boolean. If True, and a filename starting with 'filename' and 
                 containing some of the same setting (saved in filename) exists,  it will open 
                 and return this rather than run a new one. Not all settings are saved for 
                 identifiation, so if in doubt, set to 'False'.
+    Returns:
+        pymc traces, returned and saved to [out_dir]/[filneame]-[metadata].nc and the scalers
+        used on indeptanant data to normalise it, useful for predicting model
     '''
 
     dir_outputs = combine_path_and_make_dir(dir_outputs, model_title)
@@ -168,9 +187,43 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '',
                          run_evaluation = False, run_projection = False, grab_old_trace = False,
                          *args, **kw):
 
+    """ Runs prediction and evalutation of the sampled model based on previously run trace.
+    Arguments:
+        trace - pymc traces nc file, probably from a 'train_MaxEnt_model' run
+	y_filen -- filename of dependant variable (i.e burnt area)
+        x_filen_list -- filanames of independant variables
+	scalers -- the scalers used during the generation of the trace file that scales 
+            x data between 0 and 1 (not that it might not scale the opened variables 
+            here between 0 and 1 as different data maybe selected for evaluation)
+        dir -- dir y_filen and  x_filen_list are stored in. default it current dir
+        dir_outputs -- directiory where all outputs are stored. String
+        model_title - title of model run. A str default to 'no_name'. Used to initially to name 
+                the dir everythings stored in.
+        filename_out -- string of the start of the traces output name. Detault is blank. 
+		Some metadata will be saved in the filename, so even blank will 
+                save a file.
+        subset_function -- a list of constrain function useful for constraining and resticting 
+                data to spatial locations and time periods/months. Default is not to 
+                constrain (i.e "None" for no functions")
+        subset_function_args -- list of arguements that feed into subset_function
+        sample_for_plot -- fraction of gridcells used for optimization
+        run_evaluation -- Logical, default False - run the standard evalaution 
+                plots/metrics or not
+        run_projection -- Logical, default False - run projections
+        grab_old_trace -- Boolean. If True, and a filename starting with 'filename' and 
+                containing some of the same setting (saved in filename) exists,  it will open 
+                and return this rather than run new samples. Not all settings are saved for 
+                identifiation, so if in doubt, set to 'False'.
+	*args, **kw -- arguemts passed to 'evaluate_model' and 'project_model'
+    
+    Returns:
+        look in dir_outputs + model_title, and you'll see figure and tables from evaluation, 
+        projection, reponse curevs, jacknifes etc (not all implmenented yet)
+    """
     if not run_evaluation and not run_projection:
         return 
 
+    
     Y, X, lmask, scalers = read_all_data_from_netcdf(y_filen, x_filen_list, 
                                                      add_1s_columne = True, dir = dir,
                                                      x_normalise01 = True, scalers = scalers,
