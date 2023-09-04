@@ -86,41 +86,11 @@ class MaxEntFire(object):
         
         return BA
     
-    def burnt_area_uninflated(self, X):
+    def burnt_area_spread(self, X):
         BA = self.burnt_area(X)
         if self.q == 0.0: return BA
         return BA / (1 + self.q * (1 - BA))
      
-    def hinge_1(x0, y0, a, b):
-        """ fits a hinge curve function
-        x -- numpy array 
-        -- hinge point
-        """
-    
-        if np.all(x1 > x0):
-            y = a*x1 + b   
-        else:
-            y = y0
-    
-        return y
-   
-
-    def hinge_2(self, x, a1, b1, a2, b2):
-  
-        x0 = (b2-b1)/(a1-a2)
-        print("x0 = ", x0)
-        y=[]
-    
-        for xi in x:
-            if xi > x0:
-                yi = a2*xi + b2   
-            else:
-                yi = a1*xi + b1
-    
-            y.append(yi)
-        return y
-
-#
     def power_response_curve(self, X):  
         return X**self.pow_power
 
@@ -129,8 +99,4 @@ class MaxEntFire(object):
 
     def linear_combined_response_curve(self, X):
         return np.log(((np.exp(X - self.comb_X0)) ** self.comb_p) + 1)
-    #def Marias_response_curve (self, X):
-    #
-    #
-
 

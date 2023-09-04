@@ -1,8 +1,19 @@
 import matplotlib.pyplot as plt    
 import numpy as np
+from pdb import set_trace
+import iris
 
-def BayesScatter(X, Y, logXmin = None, logYmin = None, ax = None):
+def BayesScatter(X, Y, lmask = None, logXmin = None, logYmin = None, ax = None):
+    pc_size = 10
+    percentiles = np.arange(pc_size, 100, pc_size)    
+    if lmask is not None:
+        X = X.data.flatten()[lmask]
+        Y = Y.collapsed('realization', iris.analysis.PERCENTILE, percent = percentiles)
+        Y = np.array([Y[i].data.flatten()[lmask] for i in range(Y.shape[0])]).T
+    else:
+        Y = np.percentile(Y, q = percentiles, axis = 0).T
     
+
     if logXmin is not None: X = logXmin + X
     if logYmin is not None: Y = logYmin + Y
     if ax is None: fig, ax = plt.subplots()
