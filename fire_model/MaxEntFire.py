@@ -86,7 +86,7 @@ class MaxEntFire(object):
         
         return BA
     
-    def burnt_area_uninflated(self, X):
+    def burnt_area_spread(self, X):
         BA = self.burnt_area(X)
         if self.q == 0.0: return BA
         return BA / (1 + self.q * (1 - BA))

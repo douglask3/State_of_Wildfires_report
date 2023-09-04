@@ -98,7 +98,7 @@ def fit_MaxEnt_probs_to_data(Y, X, niterations, *arg, **kw):
         
         ## run model
         model = MaxEntFire(priors, inference = True)
-        prediction = model.burnt_area_uninflated(X)  
+        prediction = model.burnt_area_spread(X)  
         
         ## define error measurement
         error = pm.DensityDist("error", prediction, logp = MaxEnt_on_prob, observed = Y)
@@ -320,19 +320,21 @@ def plot_model_maps(Sim, lmask, levels, cmap, Obs = None, eg_cube = None, Nrows 
     if Obs is not None: plot_map(Obs, "Observtations", 1)
     plot_map(Sim[0,:], "Simulation - 10%", Ncols - 1)
     plot_map(Sim[1,:], "Simulation - 90%", Ncols)
-
     
 
 def evaluate_model(filename_out, dir_outputs, Obs, Sim, lmask, levels, cmap):    
     ax = plt.subplot(2, 3, 4)
     BayesScatter(Obs, Sim, lmask,  0.000001, 0.000001, ax)
     plot_model_maps(Sim, lmask, levels, cmap, Obs, Nrows = 2, Ncols = 3)
-    set_trace()
-    Y = Sim.reshape([Sim.shape[0], Obs.shape[0], int(Sim.shape[1]/Obs.shape[0])])
-    X = Obs.data.flatten()[lmask].reshape([Obs.shape[0], Y.shape[2]])
-    Yi = Y[:,:,0]
-    Xi = X[:,0]
-    #set_trace()
+    
+    
+    X = Obs.data.flatten()[lmask]
+    ncells = int(len(X)/Obs.shape[0])
+    X = X.reshape([Obs.shape[0], ncells])
+    Y = [Sim[i].data.flatten()[lmask].reshape([Obs.shape[0],ncells]) \
+         for i in range(Sim.shape[0])]
+    Y = np.array(Y)
+   
     pos = np.mean(X[np.newaxis, :, :] > Y, axis = 0)
     _, p_value = wilcoxon(pos - 0.5, axis = 0)
     apos = np.mean(pos, axis = 0)
@@ -401,7 +403,7 @@ if __name__=="__main__":
     """
     """ optimization """
 
-    model_title = 'Example_model'
+    model_title = 'Example_model'#-q
 
     dir_training = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
     #dir_training = "/gws/nopw/j04/jules/mbarbosa/driving_and_obs_overlap/AllConFire_2000_2009/"
