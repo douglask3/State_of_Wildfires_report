@@ -75,12 +75,12 @@ def fit_MaxEnt_probs_to_data(Y, X, niterations, *arg, **kw):
         ## set priors
         nvars = X.shape[1]
         priors = {#"q":     pm.LogNormal('q', mu = 0.0, sigma = 1.0),
-                  "lin_betas": pm.Normal('lin_betas', mu = 0, sigma = 1, shape = nvars),
-                  "pow_betas": pm.Normal('pow_betas', mu = 0, sigma = 1, shape = nvars),
+                  "lin_betas": pm.Normal('lin_betas', mu = 0, sigma = 100, shape = nvars),
+                  "pow_betas": pm.Normal('pow_betas', mu = 0, sigma = 100, shape = nvars),
                   "pow_power": pm.Normal('pow_power', mu = 0, sigma = 1, shape = nvars),
-                  "x2s_betas": pm.Normal('x2s_betas', mu = 0, sigma = 1, shape = nvars),
+                  "x2s_betas": pm.Normal('x2s_betas', mu = 0, sigma = 100, shape = nvars),
                   "x2s_X0"   : pm.Normal('x2s_X0'   , mu = 0, sigma = 1, shape = nvars),
-                  "comb_betas": pm.Normal('comb_betas', mu = 0, sigma = 1, shape = nvars),
+                  "comb_betas": pm.Normal('comb_betas', mu = 0, sigma = 100, shape = nvars),
                   "comb_X0": pm.Normal('comb_X0', mu = 0.5, sigma = 1, shape = nvars),
                   "comb_p": pm.Normal('comb_p', mu = 0, sigma = 1 , shape = nvars)
                   
@@ -206,27 +206,32 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '',
         param_in = dict(zip(params_names, param_in))
         out = MaxEntFire(param_in).burnt_area(X)
         out = insert_data_into_cube(out, Obs, lmask)
+        coord = iris.coords.DimCoord(i, "realization")
+        out.add_aux_coord(coord)
         iris.save(out, file_sample)
         
         return out
     
     nits = len(trace.posterior.chain)*len(trace.posterior.draw)
     idx = range(0, nits, int(np.floor(nits/sample_for_plot)))
-         
-    Sim = np.array(list(map(lambda id: sample_model(id, "control"), idx)))
     
+    def runSim(id_name):  
+        out = np.array(list(map(lambda id: sample_model(id, id_name), idx)))
+        return iris.cube.CubeList(out).merge_cube()
+    
+    Sim = runSim("control")
     '''
-    x_copy = X[:, 1].copy()
     for col in range(X.shape[1]-1):
         x_copy = X[:, col].copy()  # Copy the values of the current column
         
         variable = x_filen_list[col].replace('.nc', '')
         print(col)
-        
         X[:, col] = 0.0  # Set the current column to 0
+
+        Sim2 = runSim("_to_zero") 
         
-        Sim2 = np.array(list(map(lambda id: sample_model(id, variable + '_to_zero-'), 
-                                 idx))) # Sample model for the modified column
+        #Sim2 = np.array(list(map(lambda id: sample_model(id, variable + '_to_zero-'), 
+        #                         idx))) # Sample model for the modified column
         
         fcol = math.floor(math.sqrt(X.shape[1]))
         frw = math.ceil(X.shape[1]/fcol)
@@ -235,8 +240,8 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '',
         
         def non_masked_data(cube):
             return cube.data[cube.data.mask == False].data
-
-        for rw in range(len(Sim)):
+        
+        for rw in range(Sim.shape[0]):
             ax.plot(x_copy, non_masked_data(Sim[rw]) / non_masked_data(Sim2[rw]), '.')  # Plot the data for the current variable
         
         X[:, col] = x_copy 
@@ -251,7 +256,8 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '',
 
 
 def plot_model_maps(Sim, lmask, levels, cmap, Obs = None, eg_cube = None, Nrows = 1, Ncols = 2):
-    Sim = np.percentile(Sim, q = [10, 90], axis = 0)
+    Sim = Sim.collapsed('realization', iris.analysis.PERCENTILE, 
+                          percent=[10, 90])
 
     def plot_map(cube, plot_name, plot_n):
         plot_annual_mean(cube, levels, cmap, plot_name = plot_name, scale = 100*12, 
@@ -259,17 +265,14 @@ def plot_model_maps(Sim, lmask, levels, cmap, Obs = None, eg_cube = None, Nrows 
 
     if eg_cube is None: eg_cube = Obs
     if Obs is not None: plot_map(Obs, "Observtations", 1)
-    plot_map(insert_data_into_cube(Sim[0,:], eg_cube, lmask), "Simulation - 10%", Ncols - 1)
-    plot_map(insert_data_into_cube(Sim[1,:], eg_cube, lmask), "Simulation - 90%", Ncols)
+    plot_map(Sim[0,:], "Simulation - 10%", Ncols - 1)
+    plot_map(Sim[1,:], "Simulation - 90%", Ncols)
 
     
 
-def evaluate_model(filename_out, dir_outputs, Obs, Sim, lmask, levels, cmap):
-    set_trace()
-    qSim = np.percentile(Sim, q = np.arange(5, 100, 5), axis = 0)
-    
+def evaluate_model(filename_out, dir_outputs, Obs, Sim, lmask, levels, cmap):    
     ax = plt.subplot(2, 3, 4)
-    BayesScatter(Obs.data.flatten()[lmask], qSim.T, 0.000001, 0.000001, ax)
+    BayesScatter(Obs, Sim, lmask,  0.000001, 0.000001, ax)
     plot_model_maps(Sim, lmask, levels, cmap, Obs, Nrows = 2, Ncols = 3)
     set_trace()
     Y = Sim.reshape([Sim.shape[0], Obs.shape[0], int(Sim.shape[1]/Obs.shape[0])])
