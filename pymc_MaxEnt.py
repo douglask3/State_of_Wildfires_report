@@ -220,40 +220,47 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '',
                                                      x_normalise01 = True, scalers = scalers,
                                                      subset_function = subset_function, 
                                                      subset_function_args = subset_function_args)
-    x_copy = X[:, 1].copy()
     
     Sim = np.array(list(map(lambda id: sample_model(id, "control"), idx)))
-    '''
+    
+    #comentar aqui se não quiser rodas as curvas de resposta
     for col in range(X.shape[1]-1):
         x_copy = X[:, col].copy()  # Copy the values of the current column
         
         variable = x_filen_list[col].replace('.nc', '')
-        print(col)#
-        #Sim = np.array(list(map(sample_model, idx)))  # Sample model for the current column
+        print(col)
         
-        X[:, col] = np.mean( X[:, col])  # Set the current column to 0
+        #X[:, col] = np.mean( X[:, col])  # Set the current column to 0 - change here
+        X[:, col] = 0
+        Sim2 = np.array(list(map(lambda id: sample_model(id, variable + '_to_zero-'), 
+                                   idx)))
+        #Sim2 = np.array(list(map(sample_model, idx)))  # Sample model for the modified column
         
-        Sim2 = np.array(list(map(lambda id: sample_model(id, variable + '_to_mean-'), 
-                                 idx)))
-#np.array(list(map(sample_model, idx)))  # Sample model for the modified column
-        #fcol = math.sqrt(X.shape[1])
-        #frw = X.shape[1]/fcol
+        fcol = math.sqrt(X.shape[1])
+        if fcol % 1 != 0:  # Check if fcol is a decimal number
+            fcol = math.floor(fcol) #round down 
         
-        #ax = plt.subplot(frw,fcol, col + 1)
+        frw = X.shape[1]/fcol
+        if frw % 1 != 0:  # Check if frw is a decimal number
+            frw = math.ceil(frw) #round up
+            
         
-        ax = plt.subplot(6,4, col + 1)  # Select the corresponding subplot
+        ax = plt.subplot(frw,fcol, col + 1)
+        
+        #ax = plt.subplot(6,4, col + 1)  # Select the corresponding subplot
         #if col == 20:
             #set_trace()
         for rw in range(Sim.shape[0]):
         
-            ax.plot(x_copy, (Sim[rw, :] / Sim2[rw, :]), '.')  # Plot the data for the current variable
+            ax.plot(x_copy, (Sim[rw, :] / Sim2[rw, :]), '.', color='darkred', markersize = 0.5, linewidth=0.5)  # Plot the data for the current variable
         
         X[:, col] = x_copy 
         
-    plt.show()
+    fig_dir = combine_path_and_make_dir(dir_outputs, '/figs/')   
+    plt.savefig(fig_dir + '-response-curves.png')
+    #plt.show()
+    #set_trace() 
     
-    set_trace() 
-    '''
     
     if run_evaluation:
         evaluate_model(filename_out, dir_outputs, Obs, Sim, lmask, levels, cmap)
@@ -356,15 +363,15 @@ if __name__=="__main__":
     """
     """ optimization """
 
-    model_title = 'Example_model-non'
+    model_title = 'Example_model-non_new'
 
     #dir_training = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
     #dir_training = "/gws/nopw/j04/jules/mbarbosa/driving_and_obs_overlap/AllConFire_2000_2009/"
     dir_training = "D:/Doutorado/Sanduiche/research/maxent-variables/2002-2011/"
 
-    y_filen = "GFED4.1s_Burned_Fraction.nc"
+    #y_filen = "GFED4.1s_Burned_Fraction.nc"
     #y_filen = "Area_burned_NAT.nc"
-    #y_filen = "Area_burned_NON2.nc"
+    y_filen = "Area_burned_NON3.nc"
 
     #x_filen_list=["trees.nc", "pr_mean.nc", "consec_dry_mean.nc", 
                   #"lightn.nc", "popDens.nc",
@@ -372,14 +379,14 @@ if __name__=="__main__":
                   #"humid.nc", "csoil.nc", "tas_max.nc",
                   #"totalVeg.nc"]
     
-    x_filen_list=["consec_dry_mean.nc", "Savanna.nc", "cveg.nc", "rhumid.nc",
-                  "lightn.nc", "popDens.nc", "Forest.nc", "precip.nc",
-                  "crop.nc", "pas.nc", "Grassland.nc",
-                  "tas_max.nc", "tas_mean.nc",
+    x_filen_list=["consec_dry_mean.nc", "savanna2.nc", "cveg.nc", "rhumid.nc",
+                  "lightn.nc", "popDens.nc", "forest2.nc", "precip.nc",
+                  "crop.nc", "pas.nc", "grassland2.nc", "ed.nc", "np.nc",
+                  "tas_max.nc", "tas_mean.nc", "tca.nc", "te.nc", "mpa.nc",
                   "totalVeg.nc", "vpd.nc", "csoil.nc"]
 
 
-    grab_old_trace = False # set to True till you get the code running. Then set to False when you start adding in new response curves
+    grab_old_trace = True # set to True till you get the code running. Then set to False when you start adding in new response curves
 
     cores = 2
     fraction_data_for_sample = 0.05
