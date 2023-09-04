@@ -349,7 +349,7 @@ def evaluate_model(filename_out, dir_outputs, Obs, Sim, lmask, levels, cmap):
     plot_annual_mean(p_value_cube, np.array([0, 0.01, 0.05, 0.1, 0.5, 1.0]), 'copper',   
                      plot_name = "mean bias p-value",   Nrows = 2, Ncols = 3, plot_n = 6)
     
-    plt.gcf().set_size_inches(8, 8)
+    plt.gcf().set_size_inches(12, 8)
     
     fig_dir = combine_path_and_make_dir(dir_outputs, '/figs/')
 
