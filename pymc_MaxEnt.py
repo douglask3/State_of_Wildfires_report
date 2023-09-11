@@ -279,44 +279,11 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '',
         
         variable = x_filen_list[col].replace('.nc', '')
         print(col)
-'''        
-        #X[:, col] = np.mean( X[:, col])  # Set the current column to 0 - change here
-        X[:, col] = 0
-        Sim2 = np.array(list(map(lambda id: sample_model(id, variable + '_to_zero-'), 
-                                   idx)))
-        #Sim2 = np.array(list(map(sample_model, idx)))  # Sample model for the modified column
         
-        fcol = math.sqrt(X.shape[1])
-        if fcol % 1 != 0:  # Check if fcol is a decimal number
-            fcol = math.floor(fcol) #round down 
-        
-        frw = X.shape[1]/fcol
-        if frw % 1 != 0:  # Check if frw is a decimal number
-            frw = math.ceil(frw) #round up
-            
-        
-        ax = plt.subplot(frw,fcol, col + 1)
-        
-        #ax = plt.subplot(6,4, col + 1)  # Select the corresponding subplot
-        #if col == 20:
-            #set_trace()
-        for rw in range(Sim.shape[0]):
-        
-            ax.plot(x_copy, (Sim[rw, :] / Sim2[rw, :]), '.', color='darkred', markersize = 0.5, linewidth=0.5)  # Plot the data for the current variable
-        
-        X[:, col] = x_copy 
-        
-    fig_dir = combine_path_and_make_dir(dir_outputs, '/figs/')   
-    plt.savefig(fig_dir + '-response-curves.png')
-    #plt.show()
-    #set_trace() 
-'''
+    
         X[:, col] = 0.0  # Set the current column to 0
 
-        Sim2 = runSim("_to_zero") 
-        
-        #Sim2 = np.array(list(map(lambda id: sample_model(id, variable + '_to_zero-'), 
-        #                         idx))) # Sample model for the modified column
+        Sim2 = runSim("_to_zero")      
         
         fcol = math.floor(math.sqrt(X.shape[1]))
         frw = math.ceil(X.shape[1]/fcol)
@@ -325,9 +292,9 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '',
         
         def non_masked_data(cube):
             return cube.data[cube.data.mask == False].data
-        
+        set_trace()
         for rw in range(Sim.shape[0]):
-            ax.plot(x_copy, non_masked_data(Sim[rw]) / non_masked_data(Sim2[rw]), '.')  # Plot the data for the current variable
+            ax.plot(x_copy, non_masked_data(Sim[rw]) - non_masked_data(Sim2[rw]), '.', markersize = 0.5, linewidth=0.5)  # Plot the data for the current variable
         
         X[:, col] = x_copy 
         
@@ -335,6 +302,7 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '',
     
     plt.savefig(fig_dir + '-response-curves.png')    
     plt.show()
+    set_trace()
 
     if run_evaluation:
         evaluate_model(filename_out, dir_outputs, Obs, Sim, lmask, *args, **kw)
@@ -352,7 +320,7 @@ def plot_model_maps(Sim, lmask, levels, cmap, Obs = None, eg_cube = None, Nrows 
                      Nrows = Nrows, Ncols = Ncols, plot_n = plot_n)
 
     if eg_cube is None: eg_cube = Obs
-    if Obs is not None: plot_map(Obs, "Observtations", 1)
+    if Obs is not None: plot_map(Obs, "Observations", 1)
     plot_map(Sim[0,:], "Simulation - 10%", Ncols - 1)
     plot_map(Sim[1,:], "Simulation - 90%", Ncols)
     
@@ -438,16 +406,16 @@ if __name__=="__main__":
     """
     """ optimization """
 
-    model_title = 'Example_model-non_new'
+    model_title = 'Example_model-gfed_new2'
 
 
-    dir_training = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
+    #dir_training = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
     #dir_training = "/gws/nopw/j04/jules/mbarbosa/driving_and_obs_overlap/AllConFire_2000_2009/"
-    #dir_training = "D:/Doutorado/Sanduiche/research/maxent-variables/2002-2011/"
+    dir_training = "D:/Doutorado/Sanduiche/research/maxent-variables/2002-2011/"
 
-    #y_filen = "GFED4.1s_Burned_Fraction.nc"
+    y_filen = "GFED4.1s_Burned_Fraction.nc"
     #y_filen = "Area_burned_NAT.nc"
-    y_filen = "Area_burned_NON3.nc"
+    #y_filen = "Area_burned_NON3.nc"
 
     #x_filen_list=["trees.nc", "pr_mean.nc", "consec_dry_mean.nc", 
                   #"lightn.nc", "popDens.nc",
