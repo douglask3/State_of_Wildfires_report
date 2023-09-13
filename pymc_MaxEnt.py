@@ -74,7 +74,7 @@ def fit_MaxEnt_probs_to_data(Y, X, niterations, *arg, **kw):
     with pm.Model() as max_ent_model:
         ## set priors
         nvars = X.shape[1]
-        priors = {#"q":     pm.LogNormal('q', mu = 0.0, sigma = 1.0),
+        priors = {"q":     pm.LogNormal('q', mu = 0.0, sigma = 1.0),
                   "lin_betas": pm.Normal('lin_betas', mu = 0, sigma = 100, shape = nvars),
                   "pow_betas": pm.Normal('pow_betas', mu = 0, sigma = 100, shape = nvars),
                   "pow_power": pm.Normal('pow_power', mu = 0, sigma = 1, shape = nvars),
@@ -403,7 +403,7 @@ if __name__=="__main__":
     """
     """ optimization """
 
-    model_title = 'Example_model'#-q
+    model_title = 'Example_model-q'
 
     dir_training = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
     #dir_training = "/gws/nopw/j04/jules/mbarbosa/driving_and_obs_overlap/AllConFire_2000_2009/"
