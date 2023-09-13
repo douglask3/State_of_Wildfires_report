@@ -127,7 +127,6 @@ def read_all_data_from_netcdf(y_filename, x_filename_list, add_1s_columne = Fals
     if add_1s_columne: 
         X = np.column_stack((X, np.ones(len(X)))) # add a column of ones to X 
     
-    
     if check_mask:
         cells_we_want = np.array([np.all(rw > -9e9) and np.all(rw < 9e9) for rw in np.column_stack((X, Y))])
         Y = Y[cells_we_want]
