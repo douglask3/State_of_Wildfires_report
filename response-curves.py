@@ -74,7 +74,7 @@ def fit_MaxEnt_probs_to_data(Y, X, niterations, *arg, **kw):
     with pm.Model() as max_ent_model:
         ## set priors
         nvars = X.shape[1]
-        priors = {"q":     pm.LogNormal('q', mu = 0.0, sigma = 1.0),
+        priors = {#"q":     pm.LogNormal('q', mu = 0.0, sigma = 1.0),
                   "lin_betas": pm.Normal('lin_betas', mu = 0, sigma = 100, shape = nvars),
                   "pow_betas": pm.Normal('pow_betas', mu = 0, sigma = 100, shape = nvars),
                   "pow_power": pm.Normal('pow_power', mu = 0, sigma = 1, shape = nvars),
@@ -268,44 +268,40 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '',
     nits = len(trace.posterior.chain)*len(trace.posterior.draw)
     idx = range(0, nits, int(np.floor(nits/sample_for_plot)))
     
-    def runSim(id_name):  
-        out = np.array(list(map(lambda id: sample_model(id, id_name), idx)))
-        return iris.cube.CubeList(out).merge_cube()
-    
-    Sim = runSim("control")
+    Sim = np.array(list(map(sample_model, idx)))
     
     for col in range(X.shape[1]-1):
         x_copy = X[:, col].copy()  # Copy the values of the current column
-        
-        variable = x_filen_list[col].replace('.nc', '')
+       
         print(col)
         
-    
-        X[:, col] = 0.0  # Set the current column to 0
+        #aqui é o antigo código       
+        #X[:, col] = np.mean( X[:, col])  # Set the current column to 0 - change here
+        X[:, col] = 0.0
 
-        Sim2 = runSim("_to_zero")      
+        Sim2 = np.array(list(map(sample_model, idx)))  # Sample model for the modified column
         
         fcol = math.floor(math.sqrt(X.shape[1]))
         frw = math.ceil(X.shape[1]/fcol)
+            
         
-        ax = plt.subplot(frw,fcol, col + 1)  # Select the corresponding subplot
+        ax = plt.subplot(frw,fcol, col + 1)
         
-        def non_masked_data(cube):
-            return cube.data[cube.data.mask == False].data
-        
+        #ax = plt.subplot(6,4, col + 1)  # Select the corresponding subplot
+        #if col == 20:
+            #set_trace()
         for rw in range(Sim.shape[0]):
-            try:
-                ax.plot(x_copy, non_masked_data(Sim[rw]) - non_masked_data(Sim2[rw]), '.', markersize = 0.5, linewidth=0.5)  # Plot the data for the current variable
-            except:
-                set_trace()
+        
+            ax.plot(x_copy, (Sim[rw, :] - Sim2[rw, :]), '.', color='darkred', markersize = 0.5, linewidth=0.5)  # Plot the data for the current variable
         
         X[:, col] = x_copy 
         
-    fig_dir = combine_path_and_make_dir(dir_outputs, '/figs/')
-    
-    plt.savefig(fig_dir + '-response-curves.png')    
+    fig_dir = combine_path_and_make_dir(dir_outputs, '/figs/')   
+    plt.savefig(fig_dir + '-response-curves.png') 
     plt.show()
-    set_trace()
+    set_trace() #vai até aqui '''
+    
+        
 
     if run_evaluation:
         evaluate_model(filename_out, dir_outputs, Obs, Sim, lmask, *args, **kw)
@@ -409,57 +405,23 @@ if __name__=="__main__":
     """
     """ optimization """
 
-    person = 'Doug'
+    model_title = 'Example_model-gfed_new2'
 
 
-    if person == 'Maria':
-        model_title = 'Example_model-gfed_new2'
-        dir_training = "/gws/nopw/j04/jules/mbarbosa/driving_and_obs_overlap/AllConFire_2000_2009/"
-        dir_training = "D:/Doutorado/Sanduiche/research/maxent-variables/2002-2011/"
+    #dir_training = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
+    #dir_training = "/gws/nopw/j04/jules/mbarbosa/driving_and_obs_overlap/AllConFire_2000_2009/"
+    dir_training = "D:/Doutorado/Sanduiche/research/maxent-variables/2002-2011/"
 
-        y_filen = "GFED4.1s_Burned_Fraction.nc"
-        y_filen = "Area_burned_NAT.nc"
-        y_filen = "Area_burned_NON3.nc"
-        
-        x_filen_list=["consec_dry_mean.nc", "savanna2.nc", "cveg.nc", "rhumid.nc",
-                      "lightn.nc", "popDens.nc", "forest2.nc", "precip.nc",
-                      "crop.nc", "pas.nc", "grassland2.nc", "ed.nc", "np.nc",
-                      "tas_max.nc", "tas_mean.nc", "tca.nc", "te.nc", "mpa.nc",
-                      "totalVeg.nc", "vpd.nc", "csoil.nc"]
-
-    else:
-        model_title = 'Example_model-q'
-
-        dir_training = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
-        y_filen = "GFED4.1s_Burned_Fraction.nc"
-
-        x_filen_list=["trees.nc", "pr_mean.nc", "consec_dry_mean.nc", 
-                  "lightn.nc", "popDens.nc",
-                  "crop.nc", "pas.nc", 
-                  "humid.nc", "csoil.nc", "tas_max.nc",
-                  "totalVeg.nc"]
+    y_filen = "GFED4.1s_Burned_Fraction.nc"
+    #y_filen = "Area_burned_NAT.nc"
+    #y_filen = "Area_burned_NON3.nc"
     
+    x_filen_list=["consec_dry_mean.nc", "savanna2.nc", "cveg.nc", "rhumid.nc",
+                  "lightn.nc", "popDens.nc", "forest2.nc", "precip.nc",
+                  "crop.nc", "pas.nc", "grassland2.nc", "ed.nc", "np.nc",
+                  "tas_max.nc", "tas_mean.nc", "tca.nc", "te.nc", "mpa.nc",
+                  "totalVeg.nc", "vpd.nc", "csoil.nc"]
 
-    #x_filen_list=["trees.nc", "pr_mean.nc", "consec_dry_mean.nc", 
-                  #"lightn.nc", "popDens.nc",
-                  #"crop.nc", "pas.nc", 
-                  #"humid.nc", "csoil.nc", "tas_max.nc",
-                  #"totalVeg.nc"]
-    
-   
-
-    
-    #x_filen_list=["trees.nc", "consec_dry_mean.nc", 
-    #              "lightn.nc", "popDens.nc",
-    #              "crop.nc", "pas.nc", 
-    #              "tas_max.nc",
-    #              "totalVeg.nc", "MPA.nc"]
-
-    #x_filen_list=["consec_dry_mean.nc", "Savanna.nc", "cveg.nc", "rhumid.nc",
-    #              "lightn.nc", "popDens.nc", "Forest.nc", "precip.nc",
-    #              "crop.nc", "pas.nc", "Grassland.nc",
-    #              "tas_max.nc", "tas_mean.nc",
-    #              "totalVeg.nc", "vpd.nc", "csoil.nc"]
 
 
     grab_old_trace = True # set to True till you get the code running. Then set to False when you start adding in new response curves
