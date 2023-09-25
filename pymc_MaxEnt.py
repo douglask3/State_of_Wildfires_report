@@ -80,7 +80,7 @@ def fit_MaxEnt_probs_to_data(Y, X, niterations, *arg, **kw):
     with pm.Model() as max_ent_model:
         ## set priors
         nvars = X.shape[1]
-        priors = {#"q":     pm.LogNormal('q', mu = 0.0, sigma = 1.0),
+        priors = {"q":     pm.LogNormal('q', mu = 0.0, sigma = 1.0),
                   "lin_betas": pm.Normal('lin_betas', mu = 0, sigma = 100, shape = nvars),
                   "pow_betas": pm.Normal('pow_betas', mu = 0, sigma = 100, shape = nvars),
                   "pow_power": pm.Normal('pow_power', mu = 0, sigma = 1, shape = nvars),
@@ -420,17 +420,35 @@ if __name__=="__main__":
     """
     """ optimization """
 
-    model_title = 'Example_model-gfed_new20'
+    person = 'Doug'
 
+    if person == 'Maria':
+        model_title = 'Example_model-gfed_new2'
+        dir_training = "/gws/nopw/j04/jules/mbarbosa/driving_and_obs_overlap/AllConFire_2000_2009/"
+        dir_training = "D:/Doutorado/Sanduiche/research/maxent-variables/2002-2011/"
 
-    #dir_training = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
-    #dir_training = "/gws/nopw/j04/jules/mbarbosa/driving_and_obs_overlap/AllConFire_2000_2009/"
-    dir_training = "D:/Doutorado/Sanduiche/research/maxent-variables/2002-2011/"
+        y_filen = "GFED4.1s_Burned_Fraction.nc"
+        y_filen = "Area_burned_NAT.nc"
+        y_filen = "Area_burned_NON3.nc"
+        
+        x_filen_list=["consec_dry_mean.nc", "savanna2.nc", "cveg.nc", "rhumid.nc",
+                      "lightn.nc", "popDens.nc", "forest2.nc", "precip.nc",
+                      "crop.nc", "pas.nc", "grassland2.nc", "ed.nc", "np.nc",
+                      "tas_max.nc", "tas_mean.nc", "tca.nc", "te.nc", "mpa.nc",
+                      "totalVeg.nc", "vpd.nc", "csoil.nc"]
 
-    y_filen = "GFED4.1s_Burned_Fraction.nc"
-    #area_file = "brasil_nat.nc"
-    #y_filen = "Area_burned_NAT.nc"
-    #y_filen = "Area_burned_NON3.nc"
+    else:
+        model_title = 'Example_model-q'
+
+        dir_training = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
+        y_filen = "GFED4.1s_Burned_Fraction.nc"
+
+        x_filen_list=["trees.nc", "pr_mean.nc", "consec_dry_mean.nc", 
+                  "lightn.nc", "popDens.nc",
+                  "crop.nc", "pas.nc", 
+                  "humid.nc", "csoil.nc", "tas_max.nc",
+                  "totalVeg.nc"]
+    
 
     #x_filen_list=["trees.nc", "pr_mean.nc", "consec_dry_mean.nc", 
                   #"lightn.nc", "popDens.nc",
@@ -438,11 +456,7 @@ if __name__=="__main__":
                   #"humid.nc", "csoil.nc", "tas_max.nc",
                   #"totalVeg.nc"]
     
-    x_filen_list=["consec_dry_mean.nc", "savanna2.nc", "cveg.nc", "rhumid.nc",
-                  "lightn.nc", "popDens.nc", "forest2.nc", "precip.nc",
-                  "crop.nc", "pas.nc", "grassland2.nc", "ed.nc", "np.nc",
-                  "tas_max.nc", "tas_mean.nc", "tca.nc", "te.nc", "mpa.nc",
-                  "totalVeg.nc", "vpd.nc", "csoil.nc"]
+   
 
     #"soilM.nc", "Wetland.nc" need to be added
 
