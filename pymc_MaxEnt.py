@@ -29,7 +29,7 @@ def combine_path_and_make_dir(path1, path2):
     if not os.path.exists(path): os.makedirs(path)
     return path
 
-def MaxEnt_on_prob(BA, fx):
+def MaxEnt_on_prob(BA, fx, CA = None):
     """calculates the log-transformed continuous logit likelihood for x given mu when x 
        and mu are probabilities between 0-1. 
        Works with tensor variables.   
@@ -38,12 +38,18 @@ def MaxEnt_on_prob(BA, fx):
 	mu -- mu in P(x|mu). tensor 1-d array
     Returns:
         1-d tensor array of liklihoods.
+        
+    CA -- Area for the cover type (cover area)
     """
     fx = tt.switch(
         tt.lt(fx, 0.0000000000000000001),
         0.0000000000000000001, fx)
-    return BA*tt.log(fx) + (1.0-BA)*tt.log((1-fx))   
-
+    
+    prob = BA*tt.log(fx) + (1.0-BA)*tt.log((1-fx))
+    
+    if CA is not None: 
+        prob =  BA*CA*tt.log(fx) + (1.0-BA)*CA*tt.log((1-fx)) 
+    return prob
 
 def fit_MaxEnt_probs_to_data(Y, X, niterations, *arg, **kw):
     """ Bayesian inerence routine that fits independant variables, X, to dependant, Y.
@@ -122,6 +128,8 @@ def train_MaxEnt_model(y_filen, x_filen_list, dir = '', filename_out = '',
                        subset_function = None, subset_function_args = None,
                        niterations = 100, cores = 4, model_title = 'no_name', 
                        grab_old_trace = False):
+                       
+                       #area_file add here
     ''' Opens up traning data and trains and saves Bayesian Inference optimization of model. 
         see 'fit_MaxEnt_probs_to_data' for details how.
     Arguments:
@@ -224,7 +232,7 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '',
         return 
 
     
-    Y, X, lmask, scalers = read_all_data_from_netcdf(y_filen, x_filen_list, 
+    Y, X, lmask, scalers = read_all_data_from_netcdf(y_filen, x_filen_list,
                                                      add_1s_columne = True, dir = dir,
                                                      x_normalise01 = True, scalers = scalers,
                                                      subset_function = subset_function, 
@@ -274,6 +282,8 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '',
     
     Sim = runSim("control")
     
+    plt.figure(figsize=(12, 10))
+    
     for col in range(X.shape[1]-1):
         x_copy = X[:, col].copy()  # Copy the values of the current column
         
@@ -292,17 +302,21 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '',
         
         def non_masked_data(cube):
             return cube.data[cube.data.mask == False].data
-        set_trace()
+        #set_trace()
         for rw in range(Sim.shape[0]):
-            ax.plot(x_copy, non_masked_data(Sim[rw]) - non_masked_data(Sim2[rw]), '.', markersize = 0.5, linewidth=0.5)  # Plot the data for the current variable
-        
+            #try:
+             #ax.plot(x_copy, non_masked_data(Sim[rw]) / non_masked_data(Sim2[rw]), '.', color = "darkred", markersize = 0.5, linewidth=0.5)  # Plot the data for the current variable
+              ax.plot(x_copy, non_masked_data(Sim[rw]), '.', color = "darkred", markersize = 0.5, linewidth=0.5)
+            #except:
+                #set_trace()
         X[:, col] = x_copy 
-        
+    
     fig_dir = combine_path_and_make_dir(dir_outputs, '/figs/')
     
     plt.savefig(fig_dir + '-response-curves.png')    
-    plt.show()
+    #plt.show()
     set_trace()
+    
 
     if run_evaluation:
         evaluate_model(filename_out, dir_outputs, Obs, Sim, lmask, *args, **kw)
@@ -406,7 +420,7 @@ if __name__=="__main__":
     """
     """ optimization """
 
-    model_title = 'Example_model-gfed_new2'
+    model_title = 'Example_model-gfed_new20'
 
 
     #dir_training = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
@@ -414,6 +428,7 @@ if __name__=="__main__":
     dir_training = "D:/Doutorado/Sanduiche/research/maxent-variables/2002-2011/"
 
     y_filen = "GFED4.1s_Burned_Fraction.nc"
+    #area_file = "brasil_nat.nc"
     #y_filen = "Area_burned_NAT.nc"
     #y_filen = "Area_burned_NON3.nc"
 
@@ -429,18 +444,7 @@ if __name__=="__main__":
                   "tas_max.nc", "tas_mean.nc", "tca.nc", "te.nc", "mpa.nc",
                   "totalVeg.nc", "vpd.nc", "csoil.nc"]
 
-    
-    #x_filen_list=["trees.nc", "consec_dry_mean.nc", 
-    #              "lightn.nc", "popDens.nc",
-    #              "crop.nc", "pas.nc", 
-    #              "tas_max.nc",
-    #              "totalVeg.nc", "MPA.nc"]
-
-    #x_filen_list=["consec_dry_mean.nc", "Savanna.nc", "cveg.nc", "rhumid.nc",
-    #              "lightn.nc", "popDens.nc", "Forest.nc", "precip.nc",
-    #              "crop.nc", "pas.nc", "Grassland.nc",
-    #              "tas_max.nc", "tas_mean.nc",
-    #              "totalVeg.nc", "vpd.nc", "csoil.nc"]
+    #"soilM.nc", "Wetland.nc" need to be added
 
 
     grab_old_trace = True # set to True till you get the code running. Then set to False when you start adding in new response curves

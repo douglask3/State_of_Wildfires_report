@@ -79,15 +79,17 @@ def read_variable_from_netcdf(filename, dir = '', subset_function = None,
     if return_time_points: dataset = (dataset, time_points)
     return dataset
 
-def read_all_data_from_netcdf(y_filename, x_filename_list, add_1s_columne = False, 
+def read_all_data_from_netcdf(y_filename, x_filename_list, CA_filename = None, add_1s_columne = False, 
                               y_threshold = None, x_normalise01 = False, scalers = None,
                               check_mask = True, frac_random_sample = 1.0, *args, **kw):
+                              
     """Read data from netCDF files 
         
     Arguments:
         y_filename -- a two element python list containing the name of the file and the target 
             variable name
         x_filename_list -- a python list of filename containing the feature variables
+        CA_filename -- a python list of filename containing the area of the cover type
         y_threshold -- if converting y into boolean, the threshold we use to spit into 
             0's and 1's
         add_1s_columne -- useful for if using for regressions. Adds a variable of 
@@ -95,7 +97,7 @@ def read_all_data_from_netcdf(y_filename, x_filename_list, add_1s_columne = Fals
         x_normalise01 -- Boolean. If True, then X's are normalised between 0 and 1.
         scalers -- None or numpy array of shape 2 by n. columns of X.
             Defines what scalers (min and max) to apply to each X column. 
-            If None, doesn't appky anything.
+            If None, doesn't apply anything.
         check_mask -- Boolean. If True, simple checks if there are any large negtaive numbers 
             and makes them out. Assunes that values < -9E9, you dont want. 
             This could be different in some circumstances
@@ -129,9 +131,12 @@ def read_all_data_from_netcdf(y_filename, x_filename_list, add_1s_columne = Fals
     
     
     if check_mask:
-        cells_we_want = np.array([np.all(rw > -9e9) and np.all(rw < 9e9) for rw in np.column_stack((X, Y))])
+        cells_we_want = np.array([np.all(rw > -9e9) and np.all(rw < 9e9) for rw in np.column_stack((X, Y))]) #area
         Y = Y[cells_we_want]
         X = X[cells_we_want, :]
+        if CA_filename is not None:
+            cells_we_want = np.array([np.all(rw > -9e9) and np.all(rw < 9e9) for rw in np.column_stack((CA))])
+            CA = CA[cells_we_want]
         
     if x_normalise01: 
         scalers = np.array([np.min(X, axis=0), np.max(X, axis=0)])
@@ -149,11 +154,17 @@ def read_all_data_from_netcdf(y_filename, x_filename_list, add_1s_columne = Fals
         selected_rows = np.random.choice(M, size = int(M * frac_random_sample), replace=False)
         Y = Y[selected_rows]
         X = X[selected_rows, :]
+        if CA_filename is not None:
+            CA = CA[selected_rows]
         
     if scalers is not None:
         X = (X-scalers[0, :]) / (scalers[1, :] - scalers[0, :])
-        if check_mask: return Y, X, cells_we_want, scalers
-
-    if check_mask or frac_random_sample: return Y, X, cells_we_want
-
-    return Y, X
+        if check_mask: 
+            if CA_filename is not None: return Y, X, cells_we_want, scalers , CA
+        return Y, X, cells_we_want, scalers
+    if check_mask or frac_random_sample: 
+        if CA_filename is not None: return Y, X, cells_we_want, CA
+    return Y, X, cells_we_want
+    
+    if CA_filename is not None: return Y, X, CA
+    return Y, X 
