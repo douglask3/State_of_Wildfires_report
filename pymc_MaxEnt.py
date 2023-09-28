@@ -44,11 +44,11 @@ def MaxEnt_on_prob(BA, fx, CA = None):
     fx = tt.switch(
         tt.lt(fx, 0.0000000000000000001),
         0.0000000000000000001, fx)
-    
-    prob = BA*tt.log(fx) + (1.0-BA)*tt.log((1-fx))
-    
+      
     if CA is not None: 
-        prob =  BA*CA*tt.log(fx) + (1.0-BA)*CA*tt.log((1-fx)) 
+        prob =  BA*CA*tt.log(fx) + (1.0-BA)*CA*tt.log((1-fx))
+    else:
+        prob = BA*tt.log(fx) + (1.0-BA)*tt.log((1-fx))
     return prob
 
 def fit_MaxEnt_probs_to_data(Y, X, niterations, *arg, **kw):
@@ -122,14 +122,13 @@ def fit_MaxEnt_probs_to_data(Y, X, niterations, *arg, **kw):
     return trace
 
 
-def train_MaxEnt_model(y_filen, x_filen_list, dir = '', filename_out = '',
+def train_MaxEnt_model(y_filen, x_filen_list, CA_filen = None, dir = '', filename_out = '',
                        dir_outputs = '',
                        frac_random_sample = 1.0,
                        subset_function = None, subset_function_args = None,
                        niterations = 100, cores = 4, model_title = 'no_name', 
                        grab_old_trace = False):
                        
-                       #area_file add here
     ''' Opens up traning data and trains and saves Bayesian Inference optimization of model. 
         see 'fit_MaxEnt_probs_to_data' for details how.
     Arguments:
@@ -161,12 +160,11 @@ def train_MaxEnt_model(y_filen, x_filen_list, dir = '', filename_out = '',
         used on indeptanant data to normalise it, useful for predicting model
     '''
 
-    dir_outputs = combine_path_and_make_dir(dir_outputs, model_title)
+    #dir_outputs = combine_path_and_make_dir(dir_outputs, model_title)
     out_file =   filename_out + '-nvariables_' + \
                  '-frac_random_sample' + str(frac_random_sample) + \
                  '-nvars_' +  str(len(x_filen_list)) + \
                  '-niterations_' + str(niterations * cores)
-    
     trace_file = dir_outputs + '/trace-'   + out_file + '.nc'
     scale_file = dir_outputs + '/scalers-' + out_file + '.csv'
     
@@ -174,12 +172,43 @@ def train_MaxEnt_model(y_filen, x_filen_list, dir = '', filename_out = '',
     if os.path.isfile(trace_file) and os.path.isfile(scale_file) and grab_old_trace:
         return az.from_netcdf(trace_file), pd.read_csv(scale_file).values   
     print("opening data for inference")
-    Y, X, lmask, scalers = read_all_data_from_netcdf(y_filen, x_filen_list, 
-                                                     add_1s_columne = True, dir = dir,
-                                                     x_normalise01 = True, 
-                                                     frac_random_sample = frac_random_sample,
-                                                     subset_function = subset_function, 
-                                                     subset_function_args = subset_function_args)
+    
+    common_args = {'y_filename': y_filen,
+        'x_filename_list': x_filen_list,
+        'add_1s_columne': True,
+        'dir': dir,
+        'x_normalise01': True,
+        'frac_random_sample': frac_random_sample,
+        'subset_function': subset_function,
+        'subset_function_args': subset_function_args
+    }
+
+    if CA_filen is not None:
+        # Process CA_filen when it is provided
+        Y, X, CA, lmask, scalers = read_all_data_from_netcdf(CA_filename = CA_filen, **common_args)
+    else:
+        Y, X, lmask, scalers = read_all_data_from_netcdf(**common_args)
+        
+
+    
+    #if CA_filen is not None:
+    #Y, X, CA, lmask, scalers = read_all_data_from_netcdf(y_filen, x_filen_list, CA_filen, 
+    #                                                 add_1s_columne = True, dir = dir,
+    #                                                x_normalise01 = True, 
+    #                                                 frac_random_sample = frac_random_sample,
+    #                                                 subset_function = subset_function, 
+    #                                                 subset_function_args = subset_function_args)
+    #else:
+    
+    #Y, X, lmask, scalers = read_all_data_from_netcdf(y_filen, x_filen_list,
+    #                                                 add_1s_columne = True, dir = dir,
+    #                                                 x_normalise01 = True, 
+    #                                                 frac_random_sample = frac_random_sample,
+    #                                                 subset_function = subset_function, 
+    #                                                 subset_function_args = subset_function_args)
+    
+    
+    
     print("Running trace")
     trace = fit_MaxEnt_probs_to_data(Y, X,niterations = niterations, cores = cores)
     
@@ -188,7 +217,7 @@ def train_MaxEnt_model(y_filen, x_filen_list, dir = '', filename_out = '',
     pd.DataFrame(scalers).to_csv(scale_file, index = False)
     return trace, scalers
 
-def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '', 
+def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, CA_filen = None, dir = '', 
                          dir_outputs = '', model_title = '', filename_out = '',
                          subset_function = None, subset_function_args = None,
                          sample_for_plot = 1,
@@ -231,12 +260,29 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '',
     if not run_evaluation and not run_projection:
         return 
 
+    common_args = {
+    'y_filename': y_filen,
+    'x_filename_list': x_filen_list,
+    'add_1s_columne': True,
+    'dir': dir,
+    'x_normalise01': True,
+    'subset_function': subset_function,
+    'subset_function_args': subset_function_args
+}
+
+    if CA_filen is not None:
+        Y, X, CA, lmask, scalers = read_all_data_from_netcdf(CA_filename = CA_filen, **common_args)
+        
+    else:
+        
+        Y, X, lmask, scalers = read_all_data_from_netcdf(**common_args)
     
-    Y, X, lmask, scalers = read_all_data_from_netcdf(y_filen, x_filen_list,
-                                                     add_1s_columne = True, dir = dir,
-                                                     x_normalise01 = True, scalers = scalers,
-                                                     subset_function = subset_function, 
-                                                     subset_function_args = subset_function_args)
+    
+    #Y, X, lmask, scalers = read_all_data_from_netcdf(y_filen, x_filen_list,
+    #                                                 add_1s_columne = True, dir = dir,
+    #                                                 x_normalise01 = True, scalers = scalers,
+    #                                                 subset_function = subset_function,
+    #                                                    subset_function_args = subset_function_args)
     Obs = read_variable_from_netcdf(y_filen, dir,
                                     subset_function = subset_function, 
                                     subset_function_args = subset_function_args)
@@ -420,22 +466,24 @@ if __name__=="__main__":
     """
     """ optimization """
 
-    person = 'Doug'
+    person = 'Maria'
 
     if person == 'Maria':
-        model_title = 'Example_model-gfed_new2'
-        dir_training = "/gws/nopw/j04/jules/mbarbosa/driving_and_obs_overlap/AllConFire_2000_2009/"
+        model_title = 'Example_model-NAT_CA'
+        #dir_training = "/gws/nopw/j04/jules/mbarbosa/driving_and_obs_overlap/AllConFire_2000_2009/"
         dir_training = "D:/Doutorado/Sanduiche/research/maxent-variables/2002-2011/"
 
-        y_filen = "GFED4.1s_Burned_Fraction.nc"
+        #y_filen = "GFED4.1s_Burned_Fraction.nc"
         y_filen = "Area_burned_NAT.nc"
-        y_filen = "Area_burned_NON3.nc"
+        #y_filen = "Area_burned_NON3.nc"
         
-        x_filen_list=["consec_dry_mean.nc", "savanna2.nc", "cveg.nc", "rhumid.nc",
-                      "lightn.nc", "popDens.nc", "forest2.nc", "precip.nc",
-                      "crop.nc", "pas.nc", "grassland2.nc", "ed.nc", "np.nc",
+        CA_filen = "brazil_NAT.nc"
+        
+        x_filen_list=["consec_dry_mean.nc", "savanna.nc", "cveg.nc", "rhumid.nc",
+                      "lightn.nc", "popDens.nc", "forest.nc", "precip.nc",
+                      "crop.nc", "pas.nc", "grassland.nc", "ed.nc", "np.nc",
                       "tas_max.nc", "tas_mean.nc", "tca.nc", "te.nc", "mpa.nc",
-                      "totalVeg.nc", "vpd.nc", "csoil.nc"]
+                      "totalVeg.nc", "vpd.nc", "csoil.nc", "SoilM.nc"]
 
     else:
         model_title = 'Example_model-q'
@@ -447,21 +495,11 @@ if __name__=="__main__":
                   "lightn.nc", "popDens.nc",
                   "crop.nc", "pas.nc", 
                   "humid.nc", "csoil.nc", "tas_max.nc",
-                  "totalVeg.nc"]
-    
-
-    #x_filen_list=["trees.nc", "pr_mean.nc", "consec_dry_mean.nc", 
-                  #"lightn.nc", "popDens.nc",
-                  #"crop.nc", "pas.nc", 
-                  #"humid.nc", "csoil.nc", "tas_max.nc",
-                  #"totalVeg.nc"]
-    
-   
-
-    #"soilM.nc", "Wetland.nc" need to be added
+                  "totalVeg.nc"] 
 
 
-    grab_old_trace = True # set to True till you get the code running. Then set to False when you start adding in new response curves
+
+    grab_old_trace = False # set to True till you get the code running. Then set to False when you start adding in new response curves
 
     cores = 2
     fraction_data_for_sample = 0.05
@@ -491,19 +529,21 @@ if __name__=="__main__":
     filename = '_'.join([file[:-3] for file in x_filen_list]) + \
               '-frac_points_' + str(fraction_data_for_sample) + \
               '-Month_' +  '_'.join([str(mn) for mn in months_of_year])
+    
 
     #### Optimize
-    trace, scalers = train_MaxEnt_model(y_filen, x_filen_list, dir_training, 
+    trace, scalers = train_MaxEnt_model(y_filen, x_filen_list, CA_filen , dir_training, 
                                         filename, dir_outputs,
                                         fraction_data_for_sample,
                                         subset_function, subset_function_args,
-                                        niterations, cores, model_title, grab_old_trace)
+                                        niterations, cores, model_title, grab_old_trace)                                                                      
+                                        
 
 
     """ 
         RUN projection 
     """
-    predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir_projecting,
+    predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, CA_filen, dir_projecting,
                          dir_outputs, model_title, filename,
                          subset_function, subset_function_args,
                          sample_for_plot, 

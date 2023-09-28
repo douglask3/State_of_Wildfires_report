@@ -108,6 +108,8 @@ def read_all_data_from_netcdf(y_filename, x_filename_list, CA_filename = None, a
         X - an n-D numpy array of the feature variables 
     """
     Y, time_points = read_variable_from_netcdf(y_filename, make_flat = True, *args, return_time_points = True, **kw)
+    
+    CA = read_variable_from_netcdf(CA_filename, make_flat = True, time_points = time_points, *args, **kw)
    
     # Create a new categorical variable based on the threshold
     if y_threshold is not None:
@@ -130,12 +132,14 @@ def read_all_data_from_netcdf(y_filename, x_filename_list, CA_filename = None, a
         X = np.column_stack((X, np.ones(len(X)))) # add a column of ones to X 
     
     if check_mask:
-        cells_we_want = np.array([np.all(rw > -9e9) and np.all(rw < 9e9) for rw in np.column_stack((X, Y))]) #area
+        if CA_filename is not None:
+            cells_we_want = np.array([np.all(rw > -9e9) and np.all(rw < 9e9) for rw in np.column_stack((X, Y, CA))])
+            CA = CA[cells_we_want]
+        else:
+            cells_we_want = np.array([np.all(rw > -9e9) and np.all(rw < 9e9) for rw in np.column_stack((X,Y))])
         Y = Y[cells_we_want]
         X = X[cells_we_want, :]
-        if CA_filename is not None:
-            cells_we_want = np.array([np.all(rw > -9e9) and np.all(rw < 9e9) for rw in np.column_stack((CA))])
-            CA = CA[cells_we_want]
+                     
         
     if x_normalise01: 
         scalers = np.array([np.min(X, axis=0), np.max(X, axis=0)])
@@ -161,6 +165,7 @@ def read_all_data_from_netcdf(y_filename, x_filename_list, CA_filename = None, a
         if check_mask: 
             if CA_filename is not None: return Y, X, cells_we_want, scalers , CA
         return Y, X, cells_we_want, scalers
+        
     if check_mask or frac_random_sample: 
         if CA_filename is not None: return Y, X, cells_we_want, CA
     return Y, X, cells_we_want
