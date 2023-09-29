@@ -63,7 +63,7 @@ class MaxEntFire(object):
 	    X -- numpy or tensor 2d array of indepenant variables, each columne a different 
                     variable, no. columns (no. variables) is same as length of betas.
         Returns:
-            numpy or tensor (depdaning on 'inference' option) 1 d array of length equal to 
+            numpy or tensor (depending on 'inference' option) 1 d array of length equal to 
 	    no. rows in X of burnt area/fire probabilities.
         """
         

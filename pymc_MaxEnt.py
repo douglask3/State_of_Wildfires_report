@@ -271,7 +271,7 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, CA_filen = None,
 }
 
     if CA_filen is not None:
-        Y, X, CA, lmask, scalers = read_all_data_from_netcdf(CA_filename = CA_filen, **common_args)
+        Y, X, lmask, scalers, CA = read_all_data_from_netcdf(CA_filename = CA_filen, **common_args)
         
     else:
         
@@ -361,7 +361,7 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, CA_filen = None,
     
     plt.savefig(fig_dir + '-response-curves.png')    
     #plt.show()
-    set_trace()
+    #set_trace()
     
 
     if run_evaluation:
@@ -469,15 +469,16 @@ if __name__=="__main__":
     person = 'Maria'
 
     if person == 'Maria':
-        model_title = 'Example_model-NAT_CA'
+        model_title = 'Example_model-NON_CA'
         #dir_training = "/gws/nopw/j04/jules/mbarbosa/driving_and_obs_overlap/AllConFire_2000_2009/"
         dir_training = "D:/Doutorado/Sanduiche/research/maxent-variables/2002-2011/"
 
         #y_filen = "GFED4.1s_Burned_Fraction.nc"
-        y_filen = "Area_burned_NAT.nc"
-        #y_filen = "Area_burned_NON3.nc"
+        #y_filen = "Area_burned_NAT.nc"
+        y_filen = "Area_burned_NON.nc"
         
-        CA_filen = "brazil_NAT.nc"
+        #CA_filen = "brazil_NAT.nc"
+        CA_filen = "brazil_NON.nc"
         
         x_filen_list=["consec_dry_mean.nc", "savanna.nc", "cveg.nc", "rhumid.nc",
                       "lightn.nc", "popDens.nc", "forest.nc", "precip.nc",
