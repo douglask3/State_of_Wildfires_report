@@ -90,17 +90,7 @@ def fit_MaxEnt_probs_to_data(Y, X, niterations, *arg, **kw):
                   "comb_X0": pm.Normal('comb_X0', mu = 0.5, sigma = 1, shape = nvars),
                   "comb_p": pm.Normal('comb_p', mu = 0, sigma = 1 , shape = nvars)
                   
-                   #"x2s": pm.Normal('x2s', mu = 0, sigma = 1, shape = [2, X.shape[1]])
-                    # Maria: Add response curve priors
-                    #"X0": pm.Normal('X0', mu = 0.5, sigma = 1, shape = X.shape[1])
-                    #"p": pm.Normal('p', mu = 0, sigma = 1 , shape = X.shape[1])
-                    #"gama": pm.Normal('gama', mu = 0 , sigma = 1, shape = X.shape[1])
-                 }
-            # Will get used as follows:
-            # y = beta[0] * X[:,0] + beta[1] * X[:,1] + beta[2] *X[:,2] + ....
-            #           + powers[0,0] * X[:,0]^powers[0,1] + powers[1,0] * X[:,1]^powers[1,1] + powers[2,0] * X[:,2]^powers[2,1]
-            #           + x2s[0,0] * (X2s[0,1] + X[:,0])^2 + x2s[1,0] * (X2s[1,1] + X[:,1])^2 + ...
-            #           + Maria: response curve .....
+                  }
         
         ## run model
         model = MaxEntFire(priors, inference = True)
@@ -189,25 +179,7 @@ def train_MaxEnt_model(y_filen, x_filen_list, CA_filen = None, dir = '', filenam
     else:
         Y, X, lmask, scalers = read_all_data_from_netcdf(**common_args)
         
-
-    
-    #if CA_filen is not None:
-    #Y, X, CA, lmask, scalers = read_all_data_from_netcdf(y_filen, x_filen_list, CA_filen, 
-    #                                                 add_1s_columne = True, dir = dir,
-    #                                                x_normalise01 = True, 
-    #                                                 frac_random_sample = frac_random_sample,
-    #                                                 subset_function = subset_function, 
-    #                                                 subset_function_args = subset_function_args)
-    #else:
-    
-    #Y, X, lmask, scalers = read_all_data_from_netcdf(y_filen, x_filen_list,
-    #                                                 add_1s_columne = True, dir = dir,
-    #                                                 x_normalise01 = True, 
-    #                                                 frac_random_sample = frac_random_sample,
-    #                                                 subset_function = subset_function, 
-    #                                                 subset_function_args = subset_function_args)
-    
-    
+        
     
     print("Running trace")
     trace = fit_MaxEnt_probs_to_data(Y, X,niterations = niterations, cores = cores)
@@ -277,12 +249,6 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, CA_filen = None,
         
         Y, X, lmask, scalers = read_all_data_from_netcdf(**common_args)
     
-    
-    #Y, X, lmask, scalers = read_all_data_from_netcdf(y_filen, x_filen_list,
-    #                                                 add_1s_columne = True, dir = dir,
-    #                                                 x_normalise01 = True, scalers = scalers,
-    #                                                 subset_function = subset_function,
-    #                                                    subset_function_args = subset_function_args)
     Obs = read_variable_from_netcdf(y_filen, dir,
                                     subset_function = subset_function, 
                                     subset_function_args = subset_function_args)
@@ -330,38 +296,58 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, CA_filen = None,
     
     plt.figure(figsize=(12, 10))
     
-    for col in range(X.shape[1]-1):
-        x_copy = X[:, col].copy()  # Copy the values of the current column
-        
-        variable = x_filen_list[col].replace('.nc', '')
-        print(col)
-        
     
-        X[:, col] = 0.0  # Set the current column to 0
-
-        Sim2 = runSim("_to_zero")      
+    for col_to_keep in range(X.shape[1]-1):
+        other_cols = np.arange(X.shape[1]-1)  # Create an array of all columns
+        other_cols = other_cols[other_cols != col_to_keep]  # Exclude col_to_keep
+        original_X = X[:, other_cols].copy()
+        X[:, other_cols] = 0.0  
+        
+        Sim2 = runSim("_to_zero")
         
         fcol = math.floor(math.sqrt(X.shape[1]))
         frw = math.ceil(X.shape[1]/fcol)
         
-        ax = plt.subplot(frw,fcol, col + 1)  # Select the corresponding subplot
+        ax = plt.subplot(frw,fcol, col_to_keep + 1)  # Select the corresponding subplot
         
         def non_masked_data(cube):
             return cube.data[cube.data.mask == False].data
         #set_trace()
+        
+        
         for rw in range(Sim.shape[0]):
+            num_bins = 10
+            hist, bin_edges = np.histogram(X[:, col_to_keep], bins=num_bins)
+            bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
+            median_values = []
+            percentile_10 = []
+            percentile_90 = []
+            sim_final = non_masked_data(Sim[rw]) - non_masked_data(Sim2[rw])
+            
+            for i in range(num_bins):
+                mask = (X[:, col_to_keep] >= bin_edges[i]) & (X[:, col_to_keep] < bin_edges[i + 1])
+                values_in_bin = sim_final[mask]
+                median_values.append(np.median(values_in_bin))
+                percentile_10.append(np.percentile(values_in_bin, 10))
+                percentile_90.append(np.percentile(values_in_bin, 90))
+                
+                
+            ax.plot(bin_centers, median_values, marker='o', label='Median')
+            ax.fill_between(bin_centers, percentile_10, percentile_90, alpha=0.3, label='10th-90th Percentiles')
             #try:
              #ax.plot(x_copy, non_masked_data(Sim[rw]) / non_masked_data(Sim2[rw]), '.', color = "darkred", markersize = 0.5, linewidth=0.5)  # Plot the data for the current variable
-              ax.plot(x_copy, non_masked_data(Sim[rw]), '.', color = "darkred", markersize = 0.5, linewidth=0.5)
+              #ax.plot(X[:, col_to_keep], non_masked_data(Sim[rw]) / non_masked_data(Sim2[rw]), '.', color = "darkred", markersize = 0.5, linewidth=0.5)
             #except:
                 #set_trace()
-        X[:, col] = x_copy 
+                
+        X[:, other_cols] = original_X
     
-    fig_dir = combine_path_and_make_dir(dir_outputs, '/figs/')
     
-    plt.savefig(fig_dir + '-response-curves.png')    
-    #plt.show()
-    #set_trace()
+    #fig_dir = combine_path_and_make_dir(dir_outputs, '/figs/')
+    
+    #plt.savefig(fig_dir + '-response-curves.png')    
+    plt.show()
+    set_trace()
     
 
     if run_evaluation:
@@ -469,16 +455,16 @@ if __name__=="__main__":
     person = 'Maria'
 
     if person == 'Maria':
-        model_title = 'Example_model-NON_CA'
+        model_title = 'Example_model-NAT_CA'
         #dir_training = "/gws/nopw/j04/jules/mbarbosa/driving_and_obs_overlap/AllConFire_2000_2009/"
         dir_training = "D:/Doutorado/Sanduiche/research/maxent-variables/2002-2011/"
 
         #y_filen = "GFED4.1s_Burned_Fraction.nc"
-        #y_filen = "Area_burned_NAT.nc"
-        y_filen = "Area_burned_NON.nc"
+        y_filen = "Area_burned_NAT.nc"
+        #y_filen = "Area_burned_NON.nc"
         
-        #CA_filen = "brazil_NAT.nc"
-        CA_filen = "brazil_NON.nc"
+        CA_filen = "brazil_NAT.nc"
+        #CA_filen = "brazil_NON.nc"
         
         x_filen_list=["consec_dry_mean.nc", "savanna.nc", "cveg.nc", "rhumid.nc",
                       "lightn.nc", "popDens.nc", "forest.nc", "precip.nc",
@@ -500,7 +486,7 @@ if __name__=="__main__":
 
 
 
-    grab_old_trace = False # set to True till you get the code running. Then set to False when you start adding in new response curves
+    grab_old_trace = True # set to True till you get the code running. Then set to False when you start adding in new response curves
 
     cores = 2
     fraction_data_for_sample = 0.05
