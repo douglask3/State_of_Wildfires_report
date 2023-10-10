@@ -335,16 +335,9 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, CA_filen = None,
             percentile_90.append(np.percentile(values_in_bin, 90))
       
                 
-            set_trace()   
-            ax.plot(bin_centers, median_values, marker='.', label='Median')
-            ax.fill_between(bin_centers, percentile_10, percentile_90, alpha=0.3, label='10th-90th Percentiles')
-            #try:
-             #ax.plot(x_copy, non_masked_data(Sim[rw]) / non_masked_data(Sim2[rw]), '.', color = "darkred", markersize = 0.5, linewidth=0.5)  # Plot the data for the current variable
-              #ax.plot(X[:, col_to_keep], non_masked_data(Sim[rw]) / non_masked_data(Sim2[rw]), '.', color = "darkred", markersize = 0.5, linewidth=0.5)
-            #except:
-                #set_trace()
-                
-            
+        #set_trace()   
+        ax.plot(bin_centers, median_values, marker='.', label='Median')
+        ax.fill_between(bin_centers, percentile_10, percentile_90, alpha=0.3, label='10th-90th Percentiles')                           
                 
         X[:, other_cols] = original_X
     
