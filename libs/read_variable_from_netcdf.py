@@ -109,7 +109,9 @@ def read_all_data_from_netcdf(y_filename, x_filename_list, CA_filename = None, a
     """
     Y, time_points = read_variable_from_netcdf(y_filename, make_flat = True, *args, return_time_points = True, **kw)
     
-    CA = read_variable_from_netcdf(CA_filename, make_flat = True, time_points = time_points, *args, **kw)
+    if CA_filename is not None:
+        CA = read_variable_from_netcdf(CA_filename, make_flat = True, 
+                                       time_points = time_points, *args, **kw)
    
     # Create a new categorical variable based on the threshold
     if y_threshold is not None:
