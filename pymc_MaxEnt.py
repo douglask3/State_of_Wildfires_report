@@ -293,7 +293,7 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, CA_filen = None,
         return iris.cube.CubeList(out).merge_cube()
                
     Sim = runSim("control") 
-      
+    '''  
     for col_to_keep in range(X.shape[1]-1):
         other_cols = np.arange(X.shape[1]-1)  # Create an array of all columns
         other_cols = other_cols[other_cols != col_to_keep]  # Exclude col_to_keep
@@ -336,7 +336,7 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, CA_filen = None,
             percentile_90.append(np.percentile(values_in_bin, 90))
       
                 
-        #set_trace()   
+        set_trace()   
         ax.plot(bin_centers, median_values, marker='.', label='Median')
         ax.fill_between(bin_centers, percentile_10, percentile_90, alpha=0.3, label='10th-90th Percentiles')                           
                 
@@ -348,7 +348,7 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, CA_filen = None,
     fig_dir = combine_path_and_make_dir(dir_outputs, '/figs/')
     
     plt.savefig(fig_dir + 'control-response-curves.png')    
-
+    '''
     
     #plot sensitivity response curves
     plt.figure(figsize=(14, 12))
@@ -394,11 +394,19 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, CA_filen = None,
             for rw in range(Sim.shape[0]):
                 sim_final = non_masked_data(Sim3[rw]) - non_masked_data(Sim4[rw])                      
                 values_in_bin.append(sim_final[mask])
-            values_in_bin = np.array(values_in_bin).flatten()    
+            values_in_bin = np.array(values_in_bin).flatten()
+            
+            #if len(values_in_bin) == 0:
+            
+            #   set_trace()
             #set_trace()    
             median_values.append(np.median(values_in_bin))
             percentile_10.append(np.percentile(values_in_bin, 10))
             percentile_90.append(np.percentile(values_in_bin, 90))
+            
+            if (math.isnan(x) for x in median_values):
+            
+                set_trace()
             
         #set_trace()    
         ax.plot(bin_centers, median_values, marker='.', label='Median')
