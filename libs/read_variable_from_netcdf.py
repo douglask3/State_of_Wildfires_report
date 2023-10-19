@@ -34,7 +34,7 @@ def read_variable_from_netcdf(filename, dir = '', subset_function = None,
 
     print("Opening:")
     print(filename)
-    
+    if filename[0] == '~' or filename[0] == '/' or filename[0] == '.': dir = ''
     try:
         if isinstance(filename, str):        
             dataset = iris.load_cube(dir + filename, callback=sort_time)
@@ -49,9 +49,9 @@ def read_variable_from_netcdf(filename, dir = '', subset_function = None,
         set_trace()
         
     if dataset is None: return None
-    if time_points is not None: 
+    if time_points is not None:         
         dataset = dataset.interpolate([('time', time_points)], iris.analysis.Linear())
-        
+         
     if units is not None: dataset.units = units
     if subset_function is not None:
         if isinstance(subset_function, list):
@@ -61,9 +61,11 @@ def read_variable_from_netcdf(filename, dir = '', subset_function = None,
                 except:
                     print("Warning! function: " + FUN.__name__ + " not applied to file: " + \
                           dir + filename)
+                    
         else:      
             dataset = subset_function(dataset, **subset_function_args) 
     if return_time_points: time_points = dataset.coord('time').points 
+    
     
     if make_flat: 
         if time_series is not None: years = dataset.coord('year').points
@@ -77,6 +79,7 @@ def read_variable_from_netcdf(filename, dir = '', subset_function = None,
             if return_time_points: set_trace()
         
     if return_time_points: dataset = (dataset, time_points)
+    
     return dataset
 
 def read_all_data_from_netcdf(y_filename, x_filename_list, add_1s_columne = False, 
