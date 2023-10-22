@@ -392,12 +392,7 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, CA_filen = None,
             for rw in range(Sim.shape[0]):
                 sim_final = (non_masked_data(Sim3[rw]) - non_masked_data(Sim4[rw]))/dx                      
                 values_in_bin.append(sim_final[mask])
-            values_in_bin = np.array(values_in_bin).flatten()
-            
-            #if len(values_in_bin) == 0:
-            
-            #   set_trace()
-            #set_trace()    
+            values_in_bin = np.array(values_in_bin).flatten()   
             median_values.append(np.median(values_in_bin))
             try:
                 percentile_10.append(np.percentile(values_in_bin, 10))
@@ -406,7 +401,7 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, CA_filen = None,
                 percentile_10.append(np.nan)
                 percentile_90.append(np.nan)
             
-            if (math.isnan(x) for x in median_values):
+            if np.median(values_in_bin:
                 set_trace()
             
         #set_trace()    
@@ -550,7 +545,7 @@ if __name__=="__main__":
         cores = 2
         fraction_data_for_sample = 0.05
     else:
-        model_title = 'Example_model-q'
+        model_title = 'Example_model-q-reduced'
 
         dir_training = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
         y_filen = "GFED4.1s_Burned_Fraction.nc"
