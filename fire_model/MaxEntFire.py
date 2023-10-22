@@ -92,7 +92,7 @@ class MaxEntFire(object):
         return BA / (1 + self.q * (1 - BA))
      
     def power_response_curve(self, X):  
-        return X**self.pow_power
+        return self.pow_power**X
 
     def X2_response_curve(self, X):  
         return (X - self.x2s_X0)**2.0

@@ -83,13 +83,12 @@ def fit_MaxEnt_probs_to_data(Y, X, niterations, *arg, **kw):
         priors = {"q":     pm.LogNormal('q', mu = 0.0, sigma = 1.0),
                   "lin_betas": pm.Normal('lin_betas', mu = 0, sigma = 100, shape = nvars),
                   "pow_betas": pm.Normal('pow_betas', mu = 0, sigma = 100, shape = nvars),
-                  "pow_power": pm.Normal('pow_power', mu = 0, sigma = 1, shape = nvars),
+                  "pow_power": pm.LogNormal('pow_power', mu = 0, sigma = 1, shape = nvars),
                   "x2s_betas": pm.Normal('x2s_betas', mu = 0, sigma = 100, shape = nvars),
                   "x2s_X0"   : pm.Normal('x2s_X0'   , mu = 0, sigma = 1, shape = nvars),
                   "comb_betas": pm.Normal('comb_betas', mu = 0, sigma = 100, shape = nvars),
                   "comb_X0": pm.Normal('comb_X0', mu = 0.5, sigma = 1, shape = nvars),
                   "comb_p": pm.Normal('comb_p', mu = 0, sigma = 1 , shape = nvars)
-                  
                   }
         
         ## run model
@@ -354,18 +353,17 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, CA_filen = None,
     plt.figure(figsize=(14, 12))
     for col in range(X.shape[1]-1):
         x_copy = X[:, col].copy()  # Copy the values of the current column
-
-        
         
         print(col)
 
-        X[:, col] -= 0.1  # Subtract 0.1 of all values for the current column
+        dx = 0.001
+        X[:, col] -= dx/2.0  # Subtract 0.1 of all values for the current column
 
         Sim3 = runSim("subtract_01")    
         
         X[:, col] = x_copy #restore values
         
-        X[:, col] += 0.1 #add 0.1 to all values for the current column
+        X[:, col] += dx/2.0 #add 0.1 to all values for the current column
         
         Sim4 = runSim("add_01") 
         
@@ -379,7 +377,7 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, CA_filen = None,
         def non_masked_data(cube):
             return cube.data[cube.data.mask == False].data
             
-        num_bins = 10
+        num_bins = 20
         hist, bin_edges = np.histogram(X[:, col], bins=num_bins)
         bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
         median_values = []
@@ -392,7 +390,7 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, CA_filen = None,
             values_in_bin = []
         
             for rw in range(Sim.shape[0]):
-                sim_final = non_masked_data(Sim3[rw]) - non_masked_data(Sim4[rw])                      
+                sim_final = (non_masked_data(Sim3[rw]) - non_masked_data(Sim4[rw]))/dx                      
                 values_in_bin.append(sim_final[mask])
             values_in_bin = np.array(values_in_bin).flatten()
             
@@ -401,11 +399,14 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, CA_filen = None,
             #   set_trace()
             #set_trace()    
             median_values.append(np.median(values_in_bin))
-            percentile_10.append(np.percentile(values_in_bin, 10))
-            percentile_90.append(np.percentile(values_in_bin, 90))
+            try:
+                percentile_10.append(np.percentile(values_in_bin, 10))
+                percentile_90.append(np.percentile(values_in_bin, 90))
+            except:
+                percentile_10.append(np.nan)
+                percentile_90.append(np.nan)
             
             if (math.isnan(x) for x in median_values):
-            
                 set_trace()
             
         #set_trace()    
@@ -526,7 +527,7 @@ if __name__=="__main__":
     """
     """ optimization """
 
-    person = 'Maria'
+    person = 'Doug'
 
     if person == 'Maria':
         model_title = 'Example_model-NAT_CA'
@@ -546,24 +547,26 @@ if __name__=="__main__":
                       "tas_max.nc", "tas_mean.nc", "tca.nc", "te.nc", "mpa.nc",
                       "totalVeg.nc", "vpd.nc", "csoil.nc", "SoilM.nc"]
 
+        cores = 2
+        fraction_data_for_sample = 0.05
     else:
         model_title = 'Example_model-q'
 
         dir_training = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
         y_filen = "GFED4.1s_Burned_Fraction.nc"
-
+        CA_filen = None
         x_filen_list=["trees.nc", "pr_mean.nc", "consec_dry_mean.nc", 
-                  "lightn.nc", "popDens.nc",
+                  #"lightn.nc", "popDens.nc",
                   "crop.nc", "pas.nc", 
                   "humid.nc", "csoil.nc", "tas_max.nc",
                   "totalVeg.nc"] 
 
-
+        cores = 1
+        fraction_data_for_sample = 0.01
 
     grab_old_trace = True # set to True till you get the code running. Then set to False when you start adding in new response curves
 
-    cores = 2
-    fraction_data_for_sample = 0.05
+    
     niterations = 100
 
     months_of_year = [7]
@@ -573,7 +576,7 @@ if __name__=="__main__":
 
     dir_projecting = dir_training
 
-    sample_for_plot = 50
+    sample_for_plot = 20
 
     levels = [0, 0.1, 1, 2, 5, 10, 20, 50, 100] 
     cmap = 'OrRd'
