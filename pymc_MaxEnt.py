@@ -75,14 +75,14 @@ def fit_MaxEnt_probs_to_data(Y, X, niterations, *arg, **kw):
         ## set priors
         nvars = X.shape[1]
         priors = {#"q":     pm.LogNormal('q', mu = 0.0, sigma = 1.0),
-                  "lin_betas": pm.Normal('lin_betas', mu = 0, sigma = 100, shape = nvars),
-                  "pow_betas": pm.Normal('pow_betas', mu = 0, sigma = 100, shape = nvars),
-                  "pow_power": pm.Normal('pow_power', mu = 0, sigma = 1, shape = nvars),
-                  "x2s_betas": pm.Normal('x2s_betas', mu = 0, sigma = 100, shape = nvars),
-                  "x2s_X0"   : pm.Normal('x2s_X0'   , mu = 0, sigma = 1, shape = nvars),
-                  "comb_betas": pm.Normal('comb_betas', mu = 0, sigma = 100, shape = nvars),
-                  "comb_X0": pm.Normal('comb_X0', mu = 0.5, sigma = 1, shape = nvars),
-                  "comb_p": pm.Normal('comb_p', mu = 0, sigma = 1 , shape = nvars)
+                  "lin_betas": pm.Normal('lin_betas', mu = 0, sigma = 100, shape = nvars)#,
+                  #"pow_betas": pm.Normal('pow_betas', mu = 0, sigma = 100, shape = nvars),
+                  #"pow_power": pm.Normal('pow_power', mu = 0, sigma = 1, shape = nvars),
+                  #"x2s_betas": pm.Normal('x2s_betas', mu = 0, sigma = 100, shape = nvars),
+                  #"x2s_X0"   : pm.Normal('x2s_X0'   , mu = 0, sigma = 1, shape = nvars),
+                  #"comb_betas": pm.Normal('comb_betas', mu = 0, sigma = 100, shape = nvars),
+                  #"comb_X0": pm.Normal('comb_X0', mu = 0.5, sigma = 1, shape = nvars),
+                  #"comb_p": pm.Normal('comb_p', mu = 0, sigma = 1 , shape = nvars)
                   
                    #"x2s": pm.Normal('x2s', mu = 0, sigma = 1, shape = [2, X.shape[1]])
                     # Maria: Add response curve priors
@@ -421,7 +421,7 @@ if __name__=="__main__":
     
 
     x_filen_list=["trees.nc", "pr_mean.nc", "consec_dry_mean.nc", 
-                  "lightn.nc", "popDens.nc",
+                  "lightn.nc", "popDens.nc", "cveg.nc", "tas_mean.nc"
                   "crop.nc", "pas.nc", 
                   "humid.nc", "csoil.nc", "tas_max.nc",
                   "totalVeg.nc"]
