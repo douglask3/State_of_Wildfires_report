@@ -159,6 +159,7 @@ def train_MaxEnt_model(y_filen, x_filen_list, dir = '', filename_out = '',
                  '-nvars_' +  str(len(x_filen_list)) + \
                  '-niterations_' + str(niterations * cores)
     
+    data_file = dir_outputs + '/data-'   + out_file + '.nc'
     trace_file = dir_outputs + '/trace-'   + out_file + '.nc'
     scale_file = dir_outputs + '/scalers-' + out_file + '.csv'
     
@@ -172,6 +173,7 @@ def train_MaxEnt_model(y_filen, x_filen_list, dir = '', filename_out = '',
                                                      frac_random_sample = frac_random_sample,
                                                      subset_function = subset_function, 
                                                      subset_function_args = subset_function_args)
+    set_trace()
     print("Running trace")
     trace = fit_MaxEnt_probs_to_data(Y, X,niterations = niterations, cores = cores)
     
