@@ -15,9 +15,7 @@ import pandas as pd
 import math
 from scipy.special import logit, expit
 
-import pymc  as pm
-import pytensor
-import pytensor.tensor as tt
+from pymc_MaxEnt_train import *
 
 import matplotlib.pyplot as plt
 import arviz as az
