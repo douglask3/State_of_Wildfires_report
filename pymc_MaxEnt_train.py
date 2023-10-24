@@ -3,28 +3,19 @@ sys.path.append('fire_model/')
 sys.path.append('libs/')
 
 from MaxEntFire import MaxEntFire
-from BayesScatter import *
 
 from read_variable_from_netcdf import *
 from combine_path_and_make_dir import * 
-from plot_maps import *
 import os
 from   io     import StringIO
 import numpy  as np
 import pandas as pd
 import math
-from scipy.special import logit, expit
 
 import pymc  as pm
 import pytensor
 import pytensor.tensor as tt
-
-import matplotlib.pyplot as plt
 import arviz as az
-
-from scipy.stats import wilcoxon
-from sklearn.metrics import mean_squared_error
-
 
 
 def MaxEnt_on_prob(BA, fx, CA = None):
@@ -260,6 +251,8 @@ if __name__=="__main__":
     """ 
         RUN optimization 
     """
+
+    #### Optimize
     trace, scalers = train_MaxEnt_model(y_filen, x_filen_list, CA_filen , dir_training, 
                                         filename, dir_outputs,
                                         fraction_data_for_sample,
