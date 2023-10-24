@@ -28,13 +28,13 @@ from sklearn.metrics import mean_squared_error
 
 
 def MaxEnt_on_prob(BA, fx, CA = None):
-    """calculates the log-transformed continuous logit likelihood for x given mu when x 
-       and mu are probabilities between 0-1. 
+    """calculates the log-transformed continuous logit likelihood for BA given fx when BA
+       and fx are probabilities between 0-1 with relative areas, CA
        Works with tensor variables.   
     Arguments:
-        x -- x in P(x|mu). tensor 1-d array
-	mu -- mu in P(x|mu). tensor 1-d array
-        CA -- Area for the cover type (cover area)
+        BA -- BA in P(BA|fx). numpy 1-d array
+	gx -- gx in P(BA|fx). tensor 1-d array, length of BA
+        CA -- Area for the cover type (cover area). numpy 1-d array, length of BA. Default of None means everything is considered equal area.
     Returns:
         1-d tensor array of liklihoods.
         
@@ -49,16 +49,15 @@ def MaxEnt_on_prob(BA, fx, CA = None):
         prob = BA*tt.log(fx) + (1.0-BA)*tt.log((1-fx))
     return prob
 
-def fit_MaxEnt_probs_to_data(Y, X, niterations, *arg, **kw):
+def fit_MaxEnt_probs_to_data(Y, X, CA = None, niterations = 100, *arg, **kw):
     """ Bayesian inerence routine that fits independant variables, X, to dependant, Y.
         Based on the MaxEnt solution of probabilities. 
     Arguments:
         Y-- dependant variable as numpy 1d array
 	X -- numpy 2d array of indepenant variables, each columne a different variable
+        CA -- Area for the cover type (cover area). None means doesnt run otherwise, numpy 1-d array, length of Y. Defalt to None.
 	niterations -- number of iterations per chain when sampling the postior during 
-                NUTS inference 
-		(note default chains is normally 2 and is set by *args or **kw)
-		Defauls is 'outputs'.
+                NUTS inference. Default of 100.
 	*args, **kw -- arguemts passed to 'pymc.sample'
 
     Returns:
@@ -95,7 +94,12 @@ def fit_MaxEnt_probs_to_data(Y, X, niterations, *arg, **kw):
         prediction = model.burnt_area_spread(X)  
         
         ## define error measurement
-        error = pm.DensityDist("error", prediction, logp = MaxEnt_on_prob, observed = Y)
+        if CA is None:
+            error = pm.DensityDist("error", prediction, logp = MaxEnt_on_prob, 
+                                observed = Y)
+        else:
+            error = pm.DensityDist("error", prediction, CA, logp = MaxEnt_on_prob, 
+                                observed = Y)
                 
         ## sample model
         attempts = 1
@@ -179,11 +183,18 @@ def train_MaxEnt_model(y_filen, x_filen_list, CA_filen = None, dir = '', filenam
         Y, X, CA, lmask, scalers = read_all_data_from_netcdf(CA_filename = CA_filen, **common_args)
     else:
         Y, X, lmask, scalers = read_all_data_from_netcdf(**common_args)
-        
-    set_trace() 
+        CA = None
+    
+    if np.min(Y) < 0.0 or np.max(Y) > 100:
+        print("target variable does not meet expected unit range (i.e, data poimts should be fractions, but values found less than 0 or greater than 1)")
+        sys.exit() 
+    if np.min(Y) > 1.0:
+        if np.max(Y) < 50:
+            print("WARNING: target variable has values greater than 1 all less than 50. Interpreting at a percentage, but you should check")
+        Y = Y / 100.0
     
     print("Running trace")
-    trace = fit_MaxEnt_probs_to_data(Y, X,niterations = niterations, cores = cores)
+    trace = fit_MaxEnt_probs_to_data(Y, X, CA = CA, niterations = niterations, cores = cores)
     
     ## save trace file
     trace.to_netcdf(trace_file)
