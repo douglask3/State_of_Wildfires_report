@@ -1,0 +1,267 @@
+import sys
+sys.path.append('fire_model/')
+sys.path.append('libs/')
+
+from MaxEntFire import MaxEntFire
+from BayesScatter import *
+
+from read_variable_from_netcdf import *
+from combine_path_and_make_dir import * 
+from plot_maps import *
+import os
+from   io     import StringIO
+import numpy  as np
+import pandas as pd
+import math
+from scipy.special import logit, expit
+
+import pymc  as pm
+import pytensor
+import pytensor.tensor as tt
+
+import matplotlib.pyplot as plt
+import arviz as az
+
+from scipy.stats import wilcoxon
+from sklearn.metrics import mean_squared_error
+
+
+
+def MaxEnt_on_prob(BA, fx, CA = None):
+    """calculates the log-transformed continuous logit likelihood for BA given fx when BA
+       and fx are probabilities between 0-1 with relative areas, CA
+       Works with tensor variables.   
+    Arguments:
+        BA -- BA in P(BA|fx). numpy 1-d array
+	gx -- gx in P(BA|fx). tensor 1-d array, length of BA
+        CA -- Area for the cover type (cover area). numpy 1-d array, length of BA. Default of None means everything is considered equal area.
+    Returns:
+        1-d tensor array of liklihoods.
+        
+    """
+    fx = tt.switch(
+        tt.lt(fx, 0.0000000000000000001),
+        0.0000000000000000001, fx)
+      
+    if CA is not None: 
+        prob =  BA*CA*tt.log(fx) + (1.0-BA)*CA*tt.log((1-fx))
+    else:
+        prob = BA*tt.log(fx) + (1.0-BA)*tt.log((1-fx))
+    return prob
+
+def fit_MaxEnt_probs_to_data(Y, X, CA = None, niterations = 100, *arg, **kw):
+    """ Bayesian inerence routine that fits independant variables, X, to dependant, Y.
+        Based on the MaxEnt solution of probabilities. 
+    Arguments:
+        Y-- dependant variable as numpy 1d array
+	X -- numpy 2d array of indepenant variables, each columne a different variable
+        CA -- Area for the cover type (cover area). None means doesnt run otherwise, numpy 1-d array, length of Y. Defalt to None.
+	niterations -- number of iterations per chain when sampling the postior during 
+                NUTS inference. Default of 100.
+	*args, **kw -- arguemts passed to 'pymc.sample'
+
+    Returns:
+        pymc traces, returned and saved to [out_dir]/[filneame]-[metadata].nc
+    """
+
+    trace_callback = None
+    try:
+        if "SLURM_JOB_ID" in os.environ:
+            def trace_callback(trace, draw):        
+                if len(trace) % 10 == 0:
+                    print('chain' + str(draw[0]))
+                    print('trace' + str(len(trace)))
+    except:
+        pass        
+
+    with pm.Model() as max_ent_model:
+        ## set priors
+        nvars = X.shape[1]
+
+        priors = {"q":     pm.LogNormal('q', mu = 0.0, sigma = 1.0),
+                  "lin_betas": pm.Normal('lin_betas', mu = 0, sigma = 100, shape = nvars),
+                  "pow_betas": pm.Normal('pow_betas', mu = 0, sigma = 100, shape = nvars),
+                  "pow_power": pm.LogNormal('pow_power', mu = 0, sigma = 1, shape = nvars),
+                  "x2s_betas": pm.Normal('x2s_betas', mu = 0, sigma = 100, shape = nvars),
+                  "x2s_X0"   : pm.Normal('x2s_X0'   , mu = 0, sigma = 1, shape = nvars),
+                  "comb_betas": pm.Normal('comb_betas', mu = 0, sigma = 100, shape = nvars),
+                  "comb_X0": pm.Normal('comb_X0', mu = 0.5, sigma = 1, shape = nvars),
+                  "comb_p": pm.Normal('comb_p', mu = 0, sigma = 1 , shape = nvars)
+                  }
+
+        ## run model
+        model = MaxEntFire(priors, inference = True)
+        prediction = model.burnt_area_spread(X)  
+        
+        ## define error measurement
+        if CA is None:
+            error = pm.DensityDist("error", prediction, logp = MaxEnt_on_prob, 
+                                observed = Y)
+        else:
+            error = pm.DensityDist("error", prediction, CA, logp = MaxEnt_on_prob, 
+                                observed = Y)
+                
+        ## sample model
+        attempts = 1
+        while attempts <= 10:
+            try:
+                trace = pm.sample(niterations, return_inferencedata=True, 
+                                  callback = trace_callback, *arg, **kw)
+                attempts = 100
+            except:
+                print("sampling attempt " + str(attempts) + " failed. Trying a max of 10 times")
+                attempts += 1
+    return trace
+
+
+def train_MaxEnt_model(y_filen, x_filen_list, CA_filen = None, dir = '', filename_out = '',
+                       dir_outputs = '',
+                       frac_random_sample = 1.0,
+                       subset_function = None, subset_function_args = None,
+                       niterations = 100, cores = 4, model_title = 'no_name', 
+                       grab_old_trace = False):
+                       
+    ''' Opens up traning data and trains and saves Bayesian Inference optimization of model. 
+        see 'fit_MaxEnt_probs_to_data' for details how.
+    Arguments:
+	y_filen -- filename of dependant variable (i.e burnt area)
+        x_filen_list -- filanames of independant variables
+            (ie bioclimate, landscape metrics etc)
+        filename_out -- string of the start of the traces output name. Detault is blank. 
+		Some metadata will be saved in the filename, so even blank will 
+                save a file.
+        dir_outputs --string of path to output location. This is where the traces netcdf file 
+                will be saved.
+        fraction_data_for_sample -- fraction of gridcells used for optimization
+	subset_function -- a list of constrain function useful for constraining and resticting 
+                data to spatial locations and time periods/months. Default is not to 
+                constrain (i.e "None" for no functions")
+        subset_function_args -- list of arguements that feed into subset_function
+        niterations -- number of iterations or samples )after warm-up) in optimixation for each
+                chain. Equilivent to number of ensemble members.
+        cores - how many chains to start (confusiong name, I know).
+                When running on slurm, also number of cores
+        model_title - title of model run. A str default to 'no_name'. Used to initially to name 
+                the dir everythings stored in
+	grab_old_trace -- Boolean. If True, and a filename starting with 'filename' and 
+                containing some of the same setting (saved in filename) exists,  it will open 
+                and return this rather than run a new one. Not all settings are saved for 
+                identifiation, so if in doubt, set to 'False'.
+    Returns:
+        pymc traces, returned and saved to [out_dir]/[filneame]-[metadata].nc and the scalers
+        used on independant data to normalise it, useful for predicting model
+    '''
+
+    #dir_outputs = combine_path_and_make_dir(dir_outputs, model_title)
+    out_file =   filename_out + '-nvariables_' + \
+                 '-frac_random_sample' + str(frac_random_sample) + \
+                 '-nvars_' +  str(len(x_filen_list)) + \
+                 '-niterations_' + str(niterations * cores)
+    
+    data_file = dir_outputs + '/data-'   + out_file + '.nc'
+    trace_file = dir_outputs + '/trace-'   + out_file + '.nc'
+    scale_file = dir_outputs + '/scalers-' + out_file + '.csv'
+    
+    ## check if trace file exsts and return if wanted
+    if os.path.isfile(trace_file) and os.path.isfile(scale_file) and grab_old_trace:
+        return az.from_netcdf(trace_file), pd.read_csv(scale_file).values   
+    print("opening data for inference")
+
+  
+    common_args = {'y_filename': y_filen,
+        'x_filename_list': x_filen_list,
+        'add_1s_columne': True,
+        'dir': dir,
+        'x_normalise01': True,
+        'frac_random_sample': frac_random_sample,
+        'subset_function': subset_function,
+        'subset_function_args': subset_function_args
+    }
+
+    if CA_filen is not None:
+        # Process CA_filen when it is provided
+        Y, X, CA, lmask, scalers = read_all_data_from_netcdf(CA_filename = CA_filen, **common_args)
+    else:
+        Y, X, lmask, scalers = read_all_data_from_netcdf(**common_args)
+        CA = None
+    
+    if np.min(Y) < 0.0 or np.max(Y) > 100:
+        print("target variable does not meet expected unit range (i.e, data poimts should be fractions, but values found less than 0 or greater than 1)")
+        sys.exit() 
+    if np.min(Y) > 1.0:
+        if np.max(Y) < 50:
+            print("WARNING: target variable has values greater than 1 all less than 50. Interpreting at a percentage, but you should check")
+        Y = Y / 100.0
+    
+    print("Running trace")
+    trace = fit_MaxEnt_probs_to_data(Y, X, CA = CA, niterations = niterations, cores = cores)
+    
+    ## save trace file
+    trace.to_netcdf(trace_file)
+    pd.DataFrame(scalers).to_csv(scale_file, index = False)
+    return trace, scalers
+
+if __name__=="__main__":
+    """ Running optimization. 
+    Variables that need setting:
+        dir_training -- The directory of the training data inclduing 
+            dependant and independant variables
+        y_filen -- filename of dependant variable (i.e burnt area)
+        x_filen_list -- filanames of independant variables
+            (ie bioclimate, landscape metrics etc)
+        cores - how many chains to start (confusiong name, I know).
+            When running on slurm, also number of cores
+        fraction_data_for_sample -- fraction of gridcells used for optimization
+        niterations -- number of iterations or samples )after warm-up) in optimixation for each
+            chain. Equilivent to number of ensemble members.
+        months_of_year --- which months to extact on training and projecting
+        grab_old_trace -- Boolean. If True and there's an appripritate looking old trace file, 
+            then  optimisation is skipped that file is loaded instead. 
+            This isn't totally infalable, so if doing a final run and in doubt, set to False
+    Returns:
+        outputs trace file and info (variable scalers) needed for evaluation and projection.
+    """
+
+    """ 
+        SETPUT 
+    """
+
+    model_title = 'simple_example_model'
+
+    ### input data paths and filenames
+    dir_training = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
+    
+    y_filen = "GFED4.1s_Burned_Fraction.nc"
+    CA_filen = None
+
+    x_filen_list=["trees.nc","consec_dry_mean.nc",
+                  "crop.nc", "pas.nc", "humid.nc", "totalVeg.nc"] 
+
+    ### optimization info
+    niterations = 100
+    cores = 1
+    fraction_data_for_sample = 0.01
+    months_of_year = [7]
+
+    subset_function = sub_year_months
+    subset_function_args = {'months_of_year': months_of_year}
+
+    grab_old_trace = True # set to True till you get the code running. 
+                          # Then set to False when you start adding in new response curves
+
+    ### output info
+
+    dir_outputs = 'outputs/'
+
+    filename = '_'.join([file[:-3] for file in x_filen_list]) + \
+              '-frac_points_' + str(fraction_data_for_sample) + \
+              '-Month_' +  '_'.join([str(mn) for mn in months_of_year])
+    
+    """ 
+        RUN optimization 
+    """
+    trace, scalers = train_MaxEnt_model(y_filen, x_filen_list, CA_filen , dir_training, 
+                                        filename, dir_outputs,
+                                        fraction_data_for_sample,
+                                        subset_function, subset_function_args,
+                                        niterations, cores, model_title, grab_old_trace)
