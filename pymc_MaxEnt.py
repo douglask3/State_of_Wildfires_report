@@ -6,6 +6,7 @@ from MaxEntFire import MaxEntFire
 from BayesScatter import *
 
 from read_variable_from_netcdf import *
+from combine_path_and_make_dir import * 
 from plot_maps import *
 import os
 from   io     import StringIO
@@ -24,10 +25,7 @@ import arviz as az
 from scipy.stats import wilcoxon
 from sklearn.metrics import mean_squared_error
 
-def combine_path_and_make_dir(path1, path2):
-    path = path1 + '/'+ path2 + '/'
-    if not os.path.exists(path): os.makedirs(path)
-    return path
+
 
 def MaxEnt_on_prob(BA, fx, CA = None):
     """calculates the log-transformed continuous logit likelihood for x given mu when x 
@@ -36,10 +34,10 @@ def MaxEnt_on_prob(BA, fx, CA = None):
     Arguments:
         x -- x in P(x|mu). tensor 1-d array
 	mu -- mu in P(x|mu). tensor 1-d array
+        CA -- Area for the cover type (cover area)
     Returns:
         1-d tensor array of liklihoods.
         
-    CA -- Area for the cover type (cover area)
     """
     fx = tt.switch(
         tt.lt(fx, 0.0000000000000000001),
