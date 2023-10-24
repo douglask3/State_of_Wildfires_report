@@ -268,40 +268,31 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '',
     nits = len(trace.posterior.chain)*len(trace.posterior.draw)
     idx = range(0, nits, int(np.floor(nits/sample_for_plot)))
     
-    Sim = np.array(list(map(sample_model, idx)))
-    
+    contributions = {}
     for col in range(X.shape[1]-1):
-        x_copy = X[:, col].copy()  # Copy the values of the current column
-       
-        print(col)
+        x_copy = X[:, col].copy() 
         
-        #aqui é o antigo código       
-        #X[:, col] = np.mean( X[:, col])  # Set the current column to 0 - change here
-        X[:, col] = 0.0
-
-        Sim2 = np.array(list(map(sample_model, idx)))  # Sample model for the modified column
+        Sim = np.array(list(map(sample_model, idx)))
         
-        fcol = math.floor(math.sqrt(X.shape[1]))
-        frw = math.ceil(X.shape[1]/fcol)
-            
+        X[:, col] = 0
         
-        ax = plt.subplot(frw,fcol, col + 1)
+        Sim2 = np.array(list(map(sample_model, idx)))
         
-        #ax = plt.subplot(6,4, col + 1)  # Select the corresponding subplot
-        #if col == 20:
-            #set_trace()
-        for rw in range(Sim.shape[0]):
+        contributions[col] = np.mean(Sim - Sim2/Sim)
         
-            ax.plot(x_copy, (Sim[rw, :] - Sim2[rw, :]), '.', color='darkred', markersize = 0.5, linewidth=0.5)  # Plot the data for the current variable
+        contributions.append(contributions)
         
         X[:, col] = x_copy 
-        
-    fig_dir = combine_path_and_make_dir(dir_outputs, '/figs/')   
-    plt.savefig(fig_dir + '-response-curves.png') 
+    # Plot the jackknife variables contribution plot
+
+    fig, ax = plt.subplots()
+    ax.bar(range(len(contributions)), list(contributions.values()))
+    ax.set_xlabel('Variable')
+    ax.set_ylabel('Contribution')
     plt.show()
-    set_trace() #vai até aqui '''
-    
-        
+
+    return contributions
+    set_trace()    
 
     if run_evaluation:
         evaluate_model(filename_out, dir_outputs, Obs, Sim, lmask, *args, **kw)

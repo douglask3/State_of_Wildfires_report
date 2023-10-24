@@ -401,8 +401,8 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, CA_filen = None,
                 percentile_10.append(np.nan)
                 percentile_90.append(np.nan)
             
-            if np.median(values_in_bin:
-                set_trace()
+            #if np.median(values_in_bin):
+                #set_trace()
             
         #set_trace()    
         ax.plot(bin_centers, median_values, marker='.', label='Median')
@@ -413,8 +413,8 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, CA_filen = None,
     
         X[:, col] = x_copy 
     
-    plt.show()
-    set_trace() 
+    #plt.show()
+    #set_trace() 
     
     fig_dir = combine_path_and_make_dir(dir_outputs, '/figs/')
     
@@ -522,10 +522,10 @@ if __name__=="__main__":
     """
     """ optimization """
 
-    person = 'Doug'
+    person = 'Maria'
 
     if person == 'Maria':
-        model_title = 'Example_model-NAT_CA'
+        model_title = 'Example_model-q-reduced'
         #dir_training = "/gws/nopw/j04/jules/mbarbosa/driving_and_obs_overlap/AllConFire_2000_2009/"
         dir_training = "D:/Doutorado/Sanduiche/research/maxent-variables/2002-2011/"
 
@@ -559,7 +559,7 @@ if __name__=="__main__":
         cores = 1
         fraction_data_for_sample = 0.01
 
-    grab_old_trace = True # set to True till you get the code running. Then set to False when you start adding in new response curves
+    grab_old_trace = False # set to True till you get the code running. Then set to False when you start adding in new response curves
 
     
     niterations = 100
