@@ -48,10 +48,10 @@ if __name__=="__main__":
                   "lightn.nc", "pas.nc", "soilM.nc", "precip.nc",
                   "popDens.nc"]
 
-    grab_old_trace = False
+    grab_old_trace = TrueFalse
     cores = 1
-    fraction_data_for_sample = 0.01
-    niterations = 100
+    fraction_data_for_sample = 0.05
+    niterations = 200
 
     year_range = [2002, 2004]
     extent = [-180, 180, -59.5, 84]
@@ -64,7 +64,7 @@ if __name__=="__main__":
 
     sample_for_plot = 4
 
-    levels = [0, 0.1, 1, 2, 5, 10, 20, 50, 100] 
+    levels = [0, 5, 10, 20, 40, 60, 80, 100] 
     cmap = 'OrRd'
 
     run_evaluation = False
