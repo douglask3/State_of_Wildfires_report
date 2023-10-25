@@ -143,7 +143,10 @@ def train_MaxEnt_model(y_filen, x_filen_list, CA_filen = None, dir = '', filenam
         pymc traces, returned and saved to [out_dir]/[filneame]-[metadata].nc and the scalers
         used on independant data to normalise it, useful for predicting model
     '''
-
+    
+    print("====================")
+    print("Optimization started")
+    print("====================")
     #dir_outputs = combine_path_and_make_dir(dir_outputs, model_title)
     out_file =   filename_out + '-nvariables_' + \
                  '-frac_random_sample' + str(frac_random_sample) + \
@@ -156,46 +159,67 @@ def train_MaxEnt_model(y_filen, x_filen_list, CA_filen = None, dir = '', filenam
     
     ## check if trace file exsts and return if wanted
     if os.path.isfile(trace_file) and os.path.isfile(scale_file) and grab_old_trace:
-        return az.from_netcdf(trace_file), pd.read_csv(scale_file).values   
-    print("opening data for inference")
+        print("======================")
+        print("Old optimization found")
+        print("======================")
+        trace = az.from_netcdf(trace_file)
+        scalers = pd.read_csv(scale_file).values   
+    else:
+        print("opening data for inference")
 
   
-    common_args = {'y_filename': y_filen,
-        'x_filename_list': x_filen_list,
-        'add_1s_columne': True,
-        'dir': dir,
-        'x_normalise01': True,
-        'frac_random_sample': frac_random_sample,
-        'subset_function': subset_function,
-        'subset_function_args': subset_function_args
-    }
+        common_args = {'y_filename': y_filen,
+            'x_filename_list': x_filen_list,
+            'add_1s_columne': True,
+            'dir': dir,
+            'x_normalise01': True,
+            'frac_random_sample': frac_random_sample,
+            'subset_function': subset_function,
+            'subset_function_args': subset_function_args
+        }
 
-    if CA_filen is not None:
-        # Process CA_filen when it is provided
-        Y, X, CA, lmask, scalers = read_all_data_from_netcdf(CA_filename = CA_filen, **common_args)
-    else:
-        Y, X, lmask, scalers = read_all_data_from_netcdf(**common_args)
-        CA = None
+        if CA_filen is not None:
+            # Process CA_filen when it is provided
+            Y, X, CA, lmask, scalers = read_all_data_from_netcdf(CA_filename = CA_filen, 
+                                                                 **common_args)
+        else:
+            Y, X, lmask, scalers = read_all_data_from_netcdf(**common_args)
+            CA = None
     
-    if np.min(Y) < 0.0 or np.max(Y) > 100:
-        print("target variable does not meet expected unit range (i.e, data poimts should be fractions, but values found less than 0 or greater than 1)")
-        sys.exit() 
-    if np.min(Y) > 1.0:
-        if np.max(Y) < 50:
-            print("WARNING: target variable has values greater than 1 all less than 50. Interpreting at a percentage, but you should check")
-        Y = Y / 100.0
+        if np.min(Y) < 0.0 or np.max(Y) > 100:
+            print("target variable does not meet expected unit range " + \
+                  "(i.e, data poimts should be fractions, but values found less than " + \
+                  "0 or greater than 1)")
+            sys.exit() 
+        if np.min(Y) > 1.0:
+            if np.max(Y) < 50:
+                print("WARNING: target variable has values greater than 1 all less than 50." + \
+                      " Interpreting at a percentage, but you should check")
+            Y = Y / 100.0
     
-    print("Running trace")
-    trace = fit_MaxEnt_probs_to_data(Y, X, CA = CA, niterations = niterations, cores = cores)
+        print("======================")
+        print("Running trace")
+        print("======================")
+        trace = fit_MaxEnt_probs_to_data(Y, X, CA = CA, 
+                                         niterations = niterations, cores = cores)
     
-    ## save trace file
-    trace.to_netcdf(trace_file)
-    pd.DataFrame(scalers).to_csv(scale_file, index = False)
+        ## save trace file
+        trace.to_netcdf(trace_file)
+        pd.DataFrame(scalers).to_csv(scale_file, index = False)
+
+        print("=====================")
+        print("Optimization complete")
+        print("=====================")
+
+    print("trace filename:  " + trace_file)
+    print("scalers filename:  " + scale_file)
+    
     return trace, scalers
 
 if __name__=="__main__":
     """ Running optimization. 
     Variables that need setting:
+        model_title -- name of model run. Used as directory and filename.
         dir_training -- The directory of the training data inclduing 
             dependant and independant variables
         y_filen -- filename of dependant variable (i.e burnt area)
@@ -217,10 +241,9 @@ if __name__=="__main__":
     """ 
         SETPUT 
     """
-
+    ### input data paths and filenames
     model_title = 'simple_example_model'
 
-    ### input data paths and filenames
     dir_training = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
     
     y_filen = "GFED4.1s_Burned_Fraction.nc"
@@ -242,7 +265,6 @@ if __name__=="__main__":
                           # Then set to False when you start adding in new response curves
 
     ### output info
-
     dir_outputs = 'outputs/'
 
     filename = '_'.join([file[:-3] for file in x_filen_list]) + \
@@ -252,10 +274,9 @@ if __name__=="__main__":
     """ 
         RUN optimization 
     """
-
-    #### Optimize
     trace, scalers = train_MaxEnt_model(y_filen, x_filen_list, CA_filen , dir_training, 
                                         filename, dir_outputs,
                                         fraction_data_for_sample,
                                         subset_function, subset_function_args,
                                         niterations, cores, model_title, grab_old_trace)
+    
