@@ -3,6 +3,8 @@ sys.path.append('fire_model/')
 sys.path.append('libs/')
 
 from MaxEntFire import MaxEntFire
+from train import *
+
 from BayesScatter import *
 
 from read_variable_from_netcdf import *
@@ -15,7 +17,6 @@ import pandas as pd
 import math
 from scipy.special import logit, expit
 
-from pymc_MaxEnt_train import *
 
 import matplotlib.pyplot as plt
 import arviz as az
