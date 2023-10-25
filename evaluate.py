@@ -3,11 +3,13 @@ sys.path.append('fire_model/')
 sys.path.append('libs/')
 
 from MaxEntFire import MaxEntFire
+
 from BayesScatter import *
 #from train import *
 
 from read_variable_from_netcdf import *
 from combine_path_and_make_dir import * 
+from pymc_extras import select_post_param
 from plot_maps import *
 import os
 from   io     import StringIO
@@ -20,7 +22,30 @@ import matplotlib.pyplot as plt
 import arviz as az
 
 from scipy.stats import wilcoxon
-from sklearn.metrics import mean_squared_error
+
+def runSim_MaxEntFire(params, X, eg_cube, id_name, dir_samples, run_name, grab_old_trace):  
+    def sample_model(i, run_name = 'control'):   
+        dir_sample =  combine_path_and_make_dir(dir_samples, run_name)
+        file_sample = dir_sample + '/sample' + str(i) + '.nc'
+        
+        if os.path.isfile(file_sample) and grab_old_trace:
+            return iris.load_cube(file_sample)
+        print("Generating Sample:" + file_sample)
+        param_in = [param[i] if param.ndim == 1 else param[i,:] for param in params]
+        param_in = dict(zip(params_names, param_in))
+        out = MaxEntFire(param_in).burnt_area(X)
+        out = insert_data_into_cube(out, eg_cube, lmask)
+        coord = iris.coords.DimCoord(i, "realization")
+        out.add_aux_coord(coord)
+        iris.save(out, file_sample)
+        
+        return out
+
+    nits = len(trace.posterior.chain)*len(trace.posterior.draw)
+    idx = range(0, nits, int(np.floor(nits/sample_for_plot)))
+    out = np.array(list(map(lambda id: sample_model(id, id_name), idx)))
+
+    return iris.cube.CubeList(out).merge_cube()
 
 
 def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, CA_filen = None, dir = '', 
@@ -67,191 +92,41 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, CA_filen = None,
         return 
 
     common_args = {
-    'y_filename': y_filen,
-    'x_filename_list': x_filen_list,
-    'add_1s_columne': True,
-    'dir': dir,
-    'x_normalise01': True,
-    'subset_function': subset_function,
-    'subset_function_args': subset_function_args
-}
+        'y_filename': y_filen,
+        'x_filename_list': x_filen_list,
+        'add_1s_columne': True,
+        'dir': dir,
+        'x_normalise01': True,
+        'subset_function': subset_function,
+        'subset_function_args': subset_function_args
+    }
 
     if CA_filen is not None:
-        Y, X, lmask, scalers, CA = read_all_data_from_netcdf(CA_filename = CA_filen, **common_args)
-        
+        Y, X, lmask, scalers, CA = read_all_data_from_netcdf(CA_filename = CA_filen, **common_args)   
     else:
-        
         Y, X, lmask, scalers = read_all_data_from_netcdf(**common_args)
     
     Obs = read_variable_from_netcdf(y_filen, dir,
                                     subset_function = subset_function, 
                                     subset_function_args = subset_function_args)
     
-    def select_post_param(name): 
-        out = trace.posterior[name].values
-        A = out.shape[0]
-        B = out.shape[1]
-        new_shape = ((A * B), *out.shape[2:])
-        return np.reshape(out, new_shape)
+    params = select_post_param(trace)
 
-    params = trace.to_dict()['posterior']
-    params_names = params.keys()
-    params = [select_post_param(var) for var in params_names]
     
     dir_outputs = combine_path_and_make_dir(dir_outputs, model_title)
     dir_samples = combine_path_and_make_dir(dir_outputs, '/samples/')     
     dir_samples = combine_path_and_make_dir(dir_samples, filename_out)
       
-    def sample_model(i, run_name = 'control'):   
-        dir_sample =  combine_path_and_make_dir(dir_samples, run_name)
-        file_sample = dir_sample + '/sample' + str(i) + '.nc'
-        
-        if os.path.isfile(file_sample) and grab_old_trace:
-            return iris.load_cube(file_sample)
-        print("Generating Sample:" + file_sample)
-        param_in = [param[i] if param.ndim == 1 else param[i,:] for param in params]
-        param_in = dict(zip(params_names, param_in))
-        out = MaxEntFire(param_in).burnt_area(X)
-        out = insert_data_into_cube(out, Obs, lmask)
-        coord = iris.coords.DimCoord(i, "realization")
-        out.add_aux_coord(coord)
-        iris.save(out, file_sample)
-        
-        return out
-    
-    nits = len(trace.posterior.chain)*len(trace.posterior.draw)
-    idx = range(0, nits, int(np.floor(nits/sample_for_plot)))
-    
-    def runSim(id_name):  
-        out = np.array(list(map(lambda id: sample_model(id, id_name), idx)))
-        return iris.cube.CubeList(out).merge_cube()
-               
-    Sim = runSim("control") 
-    '''  
-    for col_to_keep in range(X.shape[1]-1):
-        other_cols = np.arange(X.shape[1]-1)  # Create an array of all columns
-        other_cols = other_cols[other_cols != col_to_keep]  # Exclude col_to_keep
-        original_X = X[:, other_cols].copy()
-        X[:, other_cols] = 0.0  
-        
-        Sim2 = runSim("_to_zero")
-        
-        fcol = math.floor(math.sqrt(X.shape[1]))
-        frw = math.ceil(X.shape[1]/fcol)
-        
-        ax = plt.subplot(frw,fcol, col_to_keep + 1)  # Select the corresponding subplot
-        
-        variable_name = x_filen_list[col_to_keep].replace('.nc', '')
-        ax.set_title(variable_name)
-        
-        def non_masked_data(cube):
-            return cube.data[cube.data.mask == False].data
-        
-        
-        num_bins = 10
-        hist, bin_edges = np.histogram(X[:, col_to_keep], bins=num_bins)
-        bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
-        median_values = []
-        percentile_10 = []
-        percentile_90 = []
-        
-        for i in range(num_bins):
-        
-            mask = (X[:, col_to_keep] >= bin_edges[i]) & (X[:, col_to_keep] < bin_edges[i + 1])
-            values_in_bin = []
-        
-            for rw in range(Sim.shape[0]):
-                sim_final = non_masked_data(Sim[rw]) - non_masked_data(Sim2[rw])                      
-                values_in_bin.append(sim_final[mask])
-            values_in_bin = np.array(values_in_bin).flatten()    
-            #set_trace()    
-            median_values.append(np.median(values_in_bin))
-            percentile_10.append(np.percentile(values_in_bin, 10))
-            percentile_90.append(np.percentile(values_in_bin, 90))
-      
-                
-        set_trace()   
-        ax.plot(bin_centers, median_values, marker='.', label='Median')
-        ax.fill_between(bin_centers, percentile_10, percentile_90, alpha=0.3, label='10th-90th Percentiles')                           
-                
-        X[:, other_cols] = original_X
-    
-    #plt.show()
-    #set_trace()     
-      
-    fig_dir = combine_path_and_make_dir(dir_outputs, '/figs/')
-    
-    plt.savefig(fig_dir + 'control-response-curves.png')    
-    '''
-    
-    #plot sensitivity response curves
-    plt.figure(figsize=(14, 12))
-    for col in range(X.shape[1]-1):
-        x_copy = X[:, col].copy()  # Copy the values of the current column
-        
-        print(col)
+    Sim = runSim_MaxEntFire(params, X, eg_cube, id_name, dir_samples, 
+                            run_name, grab_old_trace, "control") 
 
-        dx = 0.001
-        X[:, col] -= dx/2.0  # Subtract 0.1 of all values for the current column
-
-        Sim3 = runSim("subtract_01")    
+    standard_response_curve(Sim, X, eg_cube, id_name, dir_samples, 
+                            run_name, grab_old_trace)
         
-        X[:, col] = x_copy #restore values
-        
-        X[:, col] += dx/2.0 #add 0.1 to all values for the current column
-        
-        Sim4 = runSim("add_01") 
-        
-        fcol = math.floor(math.sqrt(X.shape[1]))
-        frw = math.ceil(X.shape[1]/fcol)
-        
-        ax = plt.subplot(frw,fcol, col + 1)
-        variable_name = x_filen_list[col].replace('.nc', '')
-        ax.set_title(variable_name)
-        
-        def non_masked_data(cube):
-            return cube.data[cube.data.mask == False].data
-            
-        num_bins = 20
-        hist, bin_edges = np.histogram(X[:, col], bins=num_bins)
-        bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
-        median_values = []
-        percentile_10 = []
-        percentile_90 = []
-        
-        for i in range(num_bins):
-        
-            mask = (X[:, col] >= bin_edges[i]) & (X[:, col] < bin_edges[i + 1])
-            values_in_bin = []
-        
-            for rw in range(Sim.shape[0]):
-                sim_final = (non_masked_data(Sim3[rw]) - non_masked_data(Sim4[rw]))/dx                      
-                values_in_bin.append(sim_final[mask])
-            values_in_bin = np.array(values_in_bin).flatten()   
-            median_values.append(np.median(values_in_bin))
-            try:
-                percentile_10.append(np.percentile(values_in_bin, 10))
-                percentile_90.append(np.percentile(values_in_bin, 90))
-            except:
-                percentile_10.append(np.nan)
-                percentile_90.append(np.nan)
-            
-            
-        #set_trace()    
-        ax.plot(bin_centers, median_values, marker='.', label='Median')
-        ax.fill_between(bin_centers, percentile_10, percentile_90, alpha=0.3, label='10th-90th Percentiles')      
-        
-        #for rw in range(Sim.shape[0]):
-            #ax.plot(X[:, col], non_masked_data(Sim3[rw]) - non_masked_data(Sim4[rw]), '.', color = "darkred", markersize = 0.5, linewidth=0.5)
+          
+    sensitivity_reponse_curve(Sim, X, eg_cube, id_name, dir_samples, 
+                            run_name, grab_old_trace)
     
-        X[:, col] = x_copy 
-    
-    plt.show()
-    set_trace() 
-    
-    fig_dir = combine_path_and_make_dir(dir_outputs, '/figs/')
-    
-    plt.savefig(fig_dir + 'sensitivity-response-curves.png')  
 
     if run_evaluation:
         evaluate_model(filename_out, dir_outputs, Obs, Sim, lmask, *args, **kw)
