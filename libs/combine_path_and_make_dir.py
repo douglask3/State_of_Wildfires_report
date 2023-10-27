@@ -1,3 +1,5 @@
+import os
+
 def combine_path_and_make_dir(path1, path2 = ""):
     """pastes two paths together and makes that directory if it doesnt already exist   
     Arguments:
