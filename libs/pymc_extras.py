@@ -1,4 +1,5 @@
 import arviz as az
+import numpy as np
 
 def select_post_param(trace):
     def select_post_param_name(name): 
