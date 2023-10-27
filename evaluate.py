@@ -5,12 +5,15 @@ sys.path.append('libs/')
 from MaxEntFire import MaxEntFire
 
 from BayesScatter import *
+from response_curves import *
 #from train import *
 
 from read_variable_from_netcdf import *
 from combine_path_and_make_dir import * 
-from pymc_extras import select_post_param
+from namelist_functions import *
+from pymc_extras import *
 from plot_maps import *
+
 import os
 from   io     import StringIO
 import numpy  as np
@@ -23,32 +26,8 @@ import arviz as az
 
 from scipy.stats import wilcoxon
 
-def runSim_MaxEntFire(params, X, eg_cube, id_name, dir_samples, run_name, grab_old_trace):  
-    def sample_model(i, run_name = 'control'):   
-        dir_sample =  combine_path_and_make_dir(dir_samples, run_name)
-        file_sample = dir_sample + '/sample' + str(i) + '.nc'
-        
-        if os.path.isfile(file_sample) and grab_old_trace:
-            return iris.load_cube(file_sample)
-        print("Generating Sample:" + file_sample)
-        param_in = [param[i] if param.ndim == 1 else param[i,:] for param in params]
-        param_in = dict(zip(params_names, param_in))
-        out = MaxEntFire(param_in).burnt_area(X)
-        out = insert_data_into_cube(out, eg_cube, lmask)
-        coord = iris.coords.DimCoord(i, "realization")
-        out.add_aux_coord(coord)
-        iris.save(out, file_sample)
-        
-        return out
-
-    nits = len(trace.posterior.chain)*len(trace.posterior.draw)
-    idx = range(0, nits, int(np.floor(nits/sample_for_plot)))
-    out = np.array(list(map(lambda id: sample_model(id, id_name), idx)))
-
-    return iris.cube.CubeList(out).merge_cube()
-
-
-def compare_to_obs_maps(filename_out, dir_outputs, Obs, Sim, lmask, levels, cmap):    
+def compare_to_obs_maps(filename_out, dir_outputs, Obs, Sim, lmask, levels, cmap,
+                        *args, **kw):    
     ax = plt.subplot(2, 3, 4)
     BayesScatter(Obs, Sim, lmask,  0.000001, 0.000001, ax)
     plot_BayesModel_maps(Sim, lmask, levels, cmap, Obs, Nrows = 2, Ncols = 3)
@@ -89,7 +68,17 @@ def plot_parameter_info(traces, fig_dir, filename):
     plt.savefig(fig_dir + filename + '-traces.png')
 
 
-def evaluate_MaxEnt_model(trace, y_filen, x_filen_list, scalers, CA_filen = None, dir = '', 
+def evaluate_MaxEnt_model_from_namelist(training_namelist = None, evaluate_namelist = None, 
+                                        **kwargs):
+
+    variables = read_variable_from_namelist_with_overwite(training_namelist, **kwargs)
+    
+    return evaluate_MaxEnt_model(**variables)
+
+    
+
+def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_filen = None, 
+                         dir = '', 
                          dir_outputs = '', model_title = '', filename_out = '',
                          subset_function = None, subset_function_args = None,
                          sample_for_plot = 1, grab_old_trace = False,
@@ -127,6 +116,9 @@ def evaluate_MaxEnt_model(trace, y_filen, x_filen_list, scalers, CA_filen = None
         projection, reponse curevs, jacknifes etc (not all implmenented yet)
     """
 
+    trace = az.from_netcdf(trace_file)
+    scalers = pd.read_csv(scale_file).values   
+
     common_args = {
         'y_filename': y_filen,
         'x_filename_list': x_filen_list,
@@ -146,23 +138,24 @@ def evaluate_MaxEnt_model(trace, y_filen, x_filen_list, scalers, CA_filen = None
                                     subset_function = subset_function, 
                                     subset_function_args = subset_function_args)
     
-    params = select_post_param(trace)  
-    
     dir_outputs = combine_path_and_make_dir(dir_outputs, model_title)
     dir_samples = combine_path_and_make_dir(dir_outputs, '/samples/')     
     dir_samples = combine_path_and_make_dir(dir_samples, filename_out)
-      
-    Sim = runSim_MaxEntFire(params, X, Obs, id_name, dir_samples, 
-                            run_name, grab_old_trace, "control") 
-
-    standard_response_curve(Sim, X, Obs, id_name, dir_samples, 
-                            run_name, grab_old_trace)
-        
-          
-    sensitivity_reponse_curve(Sim, X, Obs, id_name, dir_samples, 
-                            run_name, grab_old_trace)
     
-
+    common_args = {
+        'trace': trace,
+        'sample_for_plot': sample_for_plot,
+        'X': X,
+        'eg_cube': Obs,
+        'lmask': lmask,
+        'dir_samples': dir_samples,
+        'grab_old_trace': grab_old_trace}
+    Sim = runSim_MaxEntFire(**common_args, run_name = "control")#(trace, sample_for_plot, X, Obs, lmask, "control", dir_samples, grab_old_trace) 
+    
+    common_args["x_filen_list"] = x_filen_list
+    #standard_response_curve(Sim, **common_args)
+    #sensitivity_reponse_curve(Sim, **common_args)
+    
     compare_to_obs_maps(filename_out, dir_outputs, Obs, Sim, lmask, *args, **kw)
 
 
@@ -195,42 +188,18 @@ if __name__=="__main__":
         SETPUT 
     """
     ### input data paths and filenames
-    model_title = 'simple_example_model'
-    
-    trace_file = "outputs//trace-trees_consec_dry_mean_crop_pas_humid_totalVeg-frac_points_0.01-Month_7-nvariables_-frac_random_sample0.01-nvars_6-niterations_100.nc"
-    scaler_file = "outputs//scalers-trees_consec_dry_mean_crop_pas_humid_totalVeg-frac_points_0.01-Month_7-nvariables_-frac_random_sample0.01-nvars_6-niterations_100.csv"
-   
-    y_filen = "GFED4.1s_Burned_Fraction.nc"
-    CA_filen = None
-    x_filen_list=["trees.nc","consec_dry_mean.nc",
-                  "crop.nc", "pas.nc", "humid.nc", "totalVeg.nc"] 
-    
-    
-    months_of_year = [7]
-    
-    """ Projection/evaluating """
-    dir_outputs = 'outputs/'
-
-    dir_projecting = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
 
     sample_for_plot = 20
-
     levels = [0, 0.1, 1, 2, 5, 10, 20, 50, 100] 
     cmap = 'OrRd'
-
-    
-    subset_function = sub_year_months
-    subset_function_args = {'months_of_year': months_of_year}
+    dir_projecting = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
+    training_namelist = "outputs//simple_example_model/variables_info-trees_consec_dry_mean_crop_pas_humid_totalVeg-frac_points_0.01-Month_7.txt"
 
     """ 
         RUN evaluation 
     """
-    evaluate_MaxEnt_model(trace, y_filen, x_filen_list, scalers, CA_filen, dir_projecting,
-                         dir_outputs, model_title, filename,
-                         subset_function, subset_function_args,
-                         sample_for_plot, 
-                         run_evaluation = run_evaluation, run_projection = run_projection,
-                         grab_old_trace = grab_old_trace,
-                         levels = levels, cmap = cmap)
+    evaluate_MaxEnt_model_from_namelist(training_namelist, dir = dir_projecting,
+                                        sample_for_plot = sample_for_plot,
+                                        levels = levels, cmap = cmap)
     
     

@@ -1,17 +1,24 @@
+import numpy as np
+import math
+from pymc_extras import *
+
+import matplotlib.pyplot as plt
 
 def non_masked_data(cube):
         return cube.data[cube.data.mask == False].data
 
-def standard_response_curve(Sim, x, eg_cube, id_name, dir_samples,
-                            run_name, grab_old_trace):  
+def standard_response_curve(Sim, trace, sample_for_plot, X, eg_cube, lmask, 
+                            dir_samples, grab_old_trace, x_filen_list):  
+
     for col_to_keep in range(X.shape[1]-1):
         other_cols = np.arange(X.shape[1]-1)  # Create an array of all columns
         other_cols = other_cols[other_cols != col_to_keep]  # Exclude col_to_keep
         original_X = X[:, other_cols].copy()
         X[:, other_cols] = 0.0  
         
-        Sim2 = runSim("_to_zero")
-        
+        Sim2 = runSim_MaxEntFire(trace, sample_for_plot, X, eg_cube, lmask, 
+                                 "_to_zero", dir_samples, grab_old_trace)
+
         fcol = math.floor(math.sqrt(X.shape[1]))
         frw = math.ceil(X.shape[1]/fcol)
         
@@ -52,8 +59,8 @@ def standard_response_curve(Sim, x, eg_cube, id_name, dir_samples,
     plt.savefig(fig_dir + 'control-response-curves.png')   
 
 
-def sensitivity_reponse_curve(Sim, X, eg_cube, id_name, dir_samples, 
-                            run_name, grab_old_trace):
+def sensitivity_reponse_curve(Sim, trace, sample_for_plot, X, eg_cube, lmask, 
+                            dir_samples, grab_old_trace, x_filen_list):
     #plot sensitivity response curves
     plt.figure(figsize=(14, 12))
     for col in range(X.shape[1]-1):
@@ -64,13 +71,15 @@ def sensitivity_reponse_curve(Sim, X, eg_cube, id_name, dir_samples,
         dx = 0.001
         X[:, col] -= dx/2.0  # Subtract 0.1 of all values for the current column
 
-        Sim3 = runSim("subtract_01")    
+        Sim3 = runSim_MaxEntFire(trace, sample_for_plot, X, eg_cube, lmask, 
+                                 "subtract_01", dir_samples, grab_old_trace)
         
         X[:, col] = x_copy #restore values
         
         X[:, col] += dx/2.0 #add 0.1 to all values for the current column
         
-        Sim4 = runSim("add_01") 
+        Sim4 = runSim_MaxEntFire(trace, sample_for_plot, X, eg_cube, lmask, 
+                                 "add_01", dir_samples, grab_old_trace)
         
         fcol = math.floor(math.sqrt(X.shape[1]))
         frw = math.ceil(X.shape[1]/fcol)
@@ -79,7 +88,7 @@ def sensitivity_reponse_curve(Sim, X, eg_cube, id_name, dir_samples,
         variable_name = x_filen_list[col].replace('.nc', '')
         ax.set_title(variable_name)
 
-         num_bins = 20
+        num_bins = 20
         hist, bin_edges = np.histogram(X[:, col], bins=num_bins)
         bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
         median_values = []
