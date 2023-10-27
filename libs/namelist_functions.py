@@ -71,17 +71,12 @@ def read_variables_from_namelist(file_name):
                 if callable(variable_value):
                     # If the variable is a function, save its name
                     variables[variable_name] = variable_value
-                elif isinstance(variable_value, dict):
-                # If the variable is a dictionary, serialize it to JSON format
-                    variable_value = json.dumps(variable_value)
                 elif variable_value.startswith('"') and variable_value.endswith('"'):
                     # If the variable is a string, remove the quotes
                     variables[variable_name] = variable_value[1:-1]
                 elif variable_value.startswith('[') and variable_value.endswith(']'):
                     # If the variable is a list, parse it
                     variables[variable_name] = eval(variable_value)
-                #elif variable_value.startswith('{') and variable_value.endswith('}'):
-                #    set_trace()
                 else:
                     try:
                         # Try to parse the variable as a dictionary
