@@ -6,6 +6,7 @@ from MaxEntFire import MaxEntFire
 
 from read_variable_from_netcdf import *
 from combine_path_and_make_dir import * 
+from namelist_functions import *
 
 import os
 from   io     import StringIO
@@ -147,7 +148,7 @@ def train_MaxEnt_model(y_filen, x_filen_list, CA_filen = None, dir = '', filenam
     print("====================")
     print("Optimization started")
     print("====================")
-    #dir_outputs = combine_path_and_make_dir(dir_outputs, model_title)
+    dir_outputs = combine_path_and_make_dir(dir_outputs, model_title)
     out_file =   filename_out + '-nvariables_' + \
                  '-frac_random_sample' + str(frac_random_sample) + \
                  '-nvars_' +  str(len(x_filen_list)) + \
@@ -156,6 +157,7 @@ def train_MaxEnt_model(y_filen, x_filen_list, CA_filen = None, dir = '', filenam
     data_file = dir_outputs + '/data-'   + out_file + '.nc'
     trace_file = dir_outputs + '/trace-'   + out_file + '.nc'
     scale_file = dir_outputs + '/scalers-' + out_file + '.csv'
+    
     
     ## check if trace file exsts and return if wanted
     if os.path.isfile(trace_file) and os.path.isfile(scale_file) and grab_old_trace:
@@ -177,7 +179,7 @@ def train_MaxEnt_model(y_filen, x_filen_list, CA_filen = None, dir = '', filenam
             'subset_function': subset_function,
             'subset_function_args': subset_function_args
         }
-
+        
         if CA_filen is not None:
             # Process CA_filen when it is provided
             Y, X, CA, lmask, scalers = read_all_data_from_netcdf(CA_filename = CA_filen, 
@@ -211,10 +213,28 @@ def train_MaxEnt_model(y_filen, x_filen_list, CA_filen = None, dir = '', filenam
         print("Optimization complete")
         print("=====================")
 
-    print("trace filename:  " + trace_file)
-    print("scalers filename:  " + scale_file)
+
+    # Save info to namelist.
+    variable_info_file = dir_outputs + 'variables_info-' + filename + '.txt'
+    desired_variable_names = ["dir_outputs", "filename_out",
+                              "out_file", "data_file", 
+                              "trace_file", "scale_file", 
+                              "dir", "y_filen", "x_filen_list", "CA_filen",
+                              "subset_function", "subset_function_args", 
+                              "trace_file", "scale_file"]
+
+    # Create a dictionary of desired variables and their values
+    variables_to_save = {name: value for name, value in locals().items() \
+                            if name in desired_variable_names}
     
-    return trace, scalers
+    write_variables_to_namelist(variables_to_save, variable_info_file)
+
+    print("\ntrace filename:\n\t" + trace_file)
+    print("\nscalers filename:\n\t" + scale_file)
+    print("\nall information writen to namelist:\n\t" + variable_info_file)
+ 
+    return trace, scalers, variable_info_file
+
 
 if __name__=="__main__":
     """ Running optimization. 
@@ -274,7 +294,8 @@ if __name__=="__main__":
     """ 
         RUN optimization 
     """
-    trace, scalers = train_MaxEnt_model(y_filen, x_filen_list, CA_filen , dir_training, 
+    trace, scalers, variable_info_file = \
+                     train_MaxEnt_model(y_filen, x_filen_list, CA_filen , dir_training, 
                                         filename, dir_outputs,
                                         fraction_data_for_sample,
                                         subset_function, subset_function_args,
