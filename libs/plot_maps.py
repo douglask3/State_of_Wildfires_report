@@ -15,6 +15,20 @@ import math
 
 from   libs              import git_info
 
+
+def plot_BayesModel_maps(Sim, lmask, levels, cmap, Obs = None, eg_cube = None, Nrows = 1, Ncols = 2):
+    Sim = Sim.collapsed('realization', iris.analysis.PERCENTILE, 
+                          percent=[10, 90])
+
+    def plot_map(cube, plot_name, plot_n):
+        plot_annual_mean(cube, levels, cmap, plot_name = plot_name, scale = 100*12, 
+                     Nrows = Nrows, Ncols = Ncols, plot_n = plot_n)
+
+    if eg_cube is None: eg_cube = Obs
+    if Obs is not None: plot_map(Obs, "Observations", 1)
+    plot_map(Sim[0,:], "Simulation - 10%", Ncols - 1)
+    plot_map(Sim[1,:], "Simulation - 90%", Ncols)
+    
    
 def plot_annual_mean(cube, levels, cmap, plot_name = None, scale = None, 
                      Nrows = 1, Ncols = 1, plot_n = 1, *args, **kw):

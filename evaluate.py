@@ -48,112 +48,10 @@ def runSim_MaxEntFire(params, X, eg_cube, id_name, dir_samples, run_name, grab_o
     return iris.cube.CubeList(out).merge_cube()
 
 
-def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, CA_filen = None, dir = '', 
-                         dir_outputs = '', model_title = '', filename_out = '',
-                         subset_function = None, subset_function_args = None,
-                         sample_for_plot = 1,
-                         run_evaluation = False, run_projection = False, grab_old_trace = False,
-                         *args, **kw):
-
-    """ Runs prediction and evalutation of the sampled model based on previously run trace.
-    Arguments:
-        trace - pymc traces nc file, probably from a 'train_MaxEnt_model' run
-	y_filen -- filename of dependant variable (i.e burnt area)
-        x_filen_list -- filanames of independant variables
-	scalers -- the scalers used during the generation of the trace file that scales 
-            x data between 0 and 1 (not that it might not scale the opened variables 
-            here between 0 and 1 as different data maybe selected for evaluation)
-        dir -- dir y_filen and  x_filen_list are stored in. default it current dir
-        dir_outputs -- directiory where all outputs are stored. String
-        model_title - title of model run. A str default to 'no_name'. Used to initially to name 
-                the dir everythings stored in.
-        filename_out -- string of the start of the traces output name. Detault is blank. 
-		Some metadata will be saved in the filename, so even blank will 
-                save a file.
-        subset_function -- a list of constrain function useful for constraining and resticting 
-                data to spatial locations and time periods/months. Default is not to 
-                constrain (i.e "None" for no functions")
-        subset_function_args -- list of arguements that feed into subset_function
-        sample_for_plot -- fraction of gridcells used for optimization
-        run_evaluation -- Logical, default False - run the standard evalaution 
-                plots/metrics or not
-        run_projection -- Logical, default False - run projections
-        grab_old_trace -- Boolean. If True, and a filename starting with 'filename' and 
-                containing some of the same setting (saved in filename) exists,  it will open 
-                and return this rather than run new samples. Not all settings are saved for 
-                identifiation, so if in doubt, set to 'False'.
-	*args, **kw -- arguemts passed to 'evaluate_model' and 'project_model'
-    
-    Returns:
-        look in dir_outputs + model_title, and you'll see figure and tables from evaluation, 
-        projection, reponse curevs, jacknifes etc (not all implmenented yet)
-    """
-    if not run_evaluation and not run_projection:
-        return 
-
-    common_args = {
-        'y_filename': y_filen,
-        'x_filename_list': x_filen_list,
-        'add_1s_columne': True,
-        'dir': dir,
-        'x_normalise01': True,
-        'subset_function': subset_function,
-        'subset_function_args': subset_function_args
-    }
-
-    if CA_filen is not None:
-        Y, X, lmask, scalers, CA = read_all_data_from_netcdf(CA_filename = CA_filen, **common_args)   
-    else:
-        Y, X, lmask, scalers = read_all_data_from_netcdf(**common_args)
-    
-    Obs = read_variable_from_netcdf(y_filen, dir,
-                                    subset_function = subset_function, 
-                                    subset_function_args = subset_function_args)
-    
-    params = select_post_param(trace)
-
-    
-    dir_outputs = combine_path_and_make_dir(dir_outputs, model_title)
-    dir_samples = combine_path_and_make_dir(dir_outputs, '/samples/')     
-    dir_samples = combine_path_and_make_dir(dir_samples, filename_out)
-      
-    Sim = runSim_MaxEntFire(params, X, eg_cube, id_name, dir_samples, 
-                            run_name, grab_old_trace, "control") 
-
-    standard_response_curve(Sim, X, eg_cube, id_name, dir_samples, 
-                            run_name, grab_old_trace)
-        
-          
-    sensitivity_reponse_curve(Sim, X, eg_cube, id_name, dir_samples, 
-                            run_name, grab_old_trace)
-    
-
-    if run_evaluation:
-        evaluate_model(filename_out, dir_outputs, Obs, Sim, lmask, *args, **kw)
-
-    if run_projection:
-        project_model(filename_out, dir_outputs, Sim, lmask, eg_cube = Obs, *args, **kw)
-
-
-def plot_model_maps(Sim, lmask, levels, cmap, Obs = None, eg_cube = None, Nrows = 1, Ncols = 2):
-    Sim = Sim.collapsed('realization', iris.analysis.PERCENTILE, 
-                          percent=[10, 90])
-
-    def plot_map(cube, plot_name, plot_n):
-        plot_annual_mean(cube, levels, cmap, plot_name = plot_name, scale = 100*12, 
-                     Nrows = Nrows, Ncols = Ncols, plot_n = plot_n)
-
-    if eg_cube is None: eg_cube = Obs
-    if Obs is not None: plot_map(Obs, "Observations", 1)
-    plot_map(Sim[0,:], "Simulation - 10%", Ncols - 1)
-    plot_map(Sim[1,:], "Simulation - 90%", Ncols)
-    
-
-def evaluate_model(filename_out, dir_outputs, Obs, Sim, lmask, levels, cmap):    
+def compare_to_obs_maps(filename_out, dir_outputs, Obs, Sim, lmask, levels, cmap):    
     ax = plt.subplot(2, 3, 4)
     BayesScatter(Obs, Sim, lmask,  0.000001, 0.000001, ax)
-    plot_model_maps(Sim, lmask, levels, cmap, Obs, Nrows = 2, Ncols = 3)
-    
+    plot_BayesModel_maps(Sim, lmask, levels, cmap, Obs, Nrows = 2, Ncols = 3)
     
     X = Obs.data.flatten()[lmask]
     ncells = int(len(X)/Obs.shape[0])
@@ -177,20 +75,97 @@ def evaluate_model(filename_out, dir_outputs, Obs, Sim, lmask, levels, cmap):
                      plot_name = "mean bias p-value",   Nrows = 2, Ncols = 3, plot_n = 6)
     
     plt.gcf().set_size_inches(12, 8)
-    
+
     fig_dir = combine_path_and_make_dir(dir_outputs, '/figs/')
 
     plt.savefig(fig_dir + filename_out + '-evaluation.png')
 
+
+def plot_parameter_info(traces, fig_dir, filename):
+    """ plots parameter distributions from a trace file.
+    More info to follow
+    """
     az.plot_trace(trace)
     plt.savefig(fig_dir + filename + '-traces.png')
 
-def project_model(filename_out, dir_outputs, *arg, **kw):
-    plot_model_maps(*arg, **kw)
 
-    plt.gcf().set_size_inches(8*2/3, 6)
-    fig_dir = combine_path_and_make_dir(dir_outputs, '/figs/')
-    plt.savefig(fig_dir + filename_out + '-projections.png')
+def evaluate_MaxEnt_model(trace, y_filen, x_filen_list, scalers, CA_filen = None, dir = '', 
+                         dir_outputs = '', model_title = '', filename_out = '',
+                         subset_function = None, subset_function_args = None,
+                         sample_for_plot = 1, grab_old_trace = False,
+                         *args, **kw):
+
+    """ Runs prediction and evalutation of the sampled model based on previously run trace.
+    Arguments:
+        trace - pymc traces nc or nc fileiles, probably from a 'train_MaxEnt_model' run
+	y_filen -- filename of dependant variable (i.e burnt area)
+        x_filen_list -- filanames of independant variables
+	scalers -- the scalers used during the generation of the trace file that scales 
+            x data between 0 and 1 (not that it might not scale the opened variables 
+            here between 0 and 1 as different data maybe selected for evaluation). 
+            can be csv filename.
+        dir -- dir y_filen and  x_filen_list are stored in. default it current dir
+        dir_outputs -- directiory where all outputs are stored. String
+        model_title - title of model run. A str default to 'no_name'. Used to initially to name 
+                the dir everythings stored in.
+        filename_out -- string of the start of the traces output name. Detault is blank. 
+		Some metadata will be saved in the filename, so even blank will 
+                save a file.
+        subset_function -- a list of constrain function useful for constraining and resticting 
+                data to spatial locations and time periods/months. Default is not to 
+                constrain (i.e "None" for no functions")
+        subset_function_args -- list of arguements that feed into subset_function
+        sample_for_plot -- fraction of gridcells used for optimization
+        grab_old_trace -- Boolean. If True, and a filename starting with 'filename' and 
+                containing some of the same setting (saved in filename) exists,  it will open 
+                and return this rather than run new samples. Not all settings are saved for 
+                identifiation, so if in doubt, set to 'False'.
+	*args, **kw -- arguemts passed to 'evaluate_model' and 'project_model'
+    
+    Returns:
+        look in dir_outputs + model_title, and you'll see figure and tables from evaluation, 
+        projection, reponse curevs, jacknifes etc (not all implmenented yet)
+    """
+
+    common_args = {
+        'y_filename': y_filen,
+        'x_filename_list': x_filen_list,
+        'add_1s_columne': True,
+        'dir': dir,
+        'x_normalise01': True,
+        'subset_function': subset_function,
+        'subset_function_args': subset_function_args
+    }
+
+    if CA_filen is not None:
+        Y, X, lmask, scalers, CA = read_all_data_from_netcdf(CA_filename = CA_filen, **common_args)   
+    else:
+        Y, X, lmask, scalers = read_all_data_from_netcdf(**common_args)
+    
+    Obs = read_variable_from_netcdf(y_filen, dir,
+                                    subset_function = subset_function, 
+                                    subset_function_args = subset_function_args)
+    
+    params = select_post_param(trace)  
+    
+    dir_outputs = combine_path_and_make_dir(dir_outputs, model_title)
+    dir_samples = combine_path_and_make_dir(dir_outputs, '/samples/')     
+    dir_samples = combine_path_and_make_dir(dir_samples, filename_out)
+      
+    Sim = runSim_MaxEntFire(params, X, Obs, id_name, dir_samples, 
+                            run_name, grab_old_trace, "control") 
+
+    standard_response_curve(Sim, X, Obs, id_name, dir_samples, 
+                            run_name, grab_old_trace)
+        
+          
+    sensitivity_reponse_curve(Sim, X, Obs, id_name, dir_samples, 
+                            run_name, grab_old_trace)
+    
+
+    compare_to_obs_maps(filename_out, dir_outputs, Obs, Sim, lmask, *args, **kw)
+
+
 
 if __name__=="__main__":
     """ Running optimization and basic analysis. 
