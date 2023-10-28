@@ -153,7 +153,9 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
     Sim = runSim_MaxEntFire(**common_args, run_name = "control")#(trace, sample_for_plot, X, Obs, lmask, "control", dir_samples, grab_old_trace) 
     
     common_args["x_filen_list"] = x_filen_list
-    #standard_response_curve(Sim, **common_args)
+    common_args["dir_outputs"] = dir_outputs
+
+    standard_response_curve(Sim, **common_args)
     #sensitivity_reponse_curve(Sim, **common_args)
     
     compare_to_obs_maps(filename_out, dir_outputs, Obs, Sim, lmask, *args, **kw)
