@@ -9,28 +9,81 @@ from pdb import set_trace
 def non_masked_data(cube):
         return cube.data[cube.data.mask == False].data
 
-def standard_response_curve(Sim, trace, sample_for_plot, X, eg_cube, lmask, 
-                            dir_samples, dir_outputs, grab_old_trace, x_filen_list):  
+def initial_curve_experiment(*args, **kw):
 
-    for col_to_keep in range(X.shape[1]-1):
-        other_cols = np.arange(X.shape[1]-1)  # Create an array of all columns
-        other_cols = other_cols[other_cols != col_to_keep]  # Exclude col_to_keep
-        original_X = X[:, other_cols].copy()
-        X[:, other_cols] = 0.0  
+    Sim1, Sim2 = standard_curve_experiment(*args, **kw)
+    return None, Sim2
+
+def standard_curve_experiment(Sim, Xi, col_to_keep, name, trace, sample_for_plot, 
+                              eg_cube, lmask, *args, **kw):
+    X = Xi.copy()
+    other_cols = np.arange(X.shape[1]-1)  # Create an array of all columns
+    other_cols = other_cols[other_cols != col_to_keep]  # Exclude col_to_keep
+    
+    X[:, other_cols] = 0.0  
+    
+    Sim2 = runSim_MaxEntFire(trace, sample_for_plot, X, eg_cube, lmask, 
+                             name + "/all_but_to_zero", *args, **kw)
+    return Sim, Sim2
+
+def potential_curve_experiment(Sim, Xi, col_to_go, name, trace, sample_for_plot, 
+                              eg_cube, lmask, *args, **kw):
+    X = Xi.copy()
+    X[:, col_to_go] = 0.0  
         
-        Sim2 = runSim_MaxEntFire(trace, sample_for_plot, X, eg_cube, lmask, 
-                                 "_to_zero", dir_samples, grab_old_trace)
+    Sim2 = runSim_MaxEntFire(trace, sample_for_plot, X, eg_cube, lmask, 
+                             name + "/to_zero", *args, **kw)
+    return Sim, Sim2
 
+
+def sensitivity_curve_experiment(Sim, Xi, col, name, trace, sample_for_plot, 
+                              eg_cube, lmask, *args, **kw):
+    dx = 0.001
+    X = Xi.copy()
+    X[:, col] -= dx/2.0  # Subtract 0.1 of all values for the current column
+    
+    Sim1 = runSim_MaxEntFire(trace, sample_for_plot, X, eg_cube, lmask, 
+                             name + "/subtract_" + str(dx/2.0), *args, **kw)
+        
+    X = Xi.copy() #restore values
+    X[:, col] += dx/2.0 #add 0.1 to all values for the current column
+        
+    Sim2 = runSim_MaxEntFire(trace, sample_for_plot, X, eg_cube, lmask, 
+                             name + "/add_" + str(dx/2.0), *args, **kw)
+    return Sim1, Sim2
+
+
+def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask, 
+                   dir_samples, dir_outputs, grab_old_trace, x_filen_list):  
+
+    print("Plotting reponse curve: " + curve_type)
+    for col in range(X.shape[1]-1):
+        if curve_type == "initial":
+            response_FUN = initial_curve_experiment
+        elif curve_type == "standard":
+            response_FUN = standard_curve_experiment
+        elif curve_type == "potential":
+            response_FUN = potential_curve_experiment
+        elif curve_type == "sensitivity":
+            response_FUN = sensitivity_curve_experiment
+        else:
+            set_trace()
+        
+        varname = x_filen_list[col]
+        makeDir(varname)
+        Sim1, Sim2 = response_FUN(Sim, X, col, varname, trace, sample_for_plot, 
+                                      eg_cube, lmask, dir_samples, grab_old_trace)
+        
         fcol = math.floor(math.sqrt(X.shape[1]))
         frw = math.ceil(X.shape[1]/fcol)
         
-        ax = plt.subplot(frw,fcol, col_to_keep + 1)  # Select the corresponding subplot
+        ax = plt.subplot(frw,fcol, col + 1)  # Select the corresponding subplot
         
-        variable_name = x_filen_list[col_to_keep].replace('.nc', '')
+        variable_name = x_filen_list[col].replace('.nc', '')
         ax.set_title(variable_name)
         
         num_bins = 10
-        hist, bin_edges = np.histogram(X[:, col_to_keep], bins=num_bins)
+        hist, bin_edges = np.histogram(X[:, col], bins=num_bins)
         bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
         median_values = []
         percentile_10 = []
@@ -38,12 +91,15 @@ def standard_response_curve(Sim, trace, sample_for_plot, X, eg_cube, lmask,
         
         for i in range(num_bins):
         
-            mask = (X[:, col_to_keep] >= bin_edges[i]) & (X[:, col_to_keep] < bin_edges[i + 1])
+            mask = (X[:, col] >= bin_edges[i]) & (X[:, col] < bin_edges[i + 1])
             if np.any(mask):
                 values_in_bin = []
         
-                for rw in range(Sim.shape[0]):
-                    sim_final = non_masked_data(Sim[rw]) - non_masked_data(Sim2[rw])            
+                for rw in range(Sim2.shape[0]):
+                    if  Sim1 is None:
+                        sim_final = non_masked_data(Sim2[rw])
+                    else:
+                        sim_final = non_masked_data(Sim2[rw]) - non_masked_data(Sim1[rw])            
                     values_in_bin.append(sim_final[mask])
                 values_in_bin = np.array(values_in_bin).flatten()    
                    
@@ -58,10 +114,10 @@ def standard_response_curve(Sim, trace, sample_for_plot, X, eg_cube, lmask,
         ax.plot(bin_centers, median_values, marker='.', label='Median')
         ax.fill_between(bin_centers, percentile_10, percentile_90, alpha=0.3, label='10th-90th Percentiles')                           
                 
-        X[:, other_cols] = original_X
     fig_dir = combine_path_and_make_dir(dir_outputs, '/figs/')
     
-    plt.savefig(fig_dir + 'control-response-curves.png')   
+    plt.savefig(fig_dir + curve_type + '-response-curves.png')   
+    plt.clf()
 
 
 def sensitivity_reponse_curve(Sim, trace, sample_for_plot, X, eg_cube, lmask, 
@@ -69,22 +125,6 @@ def sensitivity_reponse_curve(Sim, trace, sample_for_plot, X, eg_cube, lmask,
     #plot sensitivity response curves
     plt.figure(figsize=(14, 12))
     for col in range(X.shape[1]-1):
-        x_copy = X[:, col].copy()  # Copy the values of the current column
-        
-        print(col)
-
-        dx = 0.001
-        X[:, col] -= dx/2.0  # Subtract 0.1 of all values for the current column
-
-        Sim3 = runSim_MaxEntFire(trace, sample_for_plot, X, eg_cube, lmask, 
-                                 "subtract_01", dir_samples, grab_old_trace)
-        
-        X[:, col] = x_copy #restore values
-        
-        X[:, col] += dx/2.0 #add 0.1 to all values for the current column
-        
-        Sim4 = runSim_MaxEntFire(trace, sample_for_plot, X, eg_cube, lmask, 
-                                 "add_01", dir_samples, grab_old_trace)
         
         fcol = math.floor(math.sqrt(X.shape[1]))
         frw = math.ceil(X.shape[1]/fcol)

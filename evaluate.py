@@ -155,7 +155,8 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
     common_args["x_filen_list"] = x_filen_list
     common_args["dir_outputs"] = dir_outputs
 
-    standard_response_curve(Sim, **common_args)
+    for ct in ["initial", "standard", "potential", "sensitivity"]:
+        response_curve(Sim, curve_type = ct, **common_args)
     #sensitivity_reponse_curve(Sim, **common_args)
     
     compare_to_obs_maps(filename_out, dir_outputs, Obs, Sim, lmask, *args, **kw)
@@ -201,6 +202,7 @@ if __name__=="__main__":
         RUN evaluation 
     """
     evaluate_MaxEnt_model_from_namelist(training_namelist, dir = dir_projecting,
+                                        grab_old_trace = True,
                                         sample_for_plot = sample_for_plot,
                                         levels = levels, cmap = cmap)
     

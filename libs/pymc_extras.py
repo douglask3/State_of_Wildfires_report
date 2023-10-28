@@ -11,6 +11,8 @@ from combine_path_and_make_dir import *
 from MaxEntFire import MaxEntFire
 from iris_plus import insert_data_into_cube
 
+from pdb import set_trace
+
 def select_post_param(trace):
     def select_post_param_name(name): 
         out = trace.posterior[name].values
@@ -33,6 +35,7 @@ def runSim_MaxEntFire(trace, sample_for_plot, X, eg_cube, lmask, run_name,
         
         if os.path.isfile(file_sample) and grab_old_trace:
             return iris.load_cube(file_sample)
+        
         print("Generating Sample:" + file_sample)
         param_in = [param[i] if param.ndim == 1 else param[i,:] for param in params]
         param_in = dict(zip(params_names, param_in))
