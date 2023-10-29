@@ -13,25 +13,43 @@ from pdb import set_trace as browser
 from numpy import inf
 import math
 
-from   libs              import git_info
+from libs import git_info
+from pdb import set_trace
 
-
-def plot_BayesModel_maps(Sim, lmask, levels, cmap, Obs = None, eg_cube = None, Nrows = 1, Ncols = 2):
+def plot_BayesModel_maps(Sim, levels, cmap, ylab = '', Obs = None, 
+                         Nrows = 1, Ncols = 2, plot0 = 0,
+                         *args, **kw):
     Sim = Sim.collapsed('realization', iris.analysis.PERCENTILE, 
                           percent=[10, 90])
 
     def plot_map(cube, plot_name, plot_n):
         plot_annual_mean(cube, levels, cmap, plot_name = plot_name, scale = 100*12, 
-                     Nrows = Nrows, Ncols = Ncols, plot_n = plot_n)
+                     Nrows = Nrows, Ncols = Ncols, plot_n = plot_n + plot0, *args, **kw)
+        
+        if plot_n == 1: 
+            #plt.text(-5, 0.5, ylab, fontsize=12, rotation=90, va='center', ha = 'left',
+            #         transform=plt.gca().transAxes)
+            #plt.annotate("Outside Label", xy=(0, 0.5), xycoords='figure fraction', fontsize=12, rotation=90)
+            plt.gca().text(-0.1, 0.5, ylab, fontsize=12, rotation=90, va='center', ha='right',
+                           transform=plt.gca().transAxes)
+            
+            
+            
+            
+            #plt.gca().annotate('yay2', xy=(0, 0.5), xytext=(-25, 0),
+            #            textcoords='offset points', va='center', fontsize=12, rotation=90)
 
-    if eg_cube is None: eg_cube = Obs
-    if Obs is not None: plot_map(Obs, "Observations", 1)
-    plot_map(Sim[0,:], "Simulation - 10%", Ncols - 1)
-    plot_map(Sim[1,:], "Simulation - 90%", Ncols)
+    if Obs is None: 
+        plot_n = 1
+    else:
+        plot_map(Obs, "Observations", 1)
+        plot_n = 2
+    plot_map(Sim[0,:], "Simulation - 10%", plot_n)
+    plot_map(Sim[1,:], "Simulation - 90%", plot_n+1)
     
    
 def plot_annual_mean(cube, levels, cmap, plot_name = None, scale = None, 
-                     Nrows = 1, Ncols = 1, plot_n = 1, *args, **kw):
+                     Nrows = 1, Ncols = 1, plot_n = 1, colourbar = True, *args, **kw):
 
    
     try:
@@ -42,7 +60,7 @@ def plot_annual_mean(cube, levels, cmap, plot_name = None, scale = None,
     if scale is not None: aa.data = aa.data * scale
     
     plot_lonely_cube(aa, Nrows, Ncols, plot_n, levels = levels, cmap = cmap, 
-                     colourbar = True, grayMask = True, *args, **kw)
+                     colourbar = colourbar, grayMask = True, *args, **kw)
 
 
 
@@ -50,7 +68,6 @@ def plot_lonely_cube(cube, N = None, M = None, n = None, levels = [0], extend = 
 
     cf, levels, extend = plot_cube(cube, N,  M, n, levels = levels, extend = extend, *args, **kw)
     if colourbar: 
-
         addColorbar(cf, levels, extend = extend)
     plt.tight_layout()
     return cf
@@ -60,16 +77,19 @@ def addColorbar(cf, ticks, *args, **kw):
     cb.ax.set_xticklabels(ticks)
     return cb
 
-def plot_cube(cube, N, M, n, cmap, levels = None, extend = 'neither', projection = ccrs.Robinson(),
-              grayMask = False):
+def plot_cube(cube, N, M, n, cmap, levels = None, extend = 'neither', 
+             projection = ccrs.Robinson(), grayMask = False, fig = None):
     if levels is None:
         levels, extend = hist_limits(cube, levels, 6)
 
     if n is None:
         ax = plt.axes(projection = projection)
     else:
-        ax = plt.subplot(N, M, n, projection = projection)
-
+        if fig is None:
+            ax = plt.subplot(N, M, n, projection = projection)
+        else:
+            ax = fig.add_subplot(N, M, n, projection = projection)
+    
     ax.set_title(cube.long_name)
 
     cmap = plt.get_cmap(cmap)

@@ -27,10 +27,11 @@ import arviz as az
 from scipy.stats import wilcoxon
 
 def compare_to_obs_maps(filename_out, dir_outputs, Obs, Sim, lmask, levels, cmap,
+                        dlevels = None, dcmap = None,
                         *args, **kw):    
     ax = plt.subplot(2, 3, 4)
     BayesScatter(Obs, Sim, lmask,  0.000001, 0.000001, ax)
-    plot_BayesModel_maps(Sim, lmask, levels, cmap, Obs, Nrows = 2, Ncols = 3)
+    plot_BayesModel_maps(Sim, levels, cmap, Obs, Nrows = 2, Ncols = 3)
     
     X = Obs.data.flatten()[lmask]
     ncells = int(len(X)/Obs.shape[0])
@@ -117,6 +118,7 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
     """
 
     trace = az.from_netcdf(trace_file)
+    
     scalers = pd.read_csv(scale_file).values   
 
     common_args = {
@@ -150,14 +152,12 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
         'lmask': lmask,
         'dir_samples': dir_samples,
         'grab_old_trace': grab_old_trace}
-    Sim = runSim_MaxEntFire(**common_args, run_name = "control")#(trace, sample_for_plot, X, Obs, lmask, "control", dir_samples, grab_old_trace) 
-    
-    common_args["x_filen_list"] = x_filen_list
-    common_args["dir_outputs"] = dir_outputs
+    Sim = runSim_MaxEntFire(**common_args, run_name = "control")
 
-    for ct in ["initial", "standard", "potential", "sensitivity"]:
-        response_curve(Sim, curve_type = ct, **common_args)
-    #sensitivity_reponse_curve(Sim, **common_args)
+    for ct in ["standard", "potential", "sensitivity", "initial"]:
+        response_curve(Sim, curve_type = ct, x_filen_list = x_filen_list, 
+                       dir_outputs = dir_outputs, *args, **kw, **common_args)
+    
     
     compare_to_obs_maps(filename_out, dir_outputs, Obs, Sim, lmask, *args, **kw)
 
@@ -194,7 +194,9 @@ if __name__=="__main__":
 
     sample_for_plot = 20
     levels = [0, 0.1, 1, 2, 5, 10, 20, 50, 100] 
+    dlevels = [-20, -10, -5, -2, -1, -0.1, 0.1, 1, 2, 5, 10, 20]
     cmap = 'OrRd'
+    dcmap = 'RdBu_r'
     dir_projecting = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
     training_namelist = "outputs//simple_example_model/variables_info-trees_consec_dry_mean_crop_pas_humid_totalVeg-frac_points_0.01-Month_7.txt"
 
@@ -204,6 +206,7 @@ if __name__=="__main__":
     evaluate_MaxEnt_model_from_namelist(training_namelist, dir = dir_projecting,
                                         grab_old_trace = True,
                                         sample_for_plot = sample_for_plot,
-                                        levels = levels, cmap = cmap)
+                                        levels = levels, cmap = cmap,
+                                        dlevels = dlevels, dcmap = dcmap)
     
     
