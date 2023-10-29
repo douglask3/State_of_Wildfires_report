@@ -72,6 +72,7 @@ def fit_MaxEnt_probs_to_data(Y, X, CA = None, niterations = 100, *arg, **kw):
         nvars = X.shape[1]
 
         priors = {"q":     pm.LogNormal('q', mu = 0.0, sigma = 1.0),
+                  "lin_beta_constant": pm.Normal('lin_beta_constant', mu = 0, sigma = 100),
                   "lin_betas": pm.Normal('lin_betas', mu = 0, sigma = 100, shape = nvars),
                   "pow_betas": pm.Normal('pow_betas', mu = 0, sigma = 100, shape = nvars),
                   "pow_power": pm.LogNormal('pow_power', mu = 0, sigma = 1, shape = nvars),
@@ -172,7 +173,7 @@ def train_MaxEnt_model(y_filen, x_filen_list, CA_filen = None, dir = '', filenam
   
         common_args = {'y_filename': y_filen,
             'x_filename_list': x_filen_list,
-            'add_1s_columne': True,
+            'add_1s_columne': False,
             'dir': dir,
             'x_normalise01': True,
             'frac_random_sample': frac_random_sample,
