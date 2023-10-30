@@ -55,7 +55,7 @@ def sensitivity_curve_experiment(Sim, Xi, col, name, trace, sample_for_plot,
 
 
 def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask, 
-                   dir_samples, dir_outputs, grab_old_trace, x_filen_list, 
+                   dir_samples, fig_dir, grab_old_trace, x_filen_list, 
                    levels, cmap, dlevels, dcmap, *args, **kw):  
 
     print("Plotting reponse curve: " + curve_type)
@@ -151,7 +151,7 @@ def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask,
         ax.plot(bin_centers, median_values, marker='.', label='Median')
         ax.fill_between(bin_centers, percentile_10, percentile_90, alpha=0.3, label='10th-90th Percentiles')                           
                 
-    fig_dir = combine_path_and_make_dir(dir_outputs, '/figs/')
+    
 
     if map_type > 0:
         fig_map.set_size_inches(12, 4*X.shape[1])

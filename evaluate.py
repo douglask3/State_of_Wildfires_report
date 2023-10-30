@@ -13,6 +13,7 @@ from combine_path_and_make_dir import *
 from namelist_functions import *
 from pymc_extras import *
 from plot_maps import *
+from parameter_mapping import *
 
 import os
 from   io     import StringIO
@@ -60,13 +61,6 @@ def compare_to_obs_maps(filename_out, dir_outputs, Obs, Sim, lmask, levels, cmap
 
     plt.savefig(fig_dir + filename_out + '-evaluation.png')
 
-
-def plot_parameter_info(traces, fig_dir, filename):
-    """ plots parameter distributions from a trace file.
-    More info to follow
-    """
-    az.plot_trace(trace)
-    plt.savefig(fig_dir + filename + '-traces.png')
 
 
 def evaluate_MaxEnt_model_from_namelist(training_namelist = None, evaluate_namelist = None, 
@@ -116,16 +110,18 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
         look in dir_outputs + model_title, and you'll see figure and tables from evaluation, 
         projection, reponse curevs, jacknifes etc (not all implmenented yet)
     """
-
+    fig_dir = combine_path_and_make_dir(dir_outputs, '/figs/')
     trace = az.from_netcdf(trace_file)
-    
-    scalers = pd.read_csv(scale_file).values   
+    scalers = pd.read_csv(scale_file).values  
+
+    #plot_basic_parameter_info(trace, fig_dir)
+    paramter_map(trace, x_filen_list, fig_dir) 
 
     common_args = {
         'y_filename': y_filen,
         'x_filename_list': x_filen_list,
-        'add_1s_columne': True,
         'dir': dir,
+        'scalers': scalers,
         'x_normalise01': True,
         'subset_function': subset_function,
         'subset_function_args': subset_function_args
@@ -156,11 +152,9 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
 
     for ct in ["standard", "potential", "sensitivity", "initial"]:
         response_curve(Sim, curve_type = ct, x_filen_list = x_filen_list, 
-                       dir_outputs = dir_outputs, *args, **kw, **common_args)
-    
-    
+                       fig_dir = fig_dir, *args, **kw, **common_args)
+        
     compare_to_obs_maps(filename_out, dir_outputs, Obs, Sim, lmask, *args, **kw)
-
 
 
 if __name__=="__main__":
@@ -198,7 +192,7 @@ if __name__=="__main__":
     cmap = 'OrRd'
     dcmap = 'RdBu_r'
     dir_projecting = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
-    training_namelist = "outputs//simple_example_model/variables_info-trees_consec_dry_mean_crop_pas_humid_totalVeg-frac_points_0.01-Month_7.txt"
+    training_namelist = "outputs//simple_example_model/variables_info-trees_consec_dry_mean_crop_pas_humid_totalVeg-frac_points_0.1-Month_7.txt"
 
     """ 
         RUN evaluation 

@@ -276,7 +276,7 @@ if __name__=="__main__":
     ### optimization info
     niterations = 100
     cores = 1
-    fraction_data_for_sample = 0.01
+    fraction_data_for_sample = 0.1
     months_of_year = [7]
 
     subset_function = sub_year_months

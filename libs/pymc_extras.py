@@ -24,7 +24,7 @@ def select_post_param(trace):
     params = trace.to_dict()['posterior']
     params_names = params.keys()
     params = [select_post_param_name(var) for var in params_names]
-    return params, params_names
+    return params, [var for var in params_names]
 
 def runSim_MaxEntFire(trace, sample_for_plot, X, eg_cube, lmask, run_name, 
                       dir_samples, grab_old_trace, 
