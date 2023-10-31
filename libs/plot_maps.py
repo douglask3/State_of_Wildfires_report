@@ -26,19 +26,10 @@ def plot_BayesModel_maps(Sim, levels, cmap, ylab = '', Obs = None,
         plot_annual_mean(cube, levels, cmap, plot_name = plot_name, scale = 100*12, 
                      Nrows = Nrows, Ncols = Ncols, plot_n = plot_n + plot0, *args, **kw)
         
-        if plot_n == 1: 
-            #plt.text(-5, 0.5, ylab, fontsize=12, rotation=90, va='center', ha = 'left',
-            #         transform=plt.gca().transAxes)
-            #plt.annotate("Outside Label", xy=(0, 0.5), xycoords='figure fraction', fontsize=12, rotation=90)
+        if plot_n == 1:
             plt.gca().text(-0.1, 0.5, ylab, fontsize=12, rotation=90, va='center', ha='right',
                            transform=plt.gca().transAxes)
-            
-            
-            
-            
-            #plt.gca().annotate('yay2', xy=(0, 0.5), xytext=(-25, 0),
-            #            textcoords='offset points', va='center', fontsize=12, rotation=90)
-
+    
     if Obs is None: 
         plot_n = 1
     else:
