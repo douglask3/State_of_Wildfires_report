@@ -41,8 +41,6 @@ def plot_BayesModel_maps(Sim, levels, cmap, ylab = '', Obs = None,
    
 def plot_annual_mean(cube, levels, cmap, plot_name = None, scale = None, 
                      Nrows = 1, Ncols = 1, plot_n = 1, colourbar = True, *args, **kw):
-
-   
     try:
         aa = cube.collapsed('time', iris.analysis.MEAN)
     except:
