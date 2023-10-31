@@ -19,6 +19,7 @@ from pdb import set_trace
 import iris.quickplot as qplt
 import matplotlib.pyplot as plt
 import datetime
+import geopandas as gpd
 
 def constrain_to_data(cube):
     """constrain cube to the lats and lons that contain data that isn't 'nan'   
@@ -165,7 +166,7 @@ def sub_year_months(cube, months_of_year):
         icc.add_month_number(cube, 'time')
     except:
         pass  
-    
+           
     months_of_year = np.array(months_of_year)+1
     season = iris.Constraint(month_number = lambda cell, mnths = months_of_year: \
                              np.any(np.abs(mnths - cell[0])<0.5))
@@ -323,3 +324,11 @@ def constrain_region(cube, ecoregions = None, Country = None, Continent = None, 
         cube = constrain_natural_earth(cube, Country, Continent, *args, **kw)
 
     return(cube)
+    
+def constrain_BR_biomes(cube, biome_ID):
+    mask = iris.load_cube('D:/Doutorado/Malhas/biomas/biomas_wgs84.nc')    
+    return constrain_cube_by_cube_and_numericIDs (cube, mask, biome_ID)
+
+
+
+
