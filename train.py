@@ -20,14 +20,14 @@ import pytensor.tensor as tt
 import arviz as az
 
 
-def MaxEnt_on_prob(BA, fx, CA = None):
-    """calculates the log-transformed continuous logit likelihood for BA given fx when BA
+def logistic_probability_tt(Y, fx, CA = None):
+    """calculates the log-transformed continuous logit likelihood for Y given fx when Y
        and fx are probabilities between 0-1 with relative areas, CA
        Works with tensor variables.   
     Arguments:
-        BA -- BA in P(BA|fx). numpy 1-d array
-	gx -- gx in P(BA|fx). tensor 1-d array, length of BA
-        CA -- Area for the cover type (cover area). numpy 1-d array, length of BA. Default of None means everything is considered equal area.
+        Y  -- Y  in P(Y|fx). numpy 1-d array
+	fx -- fx in P(Y|fx). tensor 1-d array, length of Y
+        CA -- Area for the cover type (cover area). numpy 1-d array, length of Y. Default of None means everything is considered equal area.
     Returns:
         1-d tensor array of liklihoods.
         
@@ -37,9 +37,9 @@ def MaxEnt_on_prob(BA, fx, CA = None):
         0.0000000000000000001, fx)
       
     if CA is not None: 
-        prob =  BA*CA*tt.log(fx) + (1.0-BA)*CA*tt.log((1-fx))
+        prob =  Y*CA*tt.log(fx) + (1.0-Y)*CA*tt.log((1-fx))
     else:
-        prob = BA*tt.log(fx) + (1.0-BA)*tt.log((1-fx))
+        prob = Y*tt.log(fx) + (1.0-Y)*tt.log((1-fx))
     return prob
 
 def fit_MaxEnt_probs_to_data(Y, X, CA = None, niterations = 100, *arg, **kw):
@@ -264,12 +264,10 @@ if __name__=="__main__":
     """
     ### input data paths and filenames
     model_title = 'simple_example_model'
-
     dir_training = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
-    
     y_filen = "GFED4.1s_Burned_Fraction.nc"
     CA_filen = None
-
+    
     x_filen_list=["trees.nc","consec_dry_mean.nc",
                   "crop.nc", "pas.nc", "humid.nc", "totalVeg.nc"] 
 
