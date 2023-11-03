@@ -293,134 +293,53 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, CA_filen = None,
                
     Sim = runSim("control") 
 
-    '''  
-    for col_to_keep in range(X.shape[1]-1):
-        other_cols = np.arange(X.shape[1]-1)  # Create an array of all columns
-        other_cols = other_cols[other_cols != col_to_keep]  # Exclude col_to_keep
-        original_X = X[:, other_cols].copy()
-        X[:, other_cols] = 0.0  
-        
-        Sim2 = runSim("_to_zero")
-        
-        fcol = math.floor(math.sqrt(X.shape[1]))
-        frw = math.ceil(X.shape[1]/fcol)
-        
-        ax = plt.subplot(frw,fcol, col_to_keep + 1)  # Select the corresponding subplot
-        
-        variable_name = x_filen_list[col_to_keep].replace('.nc', '')
-        ax.set_title(variable_name)
-        
-        def non_masked_data(cube):
-            return cube.data[cube.data.mask == False].data
-        
-        
-        num_bins = 10
-        hist, bin_edges = np.histogram(X[:, col_to_keep], bins=num_bins)
-        bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
-        median_values = []
-        percentile_10 = []
-        percentile_90 = []
-        
-        for i in range(num_bins):
-        
-            mask = (X[:, col_to_keep] >= bin_edges[i]) & (X[:, col_to_keep] < bin_edges[i + 1])
-            values_in_bin = []
-        
-            for rw in range(Sim.shape[0]):
-                sim_final = non_masked_data(Sim[rw]) - non_masked_data(Sim2[rw])                      
-                values_in_bin.append(sim_final[mask])
-            values_in_bin = np.array(values_in_bin).flatten()    
-            #set_trace()    
-            median_values.append(np.median(values_in_bin))
-            percentile_10.append(np.percentile(values_in_bin, 10))
-            percentile_90.append(np.percentile(values_in_bin, 90))
-      
-                
-        set_trace()   
-        ax.plot(bin_centers, median_values, marker='.', label='Median')
-        ax.fill_between(bin_centers, percentile_10, percentile_90, alpha=0.3, label='10th-90th Percentiles')                           
-                
-        X[:, other_cols] = original_X
+    contributions = np.zeros(X.shape[1]-1)
+    #contributions_percentage = []
     
-    #plt.show()
-    #set_trace()     
-      
-    fig_dir = combine_path_and_make_dir(dir_outputs, '/figs/')
-    
-    plt.savefig(fig_dir + 'control-response-curves.png')    
-    '''
-    '''
-    #plot sensitivity response curves
-    plt.figure(figsize=(14, 12))
     for col in range(X.shape[1]-1):
-        x_copy = X[:, col].copy()  # Copy the values of the current column
         
-        print(col)
-
-        dx = 0.001
-        X[:, col] -= dx/2.0  # Subtract 0.1 of all values for the current column
-
-        Sim3 = runSim("subtract_01")    
+        original_column = X[:, col]
         
-        X[:, col] = x_copy #restore values
+        X_deleted = np.delete(X, col, axis=1)
+    
+        col_contributions = []
+    
+        #X_deleted = np.delete(X, col, axis=1)
         
-        X[:, col] += dx/2.0 #add 0.1 to all values for the current column
+        Sim2 = runSim("deleted", X_deleted)
         
-        Sim4 = runSim("add_01") 
-        
-        fcol = math.floor(math.sqrt(X.shape[1]))
-        frw = math.ceil(X.shape[1]/fcol)
-        
-        ax = plt.subplot(frw,fcol, col + 1)
-        variable_name = x_filen_list[col].replace('.nc', '')
-        ax.set_title(variable_name)
+        #variable_name = x_filen_list[col].replace('.nc', '')
+        #ax.set_title(variable_name)
         
         def non_masked_data(cube):
             return cube.data[cube.data.mask == False].data
-            
-        num_bins = 20
-        hist, bin_edges = np.histogram(X[:, col], bins=num_bins)
-        bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
-        median_values = []
-        percentile_10 = []
-        percentile_90 = []
         
-        for i in range(num_bins):
-        
-            mask = (X[:, col] >= bin_edges[i]) & (X[:, col] < bin_edges[i + 1])
-            values_in_bin = []
-        
-            for rw in range(Sim.shape[0]):
-                sim_final = (non_masked_data(Sim3[rw]) - non_masked_data(Sim4[rw]))/dx                      
-                values_in_bin.append(sim_final[mask])
-            values_in_bin = np.array(values_in_bin).flatten()   
-            median_values.append(np.median(values_in_bin))
-            try:
-                percentile_10.append(np.percentile(values_in_bin, 10))
-                percentile_90.append(np.percentile(values_in_bin, 90))
-            except:
-                percentile_10.append(np.nan)
-                percentile_90.append(np.nan)
-            
-            #if np.median(values_in_bin:
-                #set_trace()
-            
-        #set_trace()    
-        ax.plot(bin_centers, median_values, marker='.', label='Median')
-        ax.fill_between(bin_centers, percentile_10, percentile_90, alpha=0.3, label='10th-90th Percentiles')      
-        
-        #for rw in range(Sim.shape[0]):
-            #ax.plot(X[:, col], non_masked_data(Sim3[rw]) - non_masked_data(Sim4[rw]), '.', color = "darkred", markersize = 0.5, linewidth=0.5)
+        sim_final = (non_masked_data(Sim[col]) - non_masked_data(Sim2[col]))
+        sim_final = np.mean(sim_final)
+        #set_trace()
+        contributions[col] = sim_final
+
+    contributions_percentage = np.abs(contributions) /np.sum(np.abs(contributions)) * 100
+
+
+    # Sort variables by mean contribution in descending order
+    sorted_indices = np.argsort(contributions_percentage)[::-1]
+    actual_names = [filename.replace('.nc', '') for filename in x_filen_list]
+    sorted_contributions = contributions_percentage[sorted_indices]
+    #sorted_variable_names = [f"Variable {i + 1}" for i in sorted_indices]
+    sorted_variable_names = [actual_names[i] for i in sorted_indices]
+    #set_trace()
     
-        X[:, col] = x_copy 
-    
+    # Create the bar plot
+    plt.figure(figsize=(10, 6))
+    plt.barh(sorted_variable_names, sorted_contributions, color='blue')
+    plt.xlabel('Contribution Percentage')
+    plt.title('Variable Contributions')
+    plt.grid(axis='x', linestyle='--', alpha=0.6)
+    plt.gca().invert_yaxis()  # Invert the y-axis to show the most important variables at the top
     plt.show()
-    set_trace() 
+    set_trace()
     
-    fig_dir = combine_path_and_make_dir(dir_outputs, '/figs/')
-    
-    plt.savefig(fig_dir + 'sensitivity-response-curves.png')  
-    '''
     if run_evaluation:
         evaluate_model(filename_out, dir_outputs, Obs, Sim, lmask, *args, **kw)
 

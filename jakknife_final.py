@@ -295,59 +295,97 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, CA_filen = None,
     
     Sim = runSim("control", X) 
     
-    contributions = np.zeros(X.shape[1]-1)
-    #contributions_percentage = []
+    # Initialize an array to store contributions
+    contributions = []
+
+    for col in range(X.shape[1] - 1):
+        original_column = X[:, col]
+
+        # Create an array to store contributions for the current column
+        
+        
+        X_deleted = np.delete(X, col, axis=1)
+        
+        Sim2 = runSim("deleted", X_deleted)
+        
+        rw_contributions = []
+        
+        def non_masked_data(cube):
+        
+            return cube.data[cube.data.mask == False].data
+        
+        for rw in range(Sim.shape[0]):
+        
+            sim_final = (non_masked_data(Sim[rw]) - non_masked_data(Sim2[rw]))
+            
+            rw_contributions.append(np.mean(sim_final))
+
+        contributions.append(np.mean(rw_contributions))
+
+    contributions = np.array(contributions)
+    contributions_percentage = np.abs(contributions) / np.sum(np.abs(contributions)) * 100
+
+    # Calculate the mean contribution percentage for each variable
+    mean_contributions = np.mean(contributions_percentage)
+    set_trace()
+    # Sort variables by mean contribution in descending order
+    sorted_indices = np.argsort(mean_contributions)[::-1]
+    actual_names = [filename.replace('.nc', '') for filename in x_filen_list]
+    sorted_contributions = mean_contributions[sorted_indices]
+    sorted_variable_names = [actual_names[i] for i in sorted_indices]
+
+    # Create the bar plot
+    plt.figure(figsize=(10, 6))
+    plt.barh(sorted_variable_names, sorted_contributions, color='blue')
+    plt.xlabel('Contribution Percentage')
+    plt.title('Variable Contributions')
+    plt.grid(axis='x', linestyle='--', alpha=0.6)
+    plt.gca().invert_yaxis()  # Invert the y-axis to show the most important variables at the top
+    plt.show()
+    set_trace()
+
+    '''    
+    contributions_col = np.zeros(X.shape[1]-1)
+    mean_values = []
     
     for col in range(X.shape[1]-1):
         
         original_column = X[:, col]
         
         X_deleted = np.delete(X, col, axis=1)
-    
-        col_contributions = []
-    
-        #X_deleted = np.delete(X, col, axis=1)
         
-        Sim2 = runSim("deleted", X_deleted)
-        
-        #variable_name = x_filen_list[col].replace('.nc', '')
-        #ax.set_title(variable_name)
+        Sim2 = runSim("deleted", X_deleted)       
         
         def non_masked_data(cube):
             return cube.data[cube.data.mask == False].data
-
+            
+        contributions = []
+        
+        for rw in range(Sim.shape[0]):
+        
+            sim_final = (non_masked_data(Sim[rw]) - non_masked_data(Sim2[rw]))
+            #sim_final = (non_masked_data(Sim[col]) - non_masked_data(Sim2[col]))
+            #sim_final = np.mean(sim_final)
+            #set_trace()
+            contributions.append(np.mean(sim_final))# = sim_final
+            
         #set_trace()
-        #for rw in range(Sim.shape[0]):
-        
-            #sim_final = (non_masked_data(Sim[rw]) - non_masked_data(Sim2[rw]))
-        sim_final = (non_masked_data(Sim[col]) - non_masked_data(Sim2[col]))
-        sim_final = np.mean(sim_final)
-        #set_trace()
-        contributions[col] = sim_final
-        #col_contributions.append(sim_final)
-        
-            #contributions = np.array(contributions).flatten() 
-            #contribution[rw] = sim_final
-        #average_contribution = np.mean(col_contributions, axis = 0)
-        
-        #X_deleted = np.insert(X_deleted, col, values= original_column, axis=1)
-    
-    #contributions.append(average_contribution)     
-    
-    #contributions = np.array(contributions)
-    contributions_percentage = np.abs(contributions) /np.sum(np.abs(contributions)) * 100
-    #mean_contributions = np.abs(contributions) /np.sum(np.abs(contributions)) * 100
+        contributions = np.array(contributions)  
+        #mean_value = np.mean(contributions)
+        #mean_values.append(mean_value)
+        mean_value = np.mean(contributions)
+        #contributions_col[col] = contributions  
+        mean_values.append(mean_value)
+    contributions_percentage = np.abs(mean_values) /np.sum(np.abs(mean_values)) * 100
     #set_trace()
-    # Calculate the mean contribution percentage for each variable
-    #mean_contributions = np.mean(contributions_percentage, axis=1)
-
     # Sort variables by mean contribution in descending order
     sorted_indices = np.argsort(contributions_percentage)[::-1]
     actual_names = [filename.replace('.nc', '') for filename in x_filen_list]
     sorted_contributions = contributions_percentage[sorted_indices]
     #sorted_variable_names = [f"Variable {i + 1}" for i in sorted_indices]
     sorted_variable_names = [actual_names[i] for i in sorted_indices]
-    #set_trace()
+    
+    
     # Create the bar plot
     plt.figure(figsize=(10, 6))
     plt.barh(sorted_variable_names, sorted_contributions, color='blue')
@@ -360,7 +398,7 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, CA_filen = None,
                                   
                 
         #X[:, other_cols] = original_X
-        
+    '''    
         
         
     #variable_names = x_filen_list.replace('.nc', '')
