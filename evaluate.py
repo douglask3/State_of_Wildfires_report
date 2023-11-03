@@ -33,7 +33,6 @@ from pdb import set_trace
 
 def plot_BayesModel_signifcance_maps(Obs, Sim, lmask, plot_n = 1, Nrows = 3, Ncols = 2):
     
-    
     def flatten_to_dim0(cube):           
         x = cube.data.flatten()[lmask]        
         x = x.reshape([cube.shape[0], int(len(x)/cube.shape[0])])
@@ -198,9 +197,6 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
     for ct in ["standard", "potential", "sensitivity", "initial"]:
         response_curve(Sim[0], curve_type = ct, x_filen_list = x_filen_list, 
                        fig_dir = fig_dir, *args, **kw, **common_args)
-        
-
-
 
 if __name__=="__main__":
     """ Running optimization and basic analysis. 
