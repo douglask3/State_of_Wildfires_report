@@ -192,7 +192,7 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
         'grab_old_trace': grab_old_trace}
     Sim = runSim_MaxEntFire(**common_args, run_name = "control", test_eg_cube = True)
     
-    compare_to_obs_maps(filename_out, dir_outputs, Obs, Sim, lmask, *args, **kw)
+    #compare_to_obs_maps(filename_out, dir_outputs, Obs, Sim, lmask, *args, **kw)
     Bayes_benchmark(Sim, Obs, lmask)
     for ct in ["standard", "potential", "sensitivity", "initial"]:
         response_curve(Sim[0], curve_type = ct, x_filen_list = x_filen_list, 
@@ -227,7 +227,7 @@ if __name__=="__main__":
     """
     ### input data paths and filenames
 
-    sample_for_plot = 50
+    sample_for_plot = 200
     levels = [0, 0.1, 1, 2, 5, 10, 20, 50, 100] 
     dlevels = [-20, -10, -5, -2, -1, -0.1, 0.1, 1, 2, 5, 10, 20]
     cmap = 'OrRd'
