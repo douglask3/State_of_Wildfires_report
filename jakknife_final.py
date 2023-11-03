@@ -23,7 +23,7 @@ import arviz as az
 
 from scipy.stats import wilcoxon
 from sklearn.metrics import mean_squared_error
-
+from sklearn.model_selection import cross_val_predict
 
 def combine_path_and_make_dir(path1, path2):
     path = path1 + '/'+ path2 + '/'
@@ -84,12 +84,13 @@ def fit_MaxEnt_probs_to_data(Y, X, niterations, *arg, **kw):
         priors = {"q":     pm.LogNormal('q', mu = 0.0, sigma = 1.0),
                   "lin_betas": pm.Normal('lin_betas', mu = 0, sigma = 100, shape = nvars),
                   "pow_betas": pm.Normal('pow_betas', mu = 0, sigma = 100, shape = nvars),
-                  "pow_power": pm.LogNormal('pow_power', mu = 0, sigma = 1, shape = nvars),
+                  "pow_power": pm.Normal('pow_power', mu = 0, sigma = 1, shape = nvars),
                   "x2s_betas": pm.Normal('x2s_betas', mu = 0, sigma = 100, shape = nvars),
                   "x2s_X0"   : pm.Normal('x2s_X0'   , mu = 0, sigma = 1, shape = nvars),
                   "comb_betas": pm.Normal('comb_betas', mu = 0, sigma = 100, shape = nvars),
                   "comb_X0": pm.Normal('comb_X0', mu = 0.5, sigma = 1, shape = nvars),
                   "comb_p": pm.Normal('comb_p', mu = 0, sigma = 1 , shape = nvars)
+                  
                   }
         
         ## run model
@@ -249,7 +250,6 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, CA_filen = None,
         
         Y, X, lmask, scalers = read_all_data_from_netcdf(**common_args)
     
-
     Obs = read_variable_from_netcdf(y_filen, dir,
                                     subset_function = subset_function, 
                                     subset_function_args = subset_function_args)
@@ -289,48 +289,102 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, CA_filen = None,
     nits = len(trace.posterior.chain)*len(trace.posterior.draw)
     idx = range(0, nits, int(np.floor(nits/sample_for_plot)))
     
-    def runSim(id_name):  
+    def runSim(id_name, X):  
         out = np.array(list(map(lambda id: sample_model(id, id_name), idx)))
         return iris.cube.CubeList(out).merge_cube()
-               
-    Sim = runSim("control") 
+    
+    Sim = runSim("control", X) 
+    
+    # Initialize an array to store contributions
+    contributions = []
 
-    contributions = np.zeros(X.shape[1]-1)
-    #contributions_percentage = []
+    for col in range(X.shape[1] - 1):
+        original_column = X[:, col]
+
+        # Create an array to store contributions for the current column
+        
+        
+        X_deleted = np.delete(X, col, axis=1)
+        
+        Sim2 = runSim("deleted", X_deleted)
+        
+        rw_contributions = []
+        
+        def non_masked_data(cube):
+        
+            return cube.data[cube.data.mask == False].data
+        
+        for rw in range(Sim.shape[0]):
+        
+            sim_final = (non_masked_data(Sim[rw]) - non_masked_data(Sim2[rw]))
+            
+            rw_contributions.append(np.mean(sim_final))
+
+        contributions.append(np.mean(rw_contributions))
+
+    contributions = np.array(contributions)
+    contributions_percentage = np.abs(contributions) / np.sum(np.abs(contributions)) * 100
+
+    # Calculate the mean contribution percentage for each variable
+    mean_contributions = np.mean(contributions_percentage)
+    set_trace()
+    # Sort variables by mean contribution in descending order
+    sorted_indices = np.argsort(mean_contributions)[::-1]
+    actual_names = [filename.replace('.nc', '') for filename in x_filen_list]
+    sorted_contributions = mean_contributions[sorted_indices]
+    sorted_variable_names = [actual_names[i] for i in sorted_indices]
+
+    # Create the bar plot
+    plt.figure(figsize=(10, 6))
+    plt.barh(sorted_variable_names, sorted_contributions, color='blue')
+    plt.xlabel('Contribution Percentage')
+    plt.title('Variable Contributions')
+    plt.grid(axis='x', linestyle='--', alpha=0.6)
+    plt.gca().invert_yaxis()  # Invert the y-axis to show the most important variables at the top
+    plt.show()
+    set_trace()
+
+    '''    
+    contributions_col = np.zeros(X.shape[1]-1)
+    mean_values = []
     
     for col in range(X.shape[1]-1):
         
         original_column = X[:, col]
         
         X_deleted = np.delete(X, col, axis=1)
-    
-        col_contributions = []
-    
-        #X_deleted = np.delete(X, col, axis=1)
         
-        Sim2 = runSim("deleted", X_deleted)
-        
-        #variable_name = x_filen_list[col].replace('.nc', '')
-        #ax.set_title(variable_name)
+        Sim2 = runSim("deleted", X_deleted)       
         
         def non_masked_data(cube):
             return cube.data[cube.data.mask == False].data
+            
+        contributions = []
         
-        sim_final = (non_masked_data(Sim[col]) - non_masked_data(Sim2[col]))
-        sim_final = np.mean(sim_final)
+        for rw in range(Sim.shape[0]):
+        
+            sim_final = (non_masked_data(Sim[rw]) - non_masked_data(Sim2[rw]))
+            #sim_final = (non_masked_data(Sim[col]) - non_masked_data(Sim2[col]))
+            #sim_final = np.mean(sim_final)
+            #set_trace()
+            contributions.append(np.mean(sim_final))# = sim_final
+            
         #set_trace()
-        contributions[col] = sim_final
-
-    contributions_percentage = np.abs(contributions) /np.sum(np.abs(contributions)) * 100
-
-
+        contributions = np.array(contributions)  
+        #mean_value = np.mean(contributions)
+        #mean_values.append(mean_value)
+        mean_value = np.mean(contributions)
+        #contributions_col[col] = contributions  
+        mean_values.append(mean_value)
+    contributions_percentage = np.abs(mean_values) /np.sum(np.abs(mean_values)) * 100
+    #set_trace()
     # Sort variables by mean contribution in descending order
     sorted_indices = np.argsort(contributions_percentage)[::-1]
     actual_names = [filename.replace('.nc', '') for filename in x_filen_list]
     sorted_contributions = contributions_percentage[sorted_indices]
     #sorted_variable_names = [f"Variable {i + 1}" for i in sorted_indices]
     sorted_variable_names = [actual_names[i] for i in sorted_indices]
-    #set_trace()
+    
     
     # Create the bar plot
     plt.figure(figsize=(10, 6))
@@ -341,7 +395,25 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, CA_filen = None,
     plt.gca().invert_yaxis()  # Invert the y-axis to show the most important variables at the top
     plt.show()
     set_trace()
-    
+                                  
+                
+        #X[:, other_cols] = original_X
+    '''    
+        
+        
+    #variable_names = x_filen_list.replace('.nc', '')
+    #set_trace()
+    #contributions = list(jackknife_contributions.values())
+    #set_trace()
+    #plt.bar(variable_names, contributions)
+    #plt.xlabel('Variables')
+    #plt.ylabel('Contribution')
+    #plt.title('Variable Contributions (Jackknife)')
+    #plt.xticks(rotation=45)
+    #plt.show() 
+    #set_trace()
+        
+
     if run_evaluation:
         evaluate_model(filename_out, dir_outputs, Obs, Sim, lmask, *args, **kw)
 
@@ -365,7 +437,6 @@ def plot_model_maps(Sim, lmask, levels, cmap, Obs = None, eg_cube = None, Nrows 
 
 def evaluate_model(filename_out, dir_outputs, Obs, Sim, lmask, levels, cmap):    
     ax = plt.subplot(2, 3, 4)
-
     BayesScatter(Obs, Sim, lmask,  0.000001, 0.000001, ax)
     plot_model_maps(Sim, lmask, levels, cmap, Obs, Nrows = 2, Ncols = 3)
     
@@ -406,8 +477,6 @@ def project_model(filename_out, dir_outputs, *arg, **kw):
     plt.gcf().set_size_inches(8*2/3, 6)
     fig_dir = combine_path_and_make_dir(dir_outputs, '/figs/')
     plt.savefig(fig_dir + filename_out + '-projections.png')
-
-
 
 if __name__=="__main__":
     """ Running optimization and basic analysis. 
@@ -450,7 +519,7 @@ if __name__=="__main__":
     person = 'Maria'
 
     if person == 'Maria':
-        model_title = 'Example_model-biomes'
+        model_title = 'Example_model-NAT_CA'
         #dir_training = "/gws/nopw/j04/jules/mbarbosa/driving_and_obs_overlap/AllConFire_2000_2009/"
         dir_training = "D:/Doutorado/Sanduiche/research/maxent-variables/2002-2011/"
 
@@ -467,84 +536,70 @@ if __name__=="__main__":
                       "tas_max.nc", "tas_mean.nc", "tca.nc", "te.nc", "mpa.nc",
                       "totalVeg.nc", "vpd.nc", "csoil.nc", "SoilM.nc"]
 
-        cores = 2
-        fraction_data_for_sample = 0.05
     else:
-        model_title = 'Example_model-q-reduced'
+        model_title = 'Example_model-q'
 
         dir_training = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
         y_filen = "GFED4.1s_Burned_Fraction.nc"
-        CA_filen = None
+
         x_filen_list=["trees.nc", "pr_mean.nc", "consec_dry_mean.nc", 
-                  #"lightn.nc", "popDens.nc",
+                  "lightn.nc", "popDens.nc",
                   "crop.nc", "pas.nc", 
                   "humid.nc", "csoil.nc", "tas_max.nc",
                   "totalVeg.nc"] 
 
-        cores = 1
-        fraction_data_for_sample = 0.01
 
-    grab_old_trace = False # set to True till you get the code running. Then set to False when you start adding in new response curves
 
-    
+    grab_old_trace = True # set to True till you get the code running. Then set to False when you start adding in new response curves
+
+    cores = 2
+    fraction_data_for_sample = 0.05
     niterations = 100
 
     months_of_year = [7]
-    #biome_ID = [1,2,3,4,5,6]
     
     """ Projection/evaluating """
     dir_outputs = 'outputs/'
 
     dir_projecting = dir_training
 
-    sample_for_plot = 20
+    sample_for_plot = 50
 
     levels = [0, 0.1, 1, 2, 5, 10, 20, 50, 100] 
     cmap = 'OrRd'
 
     run_evaluation = True
     run_projection = True
-    
-    biome_ID = [1]
-
      
     """ 
         RUN optimization 
-        
     """
-    while biome_ID:
-    
-        subset_function = [sub_year_months, constrain_BR_biomes]  
-        subset_function_args = [{'months_of_year': months_of_year}, {'biome_ID': biome_ID}]
+    subset_function = sub_year_months
+    subset_function_args = {'months_of_year': months_of_year}
 
-        filename = '_'.join([file[:-3] for file in x_filen_list]) + \
-                '-frac_points_' + str(fraction_data_for_sample) + \
-                '-Month_' +  '_'.join([str(mn) for mn in months_of_year]) + \
-                f'-Biome_{biome_ID}'
+    filename = '_'.join([file[:-3] for file in x_filen_list]) + \
+              '-frac_points_' + str(fraction_data_for_sample) + \
+              '-Month_' +  '_'.join([str(mn) for mn in months_of_year])
     
 
-        #### Optimize
-        trace, scalers = train_MaxEnt_model(y_filen, x_filen_list, CA_filen , dir_training, 
-                                            filename, dir_outputs,
-                                            fraction_data_for_sample,
-                                            subset_function, subset_function_args,
-                                            niterations, cores, model_title, grab_old_trace)                                                                      
+    #### Optimize
+    trace, scalers = train_MaxEnt_model(y_filen, x_filen_list, CA_filen , dir_training, 
+                                        filename, dir_outputs,
+                                        fraction_data_for_sample,
+                                        subset_function, subset_function_args,
+                                        niterations, cores, model_title, grab_old_trace)                                                                      
                                         
 
 
-        """ 
-            RUN projection 
-        """
-        predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, CA_filen, dir_projecting,
-                            dir_outputs, model_title, filename,
-                            subset_function, subset_function_args,
-                            sample_for_plot, 
-                            run_evaluation = run_evaluation, run_projection = run_projection,
-                            grab_old_trace = grab_old_trace,
-                            levels = levels, cmap = cmap)
-                            
-        biome_ID[0] += 1
-        
-        if biome_ID[0] > 6:
-            break
+    """ 
+        RUN projection 
+    """
+    predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, CA_filen, dir_projecting,
+                         dir_outputs, model_title, filename,
+                         subset_function, subset_function_args,
+                         sample_for_plot, 
+                         run_evaluation = run_evaluation, run_projection = run_projection,
+                         grab_old_trace = grab_old_trace,
+                         levels = levels, cmap = cmap)
+    
     
