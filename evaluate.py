@@ -31,8 +31,6 @@ from scipy.stats import wilcoxon
 from pdb import set_trace
 
 
-
-
 def plot_BayesModel_signifcance_maps(Obs, Sim, lmask, plot_n = 1, Nrows = 3, Ncols = 2):
     
     
