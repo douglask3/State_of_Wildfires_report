@@ -10,13 +10,20 @@ import pytensor
 import pytensor.tensor as tt
 
 from pdb import set_trace
+
+def select_key_or_defualt(dirc, key, default):
+    if key in dirc:
+        return dirc[key]
+    else:
+        return default
+
 class MaxEntFire(object):
     """
     Maximum Entropy fire model which takes indepedant variables and coefficants. 
     At the moment, just a linear model fed through a logistic function to convert to 
     burnt area/fire probablity. But we'll adapt that.  
     """ 
-    def __init__(self, betas, powers = None, inference = False):
+    def __init__(self, params, inference = False):
         """
         Sets up the model based on betas and repsonse curve pararameters (response curve 
             not yet implmented
@@ -35,11 +42,20 @@ class MaxEntFire(object):
             self.numPCK =  __import__('pytensor').tensor
         else:
             self.numPCK =  __import__('numpy')
+       
+        self.lin_betas = params['lin_betas']
+        self.pow_betas = select_key_or_defualt(params, 'pow_betas', None)
+        self.pow_power = select_key_or_defualt(params, 'pow_power', None)
+        self.x2s_betas = select_key_or_defualt(params, 'x2s_betas', None)
+        self.x2s_X0    = select_key_or_defualt(params, 'x2s_X0'   , 0.0 )
+        self.q = select_key_or_defualt(params, 'q', 0.0)
+        self.comb_betas = select_key_or_defualt(params, 'comb_betas', None)   
+        self.comb_X0 = select_key_or_defualt(params, 'comb_X0', None) 
+        self.comb_p = select_key_or_defualt(params, 'comb_p', None)
+        #Maria: add your response curve parameter selection thing
         
-        self.betas = betas
-        self.powers = powers
 
-    def fire_model(self, X):
+    def burnt_area(self, X):
         """calculated predicted burnt area based on indepedant variables. 
             At the moment, just a linear model fed through a logistic function to convert to 
             burnt area/fire probablity. But we'll adapt that.   
@@ -47,53 +63,39 @@ class MaxEntFire(object):
 	    X -- numpy or tensor 2d array of indepenant variables, each columne a different 
                     variable, no. columns (no. variables) is same as length of betas.
         Returns:
-            numpy or tensor (depdaning on 'inference' option) 1 d array of length equal to 
+            numpy or tensor (depending on 'inference' option) 1 d array of length equal to 
 	    no. rows in X of burnt area/fire probabilities.
         """
-        def dot_fun(x, p): return self.numPCK.dot(x, p)
         
-        y = dot_fun(X, self.betas)
+        y = self.numPCK.dot(X, self.lin_betas)
 
-        if self.powers is not None:
-            X_powers = self.power_response_curve(X)
-            y = y + dot_fun(X_powers, self.powers[0,:])        
+        def add_response_curve(Rbetas, FUN, y):
+            if Rbetas is not None:
+                XR = FUN(X)
+                y = y + self.numPCK.dot(XR, Rbetas) 
+            return(y)
+
+        y = add_response_curve(self.pow_betas, self.power_response_curve, y)
+        y = add_response_curve(self.x2s_betas, self.X2_response_curve   , y)
+        y = add_response_curve(self.comb_betas, self.linear_combined_response_curve , y)
+        
+        # y = add_response_curve(paramers, function, y)
+        # Maria: add yours here 
 
         BA = 1.0/(1.0 + self.numPCK.exp(-y))
-    
+        
         return BA
+    
+    def burnt_area_spread(self, X):
+        BA = self.burnt_area(X)
+        if self.q == 0.0: return BA
+        return BA / (1 + self.q * (1 - BA))
      
-    def hinge_1(x0, y0, a, b):
-        """ fits a hinge curve function
-        x -- numpy array 
-        -- hinge point
-        """
-    
-        if np.all(x1 > x0):
-            y = a*x1 + b   
-        else:
-            y = y0
-    
-        return y
-   
-
-    def hinge_2(self, x, a1, b1, a2, b2):
-  
-        x0 = (b2-b1)/(a1-a2)
-        print("x0 = ", x0)
-        y=[]
-    
-        for xi in x:
-            if xi > x0:
-                yi = a2*xi + b2   
-            else:
-                yi = a1*xi + b1
-    
-            y.append(yi)
-        return y
-
-#
     def power_response_curve(self, X):  
-        return X**self.powers[1,:]
+        return self.pow_power**X
 
+    def X2_response_curve(self, X):  
+        return (X - self.x2s_X0)**2.0
 
-
+    def linear_combined_response_curve(self, X):
+        return np.log(((np.exp(X - self.comb_X0)) ** self.comb_p) + 1)
