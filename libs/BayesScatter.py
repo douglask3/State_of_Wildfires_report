@@ -8,7 +8,7 @@ def sqidge_01s(X, logXmin):
     if logXmin is not None: X = logXmin + X*(1 - 2*logXmin)
     return(X)
 
-def Bayes_benchmark(Y, X, lmask, logXmin = None, logYmin = None, ax = None):
+def Bayes_benchmark(filename_out, fig_dir, Y, X, lmask, logXmin = None, logYmin = None, ax = None):
     X = X.data.flatten()[lmask]
     prob = Y[1].data.flatten()[lmask]
     Y = np.array([Y[0][i].data.flatten()[lmask] for i in range(Y[0].shape[0])]).T
@@ -29,39 +29,78 @@ def Bayes_benchmark(Y, X, lmask, logXmin = None, logYmin = None, ax = None):
 
         return step1, step2, step3
 
-    M = Y.shape[1]
-    nme_results = np.zeros([M, 3])
-    for i in range(M): nme_results[i, :] = NME(X, Y[:, i])
-
-    nme_median = NME(X, np.median(X), step1_only = True)
+    def run_NME_over_subset(Xi, Yi, percentiles = None):
+        if percentiles is not None:
+            lower = np.percentile(Xi[Xi>0], percentiles[0])
+            upper = np.percentile(Xi[Xi>0], percentiles[1])
+            #if percentiles[0] == 0: lower = np.min(Xi)
+            test = (Xi >= lower) & (Xi <= upper)
+            X = Xi[test]
+            Y = Yi[test, :]
+        else:
+            X = Xi
+            Y = Yi
+        M = Y.shape[1]
+        nme_results = np.zeros([M, 3])
+        for i in range(M): nme_results[i, :] = NME(X, Y[:, i])
+        
+        nme_median = NME(X, np.median(X), step1_only = True)
+        
+        XR = X.copy()
+        nme_random = np.zeros(100)
+        for i in range(100): 
+            np.random.shuffle(XR)
+            nme_random[i] = NME(X, XR, True)
     
-    XR = X.copy()
-    nme_random = np.zeros(100)
-    for i in range(100): 
-        np.random.shuffle(XR)
-        nme_random[i] = NME(X, XR, True)
+        min_val = np.min(nme_results)
+        max_val = np.max(nme_results)
+        bins = np.linspace(min_val, max_val, 50)
+
+        for i in range(3): plt.hist(nme_results[:, i], bins=bins, alpha=0.5, label=f'NME step {i+1}') 
+        plt.hist(nme_random, bins=bins, color = 'black', alpha=0.5, label='RR Null Model') 
+        
+        if percentiles is None:
+            median_lab = 'Median Null Model'
+            mean_lab =  'Mean Null Model'
+        else:         
+            median_lab = ''
+            mean_lab = ''
+        plt.gca().axvline(1, linestyle='dotted', color='red', label=mean_lab)
+        plt.gca().axvline(nme_median, linestyle='dotted', color='blue', label=median_lab)
+        for i in range(3):
+            nme10 = np.percentile(nme_results[:,i], [10])[0]
+            nme90 = np.percentile(nme_results[:,i], [90])[0]
+            if percentiles is None:
+                plt.text(0.05, 0.95 - 0.1 * i, 
+                        f'NME{i} 10-90%: {nme10:.2f}-{nme90:.2f}', 
+                        transform=plt.gca().transAxes)
+            else:
+                plt.text(0.05, 0.95 - 0.1 * i, 
+                        f'{nme10:.2f}-{nme90:.2f}', transform=plt.gca().transAxes)
+
+        
     
+    plt.figure(figsize=(8, 12))  # Set the figure size
+    plt.subplot(3, 1, 1)  # Create the density plot in the top subplot
+    run_NME_over_subset(X, Y, None)
 
-    min_val = np.min(nme_results)
-    max_val = np.max(nme_results)
-    bins = np.linspace(min_val, max_val, 50)
-
-    fig, ax = plt.subplots()
-    for i in range(3): plt.hist(nme_results[:, i], bins=bins, alpha=0.5, label=f'NME step {i+1}') 
-    plt.hist(nme_random, bins=bins, color = 'black', alpha=0.5, label='RR Null Model') 
-    ax.axvline(1, linestyle='dotted', color='red', label='Mean Null Model')
-    ax.axvline(nme_median, linestyle='dotted', color='blue', label='Median Null Model')
+    
     plt.xlabel('Score')
     plt.ylabel('Frequency')
     plt.legend()
-    plt.show()
-    set_trace()    
+
+    percentiles = [0, 1, 5, 10, 25, 75, 90, 95, 99, 100]
+
+    for i in range(len(percentiles) - 1):
+        plt.subplot(6, 3, i + 10)
+        run_NME_over_subset(X, Y, percentiles[i:(i+2)])
+    
+    plt.savefig(fig_dir + filename_out + '-NME_scores.png') 
 
     pos = pos[X > 0]
     X = X[X>0]
-
     scatter_metric_overall_and_percentiles(X, pos)
-    
+    plt.savefig(fig_dir + filename_out + '-posterior-position.png')
 
 def scatter_metric_overall_and_percentiles(X, pos, xlabel = 'Burnt Area', 
                                            ylabel = 'Posterior Position', 
