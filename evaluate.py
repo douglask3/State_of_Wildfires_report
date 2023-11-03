@@ -23,40 +23,101 @@ import math
 from scipy.special import logit, expit
 
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 import arviz as az
 
 from scipy.stats import wilcoxon
 
-def compare_to_obs_maps(filename_out, dir_outputs, Obs, Sim, lmask, levels, cmap,
-                        dlevels = None, dcmap = None,
-                        *args, **kw):    
-    ax = plt.subplot(2, 3, 4)
-    BayesScatter(Obs, Sim, lmask,  0.000001, 0.000001, ax)
-    plot_BayesModel_maps(Sim, levels, cmap, Obs, Nrows = 2, Ncols = 3)
+from pdb import set_trace
+
+
+def round_to_sf(numbers, ndigs = 2):
+    def sf(number):
+        if number == 0:
+            return 0  # Handle the special case of 0
+        order = int(np.floor(np.log10(np.abs(number))))
+        factor = 10 ** (ndigs - 1 - order)
+        return round(number * factor) / factor
+    return np.array([sf(number) for number in numbers])
+
+yay = round_to_sf(np.arange(0, 10, 0.1), 2)
+
+def plot_BayesModel_signifcance_maps(Obs, Sim, lmask, plot_n = 1, Nrows = 3, Ncols = 2):
     
-    X = Obs.data.flatten()[lmask]
-    ncells = int(len(X)/Obs.shape[0])
-    X = X.reshape([Obs.shape[0], ncells])
-    Y = [Sim[i].data.flatten()[lmask].reshape([Obs.shape[0],ncells]) \
-         for i in range(Sim.shape[0])]
+    
+    def flatten_to_dim0(cube):           
+        x = cube.data.flatten()[lmask]        
+        x = x.reshape([cube.shape[0], int(len(x)/cube.shape[0])])
+        return x
+    
+    X = flatten_to_dim0(Obs) 
+    pv = flatten_to_dim0(Sim[1])    
+        
+    Y = [flatten_to_dim0(Sim[0][i]) for i in range(Sim[0].shape[0])]
     Y = np.array(Y)
-   
-    pos = np.mean(X[np.newaxis, :, :] > Y, axis = 0)
-    _, p_value = wilcoxon(pos - 0.5, axis = 0)
-    apos = np.mean(pos, axis = 0)
+
+    ax = plt.subplot(Nrows, Ncols, plot_n)
+    Xf = X.flatten()
+    pvf = pv.flatten()
+
+    none0 =  (Xf != 0)
+    Xf0 = np.log10(Xf[none0])
+    pvf0 = 10**pvf[none0]
+
+    plot_id = ax.hist2d(Xf0, pvf0, bins=100, cmap='afmhot_r', norm=mpl.colors.LogNorm())
+    plt.gcf().colorbar(plot_id[3], ax=ax)
+    at = np.unique(np.round(np.arange(np.min(Xf0), np.max(Xf0))))
+    plt.xticks(at, 10**at)
+    labels = np.array([0, 0.3, 0.5, 0.7, 0.8, 0.9, 0.95, 0.99])
+    plt.yticks(10**labels, labels)
     
+    Sim[1].data.mask[Sim[1].data == 0] = True
+    plot_BayesModel_maps(Sim[1], [0.0, 0.5, 0.75, 0.9, 0.95, 0.99, 1.0], 'copper', '', None, 
+                         Nrows = Nrows, Ncols = Ncols, plot0 = plot_n, collapse_dim = 'time',
+                         scale = 1)
+    #hist, xedges, yedges = np.histogram2d(Xf,pvf, bins=100)
+    #log_hist = np.log1p(hist)  # Apply logarithm to avoid log(0)
+    #ax = plt.subplot(Nrows, Ncols, plot_n + 3)
+    #ax.imshow(np.rot90(log_hist), extent=[xedges[0], xedges[-1], yedges[0], yedges[-1]], 
+    #           cmap='afmhot_r', aspect='auto')
+    #
+    
+
+
+    ax = plt.subplot(Nrows, Ncols, plot_n + 3)
+    BayesScatter(Obs, Sim[0], lmask,  0.000001, 0.000001, ax)
+    
+    pos = np.mean(X[np.newaxis, :, :] > Y, axis = 0)
+    pos[X == 0] = np.nan
+    _, p_value = wilcoxon(pos - 0.5, axis = 0, nan_policy = 'omit')
+    apos = np.nanmean(pos, axis = 0)
+
     mask = lmask.reshape([ X.shape[0], int(lmask.shape[0]/X.shape[0])])[0]
     apos_cube = insert_data_into_cube(apos, Obs[0], mask)
     p_value_cube = insert_data_into_cube(p_value, Obs[0], mask)
-    
+
     plot_annual_mean(apos_cube,[0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], 
-                     'RdYlBu_r',  plot_name = "mean bias",  Nrows = 2, Ncols = 3, plot_n = 5)
+                     'RdYlBu_r',  plot_name = "mean bias", 
+                     Nrows = Nrows, Ncols = Ncols, plot_n = plot_n + 4)
 
     plot_annual_mean(p_value_cube, np.array([0, 0.01, 0.05, 0.1, 0.5, 1.0]), 'copper',   
-                     plot_name = "mean bias p-value",   Nrows = 2, Ncols = 3, plot_n = 6)
+                     plot_name = "mean bias p-value", 
+                     Nrows = Nrows, Ncols = Ncols, plot_n = plot_n + 5)
     
-    plt.gcf().set_size_inches(12, 8)
 
+
+
+def compare_to_obs_maps(filename_out, dir_outputs, Obs, Sim, lmask, levels, cmap,
+                        dlevels = None, dcmap = None,
+                        *args, **kw):    
+    
+    plot_BayesModel_maps(Sim[0], levels, cmap, '', Obs, Nrows = 3, Ncols = 3)
+    plot_BayesModel_signifcance_maps(Obs, Sim, lmask, plot_n = 4, Nrows = 3, Ncols = 3)
+    
+    
+   
+    plt.gcf().set_size_inches(12, 12)
+    plt.gcf().tight_layout()
     fig_dir = combine_path_and_make_dir(dir_outputs, '/figs/')
 
     plt.savefig(fig_dir + filename_out + '-evaluation.png')
@@ -115,7 +176,7 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
     scalers = pd.read_csv(scale_file).values  
 
     #plot_basic_parameter_info(trace, fig_dir)
-    paramter_map(trace, x_filen_list, fig_dir) 
+    #paramter_map(trace, x_filen_list, fig_dir) 
 
     common_args = {
         'y_filename': y_filen,
@@ -148,13 +209,15 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
         'lmask': lmask,
         'dir_samples': dir_samples,
         'grab_old_trace': grab_old_trace}
-    Sim = runSim_MaxEntFire(**common_args, run_name = "control")
-
+    Sim = runSim_MaxEntFire(**common_args, run_name = "control", test_eg_cube = True)
+    
+    compare_to_obs_maps(filename_out, dir_outputs, Obs, Sim, lmask, *args, **kw)
+    Bayes_benchmark(Sim, Obs, lmask)
     for ct in ["standard", "potential", "sensitivity", "initial"]:
-        response_curve(Sim, curve_type = ct, x_filen_list = x_filen_list, 
+        response_curve(Sim[0], curve_type = ct, x_filen_list = x_filen_list, 
                        fig_dir = fig_dir, *args, **kw, **common_args)
         
-    compare_to_obs_maps(filename_out, dir_outputs, Obs, Sim, lmask, *args, **kw)
+
 
 
 if __name__=="__main__":
@@ -186,7 +249,7 @@ if __name__=="__main__":
     """
     ### input data paths and filenames
 
-    sample_for_plot = 20
+    sample_for_plot = 50
     levels = [0, 0.1, 1, 2, 5, 10, 20, 50, 100] 
     dlevels = [-20, -10, -5, -2, -1, -0.1, 0.1, 1, 2, 5, 10, 20]
     cmap = 'OrRd'

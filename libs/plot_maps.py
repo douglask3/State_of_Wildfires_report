@@ -17,13 +17,14 @@ from libs import git_info
 from pdb import set_trace
 
 def plot_BayesModel_maps(Sim, levels, cmap, ylab = '', Obs = None, 
-                         Nrows = 1, Ncols = 2, plot0 = 0,
+                         Nrows = 1, Ncols = 2, plot0 = 0, collapse_dim = 'realization',
+                         scale = 100*12,
                          *args, **kw):
-    Sim = Sim.collapsed('realization', iris.analysis.PERCENTILE, 
-                          percent=[10, 90])
-
+    
+    Sim = Sim.collapsed(collapse_dim, iris.analysis.PERCENTILE, percent=[10, 90])
+    
     def plot_map(cube, plot_name, plot_n):
-        plot_annual_mean(cube, levels, cmap, plot_name = plot_name, scale = 100*12, 
+        plot_annual_mean(cube, levels, cmap, plot_name = plot_name, scale = scale, 
                      Nrows = Nrows, Ncols = Ncols, plot_n = plot_n + plot0, *args, **kw)
         
         if plot_n == 1:
