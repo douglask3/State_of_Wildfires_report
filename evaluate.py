@@ -31,16 +31,7 @@ from scipy.stats import wilcoxon
 from pdb import set_trace
 
 
-def round_to_sf(numbers, ndigs = 2):
-    def sf(number):
-        if number == 0:
-            return 0  # Handle the special case of 0
-        order = int(np.floor(np.log10(np.abs(number))))
-        factor = 10 ** (ndigs - 1 - order)
-        return round(number * factor) / factor
-    return np.array([sf(number) for number in numbers])
 
-yay = round_to_sf(np.arange(0, 10, 0.1), 2)
 
 def plot_BayesModel_signifcance_maps(Obs, Sim, lmask, plot_n = 1, Nrows = 3, Ncols = 2):
     
@@ -75,13 +66,6 @@ def plot_BayesModel_signifcance_maps(Obs, Sim, lmask, plot_n = 1, Nrows = 3, Nco
     plot_BayesModel_maps(Sim[1], [0.0, 0.5, 0.75, 0.9, 0.95, 0.99, 1.0], 'copper', '', None, 
                          Nrows = Nrows, Ncols = Ncols, plot0 = plot_n, collapse_dim = 'time',
                          scale = 1)
-    #hist, xedges, yedges = np.histogram2d(Xf,pvf, bins=100)
-    #log_hist = np.log1p(hist)  # Apply logarithm to avoid log(0)
-    #ax = plt.subplot(Nrows, Ncols, plot_n + 3)
-    #ax.imshow(np.rot90(log_hist), extent=[xedges[0], xedges[-1], yedges[0], yedges[-1]], 
-    #           cmap='afmhot_r', aspect='auto')
-    #
-    
 
 
     ax = plt.subplot(Nrows, Ncols, plot_n + 3)
