@@ -19,17 +19,18 @@ import pytensor
 import pytensor.tensor as tt
 
 import matplotlib.pyplot as plt
-#import re
 import arviz as az
 
 from scipy.stats import wilcoxon
+from sklearn.metrics import mean_squared_error
+from sklearn.model_selection import cross_val_predict
 
 def combine_path_and_make_dir(path1, path2):
     path = path1 + '/'+ path2 + '/'
     if not os.path.exists(path): os.makedirs(path)
     return path
 
-def MaxEnt_on_prob(BA, fx):
+def MaxEnt_on_prob(BA, fx, CA = None):
     """calculates the log-transformed continuous logit likelihood for x given mu when x 
        and mu are probabilities between 0-1. 
        Works with tensor variables.   
@@ -38,12 +39,18 @@ def MaxEnt_on_prob(BA, fx):
 	mu -- mu in P(x|mu). tensor 1-d array
     Returns:
         1-d tensor array of liklihoods.
+        
+    CA -- Area for the cover type (cover area)
     """
     fx = tt.switch(
         tt.lt(fx, 0.0000000000000000001),
         0.0000000000000000001, fx)
-    return BA*tt.log(fx) + (1.0-BA)*tt.log((1-fx))   
-
+      
+    if CA is not None: 
+        prob =  BA*CA*tt.log(fx) + (1.0-BA)*CA*tt.log((1-fx))
+    else:
+        prob = BA*tt.log(fx) + (1.0-BA)*tt.log((1-fx))
+    return prob
 
 def fit_MaxEnt_probs_to_data(Y, X, niterations, *arg, **kw):
     """ Bayesian inerence routine that fits independant variables, X, to dependant, Y.
@@ -74,7 +81,7 @@ def fit_MaxEnt_probs_to_data(Y, X, niterations, *arg, **kw):
     with pm.Model() as max_ent_model:
         ## set priors
         nvars = X.shape[1]
-        priors = {#"q":     pm.LogNormal('q', mu = 0.0, sigma = 1.0),
+        priors = {"q":     pm.LogNormal('q', mu = 0.0, sigma = 1.0),
                   "lin_betas": pm.Normal('lin_betas', mu = 0, sigma = 100, shape = nvars),
                   "pow_betas": pm.Normal('pow_betas', mu = 0, sigma = 100, shape = nvars),
                   "pow_power": pm.Normal('pow_power', mu = 0, sigma = 1, shape = nvars),
@@ -84,17 +91,7 @@ def fit_MaxEnt_probs_to_data(Y, X, niterations, *arg, **kw):
                   "comb_X0": pm.Normal('comb_X0', mu = 0.5, sigma = 1, shape = nvars),
                   "comb_p": pm.Normal('comb_p', mu = 0, sigma = 1 , shape = nvars)
                   
-                   #"x2s": pm.Normal('x2s', mu = 0, sigma = 1, shape = [2, X.shape[1]])
-                    # Maria: Add response curve priors
-                    #"X0": pm.Normal('X0', mu = 0.5, sigma = 1, shape = X.shape[1])
-                    #"p": pm.Normal('p', mu = 0, sigma = 1 , shape = X.shape[1])
-                    #"gama": pm.Normal('gama', mu = 0 , sigma = 1, shape = X.shape[1])
-                 }
-            # Will get used as follows:
-            # y = beta[0] * X[:,0] + beta[1] * X[:,1] + beta[2] *X[:,2] + ....
-            #           + powers[0,0] * X[:,0]^powers[0,1] + powers[1,0] * X[:,1]^powers[1,1] + powers[2,0] * X[:,2]^powers[2,1]
-            #           + x2s[0,0] * (X2s[0,1] + X[:,0])^2 + x2s[1,0] * (X2s[1,1] + X[:,1])^2 + ...
-            #           + Maria: response curve .....
+                  }
         
         ## run model
         model = MaxEntFire(priors, inference = True)
@@ -116,12 +113,13 @@ def fit_MaxEnt_probs_to_data(Y, X, niterations, *arg, **kw):
     return trace
 
 
-def train_MaxEnt_model(y_filen, x_filen_list, dir = '', filename_out = '',
+def train_MaxEnt_model(y_filen, x_filen_list, CA_filen = None, dir = '', filename_out = '',
                        dir_outputs = '',
                        frac_random_sample = 1.0,
                        subset_function = None, subset_function_args = None,
                        niterations = 100, cores = 4, model_title = 'no_name', 
                        grab_old_trace = False):
+                       
     ''' Opens up traning data and trains and saves Bayesian Inference optimization of model. 
         see 'fit_MaxEnt_probs_to_data' for details how.
     Arguments:
@@ -150,15 +148,14 @@ def train_MaxEnt_model(y_filen, x_filen_list, dir = '', filename_out = '',
                 identifiation, so if in doubt, set to 'False'.
     Returns:
         pymc traces, returned and saved to [out_dir]/[filneame]-[metadata].nc and the scalers
-        used on indeptanant data to normalise it, useful for predicting model
+        used on independant data to normalise it, useful for predicting model
     '''
 
-    dir_outputs = combine_path_and_make_dir(dir_outputs, model_title)
+    #dir_outputs = combine_path_and_make_dir(dir_outputs, model_title)
     out_file =   filename_out + '-nvariables_' + \
                  '-frac_random_sample' + str(frac_random_sample) + \
                  '-nvars_' +  str(len(x_filen_list)) + \
                  '-niterations_' + str(niterations * cores)
-    
     trace_file = dir_outputs + '/trace-'   + out_file + '.nc'
     scale_file = dir_outputs + '/scalers-' + out_file + '.csv'
     
@@ -166,12 +163,25 @@ def train_MaxEnt_model(y_filen, x_filen_list, dir = '', filename_out = '',
     if os.path.isfile(trace_file) and os.path.isfile(scale_file) and grab_old_trace:
         return az.from_netcdf(trace_file), pd.read_csv(scale_file).values   
     print("opening data for inference")
-    Y, X, lmask, scalers = read_all_data_from_netcdf(y_filen, x_filen_list, 
-                                                     add_1s_columne = True, dir = dir,
-                                                     x_normalise01 = True, 
-                                                     frac_random_sample = frac_random_sample,
-                                                     subset_function = subset_function, 
-                                                     subset_function_args = subset_function_args)
+    
+    common_args = {'y_filename': y_filen,
+        'x_filename_list': x_filen_list,
+        'add_1s_columne': True,
+        'dir': dir,
+        'x_normalise01': True,
+        'frac_random_sample': frac_random_sample,
+        'subset_function': subset_function,
+        'subset_function_args': subset_function_args
+    }
+
+    if CA_filen is not None:
+        # Process CA_filen when it is provided
+        Y, X, CA, lmask, scalers = read_all_data_from_netcdf(CA_filename = CA_filen, **common_args)
+    else:
+        Y, X, lmask, scalers = read_all_data_from_netcdf(**common_args)
+        
+        
+    
     print("Running trace")
     trace = fit_MaxEnt_probs_to_data(Y, X,niterations = niterations, cores = cores)
     
@@ -180,7 +190,7 @@ def train_MaxEnt_model(y_filen, x_filen_list, dir = '', filename_out = '',
     pd.DataFrame(scalers).to_csv(scale_file, index = False)
     return trace, scalers
 
-def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '', 
+def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, CA_filen = None, dir = '', 
                          dir_outputs = '', model_title = '', filename_out = '',
                          subset_function = None, subset_function_args = None,
                          sample_for_plot = 1,
@@ -223,12 +233,23 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '',
     if not run_evaluation and not run_projection:
         return 
 
+    common_args = {
+    'y_filename': y_filen,
+    'x_filename_list': x_filen_list,
+    'add_1s_columne': True,
+    'dir': dir,
+    'x_normalise01': True,
+    'subset_function': subset_function,
+    'subset_function_args': subset_function_args
+}
+
+    if CA_filen is not None:
+        Y, X, lmask, scalers, CA = read_all_data_from_netcdf(CA_filename = CA_filen, **common_args)
+        
+    else:
+        
+        Y, X, lmask, scalers = read_all_data_from_netcdf(**common_args)
     
-    Y, X, lmask, scalers = read_all_data_from_netcdf(y_filen, x_filen_list, 
-                                                     add_1s_columne = True, dir = dir,
-                                                     x_normalise01 = True, scalers = scalers,
-                                                     subset_function = subset_function, 
-                                                     subset_function_args = subset_function_args)
     Obs = read_variable_from_netcdf(y_filen, dir,
                                     subset_function = subset_function, 
                                     subset_function_args = subset_function_args)
@@ -268,31 +289,130 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir = '',
     nits = len(trace.posterior.chain)*len(trace.posterior.draw)
     idx = range(0, nits, int(np.floor(nits/sample_for_plot)))
     
-    contributions = {}
-    for col in range(X.shape[1]-1):
-        x_copy = X[:, col].copy() 
-        
-        Sim = np.array(list(map(sample_model, idx)))
-        
-        X[:, col] = 0
-        
-        Sim2 = np.array(list(map(sample_model, idx)))
-        
-        contributions[col] = np.mean(Sim - Sim2/Sim)
-        
-        contributions.append(contributions)
-        
-        X[:, col] = x_copy 
-    # Plot the jackknife variables contribution plot
+    def runSim(id_name, X):  
+        out = np.array(list(map(lambda id: sample_model(id, id_name), idx)))
+        return iris.cube.CubeList(out).merge_cube()
+    
+    Sim = runSim("control", X) 
+    
+    # Initialize an array to store contributions
+    contributions = []
 
-    fig, ax = plt.subplots()
-    ax.bar(range(len(contributions)), list(contributions.values()))
-    ax.set_xlabel('Variable')
-    ax.set_ylabel('Contribution')
+    for col in range(X.shape[1] - 1):
+        original_column = X[:, col]
+
+        # Create an array to store contributions for the current column
+        
+        
+        X_deleted = np.delete(X, col, axis=1)
+        
+        Sim2 = runSim("deleted", X_deleted)
+        
+        rw_contributions = []
+        
+        def non_masked_data(cube):
+        
+            return cube.data[cube.data.mask == False].data
+        
+        for rw in range(Sim.shape[0]):
+        
+            sim_final = (non_masked_data(Sim[rw]) - non_masked_data(Sim2[rw]))
+            
+            rw_contributions.append(np.mean(sim_final))
+
+        contributions.append(np.mean(rw_contributions))
+
+    contributions = np.array(contributions)
+    contributions_percentage = np.abs(contributions) / np.sum(np.abs(contributions)) * 100
+
+    # Calculate the mean contribution percentage for each variable
+    mean_contributions = np.mean(contributions_percentage)
+    set_trace()
+    # Sort variables by mean contribution in descending order
+    sorted_indices = np.argsort(mean_contributions)[::-1]
+    actual_names = [filename.replace('.nc', '') for filename in x_filen_list]
+    sorted_contributions = mean_contributions[sorted_indices]
+    sorted_variable_names = [actual_names[i] for i in sorted_indices]
+
+    # Create the bar plot
+    plt.figure(figsize=(10, 6))
+    plt.barh(sorted_variable_names, sorted_contributions, color='blue')
+    plt.xlabel('Contribution Percentage')
+    plt.title('Variable Contributions')
+    plt.grid(axis='x', linestyle='--', alpha=0.6)
+    plt.gca().invert_yaxis()  # Invert the y-axis to show the most important variables at the top
     plt.show()
+    set_trace()
 
-    return contributions
-    set_trace()    
+    '''    
+    contributions_col = np.zeros(X.shape[1]-1)
+    mean_values = []
+    
+    for col in range(X.shape[1]-1):
+        
+        original_column = X[:, col]
+        
+        X_deleted = np.delete(X, col, axis=1)
+        
+        Sim2 = runSim("deleted", X_deleted)       
+        
+        def non_masked_data(cube):
+            return cube.data[cube.data.mask == False].data
+            
+        contributions = []
+        
+        for rw in range(Sim.shape[0]):
+        
+            sim_final = (non_masked_data(Sim[rw]) - non_masked_data(Sim2[rw]))
+            #sim_final = (non_masked_data(Sim[col]) - non_masked_data(Sim2[col]))
+            #sim_final = np.mean(sim_final)
+            #set_trace()
+            contributions.append(np.mean(sim_final))# = sim_final
+            
+        #set_trace()
+        contributions = np.array(contributions)  
+        #mean_value = np.mean(contributions)
+        #mean_values.append(mean_value)
+        mean_value = np.mean(contributions)
+        #contributions_col[col] = contributions  
+        mean_values.append(mean_value)
+    contributions_percentage = np.abs(mean_values) /np.sum(np.abs(mean_values)) * 100
+    #set_trace()
+    # Sort variables by mean contribution in descending order
+    sorted_indices = np.argsort(contributions_percentage)[::-1]
+    actual_names = [filename.replace('.nc', '') for filename in x_filen_list]
+    sorted_contributions = contributions_percentage[sorted_indices]
+    #sorted_variable_names = [f"Variable {i + 1}" for i in sorted_indices]
+    sorted_variable_names = [actual_names[i] for i in sorted_indices]
+    
+    
+    # Create the bar plot
+    plt.figure(figsize=(10, 6))
+    plt.barh(sorted_variable_names, sorted_contributions, color='blue')
+    plt.xlabel('Contribution Percentage')
+    plt.title('Variable Contributions')
+    plt.grid(axis='x', linestyle='--', alpha=0.6)
+    plt.gca().invert_yaxis()  # Invert the y-axis to show the most important variables at the top
+    plt.show()
+    set_trace()
+                                  
+                
+        #X[:, other_cols] = original_X
+    '''    
+        
+        
+    #variable_names = x_filen_list.replace('.nc', '')
+    #set_trace()
+    #contributions = list(jackknife_contributions.values())
+    #set_trace()
+    #plt.bar(variable_names, contributions)
+    #plt.xlabel('Variables')
+    #plt.ylabel('Contribution')
+    #plt.title('Variable Contributions (Jackknife)')
+    #plt.xticks(rotation=45)
+    #plt.show() 
+    #set_trace()
+        
 
     if run_evaluation:
         evaluate_model(filename_out, dir_outputs, Obs, Sim, lmask, *args, **kw)
@@ -396,22 +516,37 @@ if __name__=="__main__":
     """
     """ optimization """
 
-    model_title = 'Example_model-gfed_new2'
+    person = 'Maria'
 
+    if person == 'Maria':
+        model_title = 'Example_model-NAT_CA'
+        #dir_training = "/gws/nopw/j04/jules/mbarbosa/driving_and_obs_overlap/AllConFire_2000_2009/"
+        dir_training = "D:/Doutorado/Sanduiche/research/maxent-variables/2002-2011/"
 
-    #dir_training = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
-    #dir_training = "/gws/nopw/j04/jules/mbarbosa/driving_and_obs_overlap/AllConFire_2000_2009/"
-    dir_training = "D:/Doutorado/Sanduiche/research/maxent-variables/2002-2011/"
+        #y_filen = "GFED4.1s_Burned_Fraction.nc"
+        y_filen = "Area_burned_NAT.nc"
+        #y_filen = "Area_burned_NON.nc"
+        
+        CA_filen = "brazil_NAT.nc"
+        #CA_filen = "brazil_NON.nc"
+        
+        x_filen_list=["consec_dry_mean.nc", "savanna.nc", "cveg.nc", "rhumid.nc",
+                      "lightn.nc", "popDens.nc", "forest.nc", "precip.nc",
+                      "crop.nc", "pas.nc", "grassland.nc", "ed.nc", "np.nc",
+                      "tas_max.nc", "tas_mean.nc", "tca.nc", "te.nc", "mpa.nc",
+                      "totalVeg.nc", "vpd.nc", "csoil.nc", "SoilM.nc"]
 
-    y_filen = "GFED4.1s_Burned_Fraction.nc"
-    #y_filen = "Area_burned_NAT.nc"
-    #y_filen = "Area_burned_NON3.nc"
-    
-    x_filen_list=["consec_dry_mean.nc", "savanna2.nc", "cveg.nc", "rhumid.nc",
-                  "lightn.nc", "popDens.nc", "forest2.nc", "precip.nc",
-                  "crop.nc", "pas.nc", "grassland2.nc", "ed.nc", "np.nc",
-                  "tas_max.nc", "tas_mean.nc", "tca.nc", "te.nc", "mpa.nc",
-                  "totalVeg.nc", "vpd.nc", "csoil.nc"]
+    else:
+        model_title = 'Example_model-q'
+
+        dir_training = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
+        y_filen = "GFED4.1s_Burned_Fraction.nc"
+
+        x_filen_list=["trees.nc", "pr_mean.nc", "consec_dry_mean.nc", 
+                  "lightn.nc", "popDens.nc",
+                  "crop.nc", "pas.nc", 
+                  "humid.nc", "csoil.nc", "tas_max.nc",
+                  "totalVeg.nc"] 
 
 
 
@@ -445,19 +580,21 @@ if __name__=="__main__":
     filename = '_'.join([file[:-3] for file in x_filen_list]) + \
               '-frac_points_' + str(fraction_data_for_sample) + \
               '-Month_' +  '_'.join([str(mn) for mn in months_of_year])
+    
 
     #### Optimize
-    trace, scalers = train_MaxEnt_model(y_filen, x_filen_list, dir_training, 
+    trace, scalers = train_MaxEnt_model(y_filen, x_filen_list, CA_filen , dir_training, 
                                         filename, dir_outputs,
                                         fraction_data_for_sample,
                                         subset_function, subset_function_args,
-                                        niterations, cores, model_title, grab_old_trace)
+                                        niterations, cores, model_title, grab_old_trace)                                                                      
+                                        
 
 
     """ 
         RUN projection 
     """
-    predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, dir_projecting,
+    predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, CA_filen, dir_projecting,
                          dir_outputs, model_title, filename,
                          subset_function, subset_function_args,
                          sample_for_plot, 

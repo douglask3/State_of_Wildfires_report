@@ -61,7 +61,6 @@ def read_variable_from_netcdf(filename, dir = '', subset_function = None,
                 except:
                     print("Warning! function: " + FUN.__name__ + " not applied to file: " + \
                           dir + filename)
-                    
         else:      
             dataset = subset_function(dataset, **subset_function_args) 
     if return_time_points: time_points = dataset.coord('time').points 

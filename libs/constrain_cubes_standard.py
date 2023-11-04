@@ -19,6 +19,7 @@ from pdb import set_trace
 import iris.quickplot as qplt
 import matplotlib.pyplot as plt
 import datetime
+import geopandas as gpd
 
 def constrain_to_data(cube):
     """constrain cube to the lats and lons that contain data that isn't 'nan'   
@@ -326,9 +327,18 @@ def constrain_region(cube, ecoregions = None, Country = None, Continent = None, 
 
     return(cube)
 
+
 def contrain_coords(cube, extent):
     
     longitude_constraint = iris.Constraint(longitude=lambda cell: extent[0] <= cell.point <= extent[1])
     latitude_constraint = iris.Constraint(latitude=lambda cell: extent[2] <= cell.point <= extent[3])
     
     return cube.extract(longitude_constraint & latitude_constraint)
+
+    
+def constrain_BR_biomes(cube, biome_ID):
+    mask = iris.load_cube('D:/Doutorado/Malhas/biomas/biomas_wgs84.nc')    
+    return constrain_cube_by_cube_and_numericIDs (cube, mask, biome_ID)
+
+
+

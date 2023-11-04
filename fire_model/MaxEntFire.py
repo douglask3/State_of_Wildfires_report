@@ -96,9 +96,9 @@ class MaxEntFire(object):
     def power_response_curve(self, X):  
         return self.pow_power**X
 
+
     def X2_response_curve(self, X):  
         return (X - self.x2s_X0)**2.0
 
     def linear_combined_response_curve(self, X):
         return np.log(((np.exp(X - self.comb_X0)) ** self.comb_p) + 1)
-
