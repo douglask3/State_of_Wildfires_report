@@ -7,6 +7,7 @@ from MaxEntFire import MaxEntFire
 from read_variable_from_netcdf import *
 from combine_path_and_make_dir import * 
 from namelist_functions import *
+from pymc_extras import *
 
 import os
 from   io     import StringIO
@@ -15,11 +16,7 @@ import pandas as pd
 import math
 
 import pymc  as pm
-import pytensor
-import pytensor.tensor as tt
 import arviz as az
-
-
 
 
 def fit_MaxEnt_probs_to_data(Y, X, CA = None, niterations = 100, *arg, **kw):
@@ -69,13 +66,17 @@ def fit_MaxEnt_probs_to_data(Y, X, CA = None, niterations = 100, *arg, **kw):
         
         ## define error measurement
         if CA is None:
-            error = pm.DensityDist("error", prediction, logp = MaxEnt_on_prob, 
+            error = pm.DensityDist("error", prediction, logp = logistic_probability_tt, 
                                 observed = Y)
         else:
-            error = pm.DensityDist("error", prediction, CA, logp = MaxEnt_on_prob, 
+            CA = CA.data
+            error = pm.DensityDist("error", prediction, CA, logp = logistic_probability_tt, 
                                 observed = Y)
                 
         ## sample model
+
+        trace = pm.sample(niterations, return_inferencedata=True, 
+                          callback = trace_callback, *arg, **kw)
         attempts = 1
         while attempts <= 10:
             try:
@@ -165,10 +166,11 @@ def train_MaxEnt_model(y_filen, x_filen_list, CA_filen = None, dir = '', filenam
             # Process CA_filen when it is provided
             Y, X, CA, lmask, scalers = read_all_data_from_netcdf(CA_filename = CA_filen, 
                                                                  **common_args)
+            CA = CA/np.max(CA)
         else:
             Y, X, lmask, scalers = read_all_data_from_netcdf(**common_args)
             CA = None
-    
+        
         if np.min(Y) < 0.0 or np.max(Y) > 100:
             print("target variable does not meet expected unit range " + \
                   "(i.e, data poimts should be fractions, but values found less than " + \

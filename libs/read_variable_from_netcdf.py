@@ -143,7 +143,6 @@ def read_all_data_from_netcdf(y_filename, x_filename_list, CA_filename = None, a
             cells_we_want = np.array([np.all(rw > -9e9) and np.all(rw < 9e9) for rw in np.column_stack((X,Y))])
         Y = Y[cells_we_want]
         X = X[cells_we_want, :]
-                     
         
     if x_normalise01: 
         scalers = np.array([np.min(X, axis=0), np.max(X, axis=0)])
@@ -155,7 +154,7 @@ def read_all_data_from_netcdf(y_filename, x_filename_list, CA_filename = None, a
         test = scalers[1,:] == scalers[0,:]
         scalers[0,test] = 0.0
         scalers[1,test] = 1.0
-    #set_trace()
+    
     if frac_random_sample is not None and frac_random_sample < 1:
         M = X.shape[0]
         selected_rows = np.random.choice(M, size = int(M * frac_random_sample), replace=False)
@@ -163,15 +162,15 @@ def read_all_data_from_netcdf(y_filename, x_filename_list, CA_filename = None, a
         X = X[selected_rows, :]
         if CA_filename is not None:
             CA = CA[selected_rows]
-        
+    
     if scalers is not None:
         X = (X-scalers[0, :]) / (scalers[1, :] - scalers[0, :])
         if check_mask: 
-            if CA_filename is not None: return Y, X, cells_we_want, scalers , CA
+            if CA_filename is not None: return Y, X, CA, cells_we_want, scalers
         return Y, X, cells_we_want, scalers
         
     if check_mask or frac_random_sample: 
-        if CA_filename is not None: return Y, X, cells_we_want, CA
+        if CA_filename is not None: return Y, X, CA, cells_we_want
     return Y, X, cells_we_want
     
     if CA_filename is not None: return Y, X, CA

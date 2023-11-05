@@ -2,31 +2,14 @@ import sys
 sys.path.append('fire_model/')
 sys.path.append('libs/')
 
-from MaxEntFire import MaxEntFire
 from train import *
+from evaluate import *
 
-from BayesScatter import *
-
-from read_variable_from_netcdf import *
-from combine_path_and_make_dir import * 
-from plot_maps import *
 import os
 from   io     import StringIO
 import numpy  as np
-import pandas as pd
-import math
-from scipy.special import logit, expit
-
 
 import matplotlib.pyplot as plt
-import arviz as az
-
-from scipy.stats import wilcoxon
-from sklearn.metrics import mean_squared_error
-
-
-
-
 
 def project_model(filename_out, dir_outputs, *arg, **kw):
     plot_model_maps(*arg, **kw)
@@ -75,7 +58,7 @@ if __name__=="__main__":
     """
     """ optimization """
 
-    person = 'Maria'
+    person = 'Doug'
 
     if person == 'Maria':
         model_title = 'Example_model-biomes'
@@ -88,6 +71,7 @@ if __name__=="__main__":
         
         CA_filen = "brazil_NAT.nc"
         #CA_filen = "brazil_NON.nc"
+        biome_ID = [1,2,3,4,5,6]
         
         x_filen_list=["consec_dry_mean.nc", "savanna.nc", "cveg.nc", "rhumid.nc",
                       "lightn.nc", "popDens.nc", "forest.nc", "precip.nc",
@@ -101,8 +85,9 @@ if __name__=="__main__":
         model_title = 'Example_model-q-reduced'
 
         dir_training = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
-        y_filen = "GFED4.1s_Burned_Fraction.nc"
-        CA_filen = None
+        y_filen = "Area_burned_NAT.nc"
+        CA_filen = "brazil_NAT.nc"
+        biome_ID = [1,2]
         x_filen_list=["trees.nc", "pr_mean.nc", "consec_dry_mean.nc", 
                   #"lightn.nc", "popDens.nc",
                   "crop.nc", "pas.nc", 
@@ -113,11 +98,10 @@ if __name__=="__main__":
         fraction_data_for_sample = 0.01
 
     grab_old_trace = False # set to True till you get the code running. Then set to False when you start adding in new response curves
-
+    
     niterations = 100
 
     months_of_year = [7]
-    #biome_ID = [1,2,3,4,5,6]
     
     """ Projection/evaluating """
     dir_outputs = 'outputs/'
@@ -125,24 +109,24 @@ if __name__=="__main__":
     dir_projecting = dir_training
 
     sample_for_plot = 20
-
+    
     levels = [0, 0.1, 1, 2, 5, 10, 20, 50, 100] 
+    dlevels = [-20, -10, -5, -2, -1, -0.1, 0.1, 1, 2, 5, 10, 20]
     cmap = 'OrRd'
+    dcmap = 'RdBu_r'
+
 
     run_evaluation = True
     run_projection = True
-    
-    biome_ID = [1]
-
      
     """ 
         RUN optimization 
         
     """
-    while biome_ID:
+    for biome in biome_ID:
     
         subset_function = [sub_year_months, constrain_BR_biomes]  
-        subset_function_args = [{'months_of_year': months_of_year}, {'biome_ID': biome_ID}]
+        subset_function_args = [{'months_of_year': months_of_year}, {'biome_ID': [biome]}]
 
         filename = '_'.join([file[:-3] for file in x_filen_list]) + \
                 '-frac_points_' + str(fraction_data_for_sample) + \
@@ -151,27 +135,22 @@ if __name__=="__main__":
     
 
         #### Optimize
-        trace, scalers = train_MaxEnt_model(y_filen, x_filen_list, CA_filen , dir_training, 
-                                            filename, dir_outputs,
-                                            fraction_data_for_sample,
-                                            subset_function, subset_function_args,
-                                            niterations, cores, model_title, grab_old_trace)                                                                      
+        trace, scalers, variable_info_file = \
+                    train_MaxEnt_model(y_filen, x_filen_list, CA_filen , dir_training, 
+                                      filename, dir_outputs,
+                                      fraction_data_for_sample,
+                                      subset_function, subset_function_args,
+                                      niterations, cores, model_title, grab_old_trace)                                                                      
                                         
 
 
         """ 
             RUN projection 
         """
-        predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, CA_filen, dir_projecting,
-                            dir_outputs, model_title, filename,
-                            subset_function, subset_function_args,
-                            sample_for_plot, 
-                            run_evaluation = run_evaluation, run_projection = run_projection,
-                            grab_old_trace = grab_old_trace,
-                            levels = levels, cmap = cmap)
-                            
-        biome_ID[0] += 1
-        
-        if biome_ID[0] > 6:
-            break
+
+        evaluate_MaxEnt_model_from_namelist(variable_info_file, dir = dir_projecting,
+                                            grab_old_trace = True,
+                                            sample_for_plot = sample_for_plot,
+                                            levels = levels, cmap = cmap,
+                                            dlevels = dlevels, dcmap = dcmap)
     
