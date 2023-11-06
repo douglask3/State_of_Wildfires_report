@@ -198,7 +198,7 @@ def train_MaxEnt_model(y_filen, x_filen_list, CA_filen = None, dir = '', filenam
 
 
     # Save info to namelist.
-    variable_info_file = dir_outputs + 'variables_info-' + filename + '.txt'
+    variable_info_file = dir_outputs + 'variables_info-' + out_file + '.txt'
     desired_variable_names = ["dir_outputs", "filename_out",
                               "out_file", "data_file", 
                               "trace_file", "scale_file", 
