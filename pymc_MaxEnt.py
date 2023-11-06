@@ -71,7 +71,7 @@ if __name__=="__main__":
         
         CA_filen = "brazil_NAT.nc"
         #CA_filen = "brazil_NON.nc"
-        biome_ID = [1,2,3,4,5,6]
+        biome_IsD = [1,2,3,4,5,6]
         
         x_filen_list=["consec_dry_mean.nc", "savanna.nc", "cveg.nc", "rhumid.nc",
                       "lightn.nc", "popDens.nc", "forest.nc", "precip.nc",
@@ -87,7 +87,7 @@ if __name__=="__main__":
         dir_training = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
         y_filen = "Area_burned_NAT.nc"
         CA_filen = "brazil_NAT.nc"
-        biome_ID = [1,2]
+        biome_IDs = [1,2]
         x_filen_list=["trees.nc", "pr_mean.nc", "consec_dry_mean.nc", 
                   #"lightn.nc", "popDens.nc",
                   "crop.nc", "pas.nc", 
@@ -97,7 +97,7 @@ if __name__=="__main__":
         cores = 1
         fraction_data_for_sample = 0.01
 
-    grab_old_trace = False # set to True till you get the code running. Then set to False when you start adding in new response curves
+    grab_old_trace = True # set to True till you get the code running. Then set to False when you start adding in new response curves
     
     niterations = 100
 
@@ -114,19 +114,15 @@ if __name__=="__main__":
     dlevels = [-20, -10, -5, -2, -1, -0.1, 0.1, 1, 2, 5, 10, 20]
     cmap = 'OrRd'
     dcmap = 'RdBu_r'
-
-
-    run_evaluation = True
-    run_projection = True
      
     """ 
         RUN optimization 
         
     """
-    for biome in biome_ID:
+    for biome_ID in biome_IDs:
     
         subset_function = [sub_year_months, constrain_BR_biomes]  
-        subset_function_args = [{'months_of_year': months_of_year}, {'biome_ID': [biome]}]
+        subset_function_args = [{'months_of_year': months_of_year}, {'biome_ID': [biome_ID]}]
 
         filename = '_'.join([file[:-3] for file in x_filen_list]) + \
                 '-frac_points_' + str(fraction_data_for_sample) + \
@@ -140,9 +136,7 @@ if __name__=="__main__":
                                       filename, dir_outputs,
                                       fraction_data_for_sample,
                                       subset_function, subset_function_args,
-                                      niterations, cores, model_title, grab_old_trace)                                                                      
-                                        
-
+                                      niterations, cores, model_title, grab_old_trace)
 
         """ 
             RUN projection 
