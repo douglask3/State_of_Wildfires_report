@@ -34,7 +34,7 @@ def read_variable_from_netcdf(filename, dir = '', subset_function = None,
 
     print("Opening:")
     print(filename)
-    
+    if filename[0] == '~' or filename[0] == '/' or filename[0] == '.': dir = ''
     try:
         if isinstance(filename, str):        
             dataset = iris.load_cube(dir + filename, callback=sort_time)
@@ -49,9 +49,9 @@ def read_variable_from_netcdf(filename, dir = '', subset_function = None,
         set_trace()
         
     if dataset is None: return None
-    if time_points is not None: 
+    if time_points is not None:         
         dataset = dataset.interpolate([('time', time_points)], iris.analysis.Linear())
-        
+         
     if units is not None: dataset.units = units
     if subset_function is not None:
         if isinstance(subset_function, list):
@@ -61,10 +61,10 @@ def read_variable_from_netcdf(filename, dir = '', subset_function = None,
                 except:
                     print("Warning! function: " + FUN.__name__ + " not applied to file: " + \
                           dir + filename)
-
         else:      
             dataset = subset_function(dataset, **subset_function_args) 
     if return_time_points: time_points = dataset.coord('time').points 
+    
     
     if make_flat: 
         if time_series is not None: years = dataset.coord('year').points
@@ -78,11 +78,13 @@ def read_variable_from_netcdf(filename, dir = '', subset_function = None,
             if return_time_points: set_trace()
         
     if return_time_points: dataset = (dataset, time_points)
+    
     return dataset
 
 def read_all_data_from_netcdf(y_filename, x_filename_list, CA_filename = None, add_1s_columne = False, 
                               y_threshold = None, x_normalise01 = False, scalers = None,
-                              check_mask = True, frac_random_sample = 1.0, *args, **kw):
+                              check_mask = True, frac_random_sample = 1.0, 
+                              min_data_points_for_sample = None, *args, **kw):
                               
     """Read data from netCDF files 
         
@@ -124,6 +126,7 @@ def read_all_data_from_netcdf(y_filename, x_filename_list, CA_filename = None, a
     n=len(Y)
     m=len(x_filename_list)
     
+    
     X = np.zeros([n,m])
     
     for i, filename in enumerate(x_filename_list):
@@ -142,7 +145,6 @@ def read_all_data_from_netcdf(y_filename, x_filename_list, CA_filename = None, a
             cells_we_want = np.array([np.all(rw > -9e9) and np.all(rw < 9e9) for rw in np.column_stack((X,Y))])
         Y = Y[cells_we_want]
         X = X[cells_we_want, :]
-                     
         
     if x_normalise01: 
         scalers = np.array([np.min(X, axis=0), np.max(X, axis=0)])
@@ -154,23 +156,31 @@ def read_all_data_from_netcdf(y_filename, x_filename_list, CA_filename = None, a
         test = scalers[1,:] == scalers[0,:]
         scalers[0,test] = 0.0
         scalers[1,test] = 1.0
-    #set_trace()
-    if frac_random_sample is not None and frac_random_sample < 1:
+    
+
+    if frac_random_sample is None: 
+        frac_random_sample = 1000
+    else:
+        if min_data_points_for_sample is not None:
+            min_data_frac = min_data_points_for_sample/len(Y)
+            if min_data_frac > frac_random_sample: frac_random_sample = min_data_frac
+    
+    if frac_random_sample < 1:
         M = X.shape[0]
         selected_rows = np.random.choice(M, size = int(M * frac_random_sample), replace=False)
         Y = Y[selected_rows]
         X = X[selected_rows, :]
         if CA_filename is not None:
             CA = CA[selected_rows]
-        
+    
     if scalers is not None:
         X = (X-scalers[0, :]) / (scalers[1, :] - scalers[0, :])
         if check_mask: 
-            if CA_filename is not None: return Y, X, cells_we_want, scalers , CA
+            if CA_filename is not None: return Y, X, CA, cells_we_want, scalers
         return Y, X, cells_we_want, scalers
         
     if check_mask or frac_random_sample: 
-        if CA_filename is not None: return Y, X, cells_we_want, CA
+        if CA_filename is not None: return Y, X, CA, cells_we_want
     return Y, X, cells_we_want
     
     if CA_filename is not None: return Y, X, CA

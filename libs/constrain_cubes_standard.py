@@ -147,7 +147,7 @@ def sub_year_range(cube, year_range):
     Returns:
         cube of just years between to years provided.
     """
-    constraint = iris.Constraint(year=lambda cell: year_range[0] <= cell <= year_range[1])
+    constraint = iris.Constraint(year=lambda cell: (year_range[0]-0.5) <= cell <= (year_range[1]+0.5))
     return cube.extract(constraint)
     
     
@@ -265,7 +265,8 @@ def constrain_olson(cube, ecoregions):
     biomes = iris.load_cube('data/wwf_terr_ecos_0p5.nc')
     return constrain_cube_by_cube_and_numericIDs(cube, biomes, ecoregions)
 
-def constrain_natural_earth(cube, Country, Continent = None, shpfilename = None, *args, **kw):
+def constrain_natural_earth(cube, Country, Continent = None, shpfilename = None, 
+                            constrain = True, *args, **kw):
     
     """constrains a cube to Natural Earth Country or continent.
     Assumes that the cube is iris
@@ -299,7 +300,8 @@ def constrain_natural_earth(cube, Country, Continent = None, shpfilename = None,
     elif Continent is not None:
         CountrySelect = shape.load_shp(shpfilename, Continent='South America')
         CountrySelect = Country.unary_union()
-    cube = CountrySelect[0].constrain_cube(cube)
+    
+    if constrain: cube = CountrySelect[0].constrain_cube(cube)
     
     cube = CountrySelect[0].mask_cube(cube)
     return cube
@@ -324,9 +326,19 @@ def constrain_region(cube, ecoregions = None, Country = None, Continent = None, 
         cube = constrain_natural_earth(cube, Country, Continent, *args, **kw)
 
     return(cube)
+
+
+def contrain_coords(cube, extent):
+    
+    longitude_constraint = iris.Constraint(longitude=lambda cell: extent[0] <= cell.point <= extent[1])
+    latitude_constraint = iris.Constraint(latitude=lambda cell: extent[2] <= cell.point <= extent[3])
+    
+    return cube.extract(longitude_constraint & latitude_constraint)
+
     
 def constrain_BR_biomes(cube, biome_ID):
     mask = iris.load_cube('D:/Doutorado/Malhas/biomas/biomas_wgs84.nc')    
     return constrain_cube_by_cube_and_numericIDs (cube, mask, biome_ID)
+
 
 

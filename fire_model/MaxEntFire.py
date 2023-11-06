@@ -43,7 +43,9 @@ class MaxEntFire(object):
         else:
             self.numPCK =  __import__('numpy')
        
+        
         self.lin_betas = params['lin_betas']
+        self.lin_beta_constant = select_key_or_defualt(params, 'lin_beta_constant', 0.0)
         self.pow_betas = select_key_or_defualt(params, 'pow_betas', None)
         self.pow_power = select_key_or_defualt(params, 'pow_power', None)
         self.x2s_betas = select_key_or_defualt(params, 'x2s_betas', None)
