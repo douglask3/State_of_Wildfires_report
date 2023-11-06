@@ -1,9 +1,10 @@
-from pdb import set_trace
-
 import json
 import sys
 sys.path.append('libs/')
 from constrain_cubes_standard import *
+
+from pdb import set_trace
+
 
 def write_variables_to_namelist(variables, output_file):
     """Write a dictionary of variables to a file in the specified format.
@@ -76,7 +77,13 @@ def read_variables_from_namelist(file_name):
                     variables[variable_name] = variable_value[1:-1]
                 elif variable_value.startswith('[') and variable_value.endswith(']'):
                     # If the variable is a list, parse it
-                    variables[variable_name] = eval(variable_value)
+                    try:        
+                        variables[variable_name] = eval(variable_value)
+                    except:
+                        functions = variable_value.split(', ')
+                        def define_function(fun):
+                            return eval(fun.split('function ')[1].split(' at ')[0])
+                        variables[variable_name] = [define_function(fun) for fun in functions]
                 else:
                     try:
                         # Try to parse the variable as a dictionary
