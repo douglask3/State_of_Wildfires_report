@@ -94,7 +94,7 @@ def train_MaxEnt_model(y_filen, x_filen_list, CA_filen = None, dir = '', filenam
                        frac_random_sample = 1.0,
                        subset_function = None, subset_function_args = None,
                        niterations = 100, cores = 4, model_title = 'no_name', 
-                       grab_old_trace = False):
+                       grab_old_trace = False, **kws):
                        
     ''' Opens up traning data and trains and saves Bayesian Inference optimization of model. 
         see 'fit_MaxEnt_probs_to_data' for details how.
@@ -159,7 +159,8 @@ def train_MaxEnt_model(y_filen, x_filen_list, CA_filen = None, dir = '', filenam
             'x_normalise01': True,
             'frac_random_sample': frac_random_sample,
             'subset_function': subset_function,
-            'subset_function_args': subset_function_args
+            'subset_function_args': subset_function_args,
+            **kws
         }
         
         if CA_filen is not None:
