@@ -447,7 +447,7 @@ if __name__=="__main__":
     """
     """ optimization """
 
-    person = 'Maria'
+    person = 'Doug'
 
     if person == 'Maria':
         model_title = 'Example_model-biomes'
