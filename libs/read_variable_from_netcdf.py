@@ -83,7 +83,8 @@ def read_variable_from_netcdf(filename, dir = '', subset_function = None,
 
 def read_all_data_from_netcdf(y_filename, x_filename_list, CA_filename = None, add_1s_columne = False, 
                               y_threshold = None, x_normalise01 = False, scalers = None,
-                              check_mask = True, frac_random_sample = 1.0, *args, **kw):
+                              check_mask = True, frac_random_sample = 1.0, 
+                              min_data_points_for_sample = None, *args, **kw):
                               
     """Read data from netCDF files 
         
@@ -125,6 +126,7 @@ def read_all_data_from_netcdf(y_filename, x_filename_list, CA_filename = None, a
     n=len(Y)
     m=len(x_filename_list)
     
+    
     X = np.zeros([n,m])
     
     for i, filename in enumerate(x_filename_list):
@@ -155,7 +157,15 @@ def read_all_data_from_netcdf(y_filename, x_filename_list, CA_filename = None, a
         scalers[0,test] = 0.0
         scalers[1,test] = 1.0
     
-    if frac_random_sample is not None and frac_random_sample < 1:
+
+    if frac_random_sample is None: 
+        frac_random_sample = 1000
+    else:
+        if min_data_points_for_sample is not None:
+            min_data_frac = min_data_points_for_sample/len(Y)
+            if min_data_frac > frac_random_sample: frac_random_sample = min_data_frac
+    
+    if frac_random_sample < 1:
         M = X.shape[0]
         selected_rows = np.random.choice(M, size = int(M * frac_random_sample), replace=False)
         Y = Y[selected_rows]

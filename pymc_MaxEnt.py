@@ -100,7 +100,7 @@ if __name__=="__main__":
     grab_old_trace = True # set to True till you get the code running. Then set to False when you start adding in new response curves
     
     niterations = 100
-
+    min_data_points_for_sample = 1000
     months_of_year = [7]
     
     """ Projection/evaluating """
@@ -136,7 +136,8 @@ if __name__=="__main__":
                                       filename, dir_outputs,
                                       fraction_data_for_sample,
                                       subset_function, subset_function_args,
-                                      niterations, cores, model_title, grab_old_trace)
+                                      niterations, cores, model_title, grab_old_trace,
+                                      min_data_points_for_sample = min_data_points_for_sample)
 
         """ 
             RUN projection 
