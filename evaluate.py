@@ -170,7 +170,7 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
     }
 
     if CA_filen is not None:
-        Y, X, lmask, scalers, CA = read_all_data_from_netcdf(CA_filename = CA_filen, **common_args)   
+        Y, X, CA, lmask, scalers = read_all_data_from_netcdf(CA_filename = CA_filen, **common_args)   
     else:
         Y, X, lmask, scalers = read_all_data_from_netcdf(**common_args)
     
@@ -192,7 +192,7 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
         'grab_old_trace': grab_old_trace}
     Sim = runSim_MaxEntFire(**common_args, run_name = "control", test_eg_cube = True)
     
-    #compare_to_obs_maps(filename_out, dir_outputs, Obs, Sim, lmask, *args, **kw)
+    compare_to_obs_maps(filename_out, dir_outputs, Obs, Sim, lmask, *args, **kw)
     Bayes_benchmark(filename_out, fig_dir, Sim, Obs, lmask)
     for ct in ["standard", "potential", "sensitivity", "initial"]:
         response_curve(Sim[0], curve_type = ct, x_filen_list = x_filen_list, 
