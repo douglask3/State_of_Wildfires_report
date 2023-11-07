@@ -12,23 +12,23 @@ if __name__=="__main__":
         cores - how many chains to start (confusiong name, I know).
             When running on slurm, also number of cores
         fraction_data_for_sample -- fraction of gridcells used for optimization
-        niterations -- number of iterations or samples )after warm-up) in optimixation for each
-            chain. Equilivent to number of ensemble members.
-        months_of_year --- which months to extact on training and projecting
-        grab_old_trace -- Boolean. If True and there's an appripritate looking old trace file, 
+        niterations -- number of iterations or samples )after warm-up) in optimization for each
+            chain. Equivalent to number of ensemble members.
+        months_of_year --- which months to extract on training and projecting
+        grab_old_trace -- Boolean. If True and there's an appropriate looking old trace file, 
             then  optimisation is skipped that file is loaded instead. 
-            This isn't totally infalable, so if doing a final run and in doubt, set to False
+            This isn't totally infallible, so if doing a final run and in doubt, set to False
     For Projection/evaluating:
         dir_outputs -- where stuff gets outputted
-        dir_projecting -- The directory of the data used for prjections. 
-            Should contain same files for independant varibales as dir_training 
-            (though you should be able to adpated this easily if required). 
+        dir_projecting -- The directory of the data used for projections. 
+            Should contain same files for independant variables as dir_training 
+            (though you should be able to adpat this easily if required). 
             Doesnt need dependant variable, but if there, this will (once
-            we've implmented it) attempt some evaluation.
-        sample_for_plot -- how many iterations (samples) from optimixation should be used 
+            we've implemented it) attempt some evaluation.
+        sample_for_plot -- how many iterations (samples) from optimization should be used 
             for plotting and evaluation.
-        levels -- levels on teh colourbar on observtation and prodiction maps
-        cmap -- levels on teh colourbar on observtation and prodiction maps
+        levels -- levels on the colourbar on observation and prediction maps
+        cmap -- levels on the colourbar on observattion and prediction maps
     Returns:
         trace file, maps, etc (to be added too)
     """

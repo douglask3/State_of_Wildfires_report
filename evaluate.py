@@ -6,6 +6,7 @@ from MaxEntFire import MaxEntFire
 
 from BayesScatter import *
 from response_curves import *
+from jackknife import *
 #from train import *
 
 from read_variable_from_netcdf import *
@@ -191,6 +192,10 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
         'dir_samples': dir_samples,
         'grab_old_trace': grab_old_trace}
     Sim = runSim_MaxEntFire(**common_args, run_name = "control", test_eg_cube = True)
+    
+    ##include jackknife here
+    
+    plot_jackknife(Sim, Xi, x_filen_list = x_filen_list, *args, **kw, **common_args)
     
     compare_to_obs_maps(filename_out, dir_outputs, Obs, Sim, lmask, *args, **kw)
     Bayes_benchmark(filename_out, fig_dir, Sim, Obs, lmask)
