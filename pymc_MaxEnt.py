@@ -107,7 +107,7 @@ if __name__=="__main__":
     dir_outputs = 'outputs/'
 
     dir_projecting = dir_training
-
+    #dir_projecting = "D:/Doutorado/Sanduiche/research/maxent-variables/2012-2021/"
     sample_for_plot = 20
     
     levels = [0, 0.1, 1, 2, 5, 10, 20, 50, 100] 
