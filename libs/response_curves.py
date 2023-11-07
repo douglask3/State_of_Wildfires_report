@@ -132,11 +132,6 @@ def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask,
                 values_in_bin = []
         
                 for rw in range(Sim2.shape[0]):
-                    #if  Sim1 is None:
-                    #    sim_final = non_masked_data(Sim2[rw])
-                    #else:
-                    #    sim_final = non_masked_data(Sim2[rw]) - non_masked_data(Sim1[rw])     
-                    
                     values_in_bin.append(non_masked_data(diff[rw])[mask])
                 values_in_bin = np.array(values_in_bin).flatten()    
                    
@@ -149,10 +144,9 @@ def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask,
                 percentile_90.append(np.nan)
         
         ax.plot(bin_centers, median_values, marker='.', label='Median')
-        ax.fill_between(bin_centers, percentile_10, percentile_90, alpha=0.3, label='10th-90th Percentiles')                           
+        ax.fill_between(bin_centers, percentile_10, percentile_90, alpha=0.3, 
+                        label='10th-90th Percentiles')                           
                 
-    
-
     if map_type > 0:
         fig_map.set_size_inches(12, 4*X.shape[1])
         fig_map.tight_layout()
