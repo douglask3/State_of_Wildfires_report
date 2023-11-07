@@ -96,7 +96,7 @@ def train_MaxEnt_model(y_filen, x_filen_list, CA_filen = None, dir = '', filenam
                        niterations = 100, cores = 4, model_title = 'no_name', 
                        grab_old_trace = False, **kws):
                        
-    ''' Opens up traning data and trains and saves Bayesian Inference optimization of model. 
+    ''' Opens up training data and trains and saves Bayesian Inference optimization of model. 
         see 'fit_MaxEnt_probs_to_data' for details how.
     Arguments:
 	y_filen -- filename of dependant variable (i.e burnt area)
