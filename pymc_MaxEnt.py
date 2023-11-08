@@ -58,7 +58,7 @@ if __name__=="__main__":
     """
     """ optimization """
 
-    person = 'Maria'
+    person = 'Doug'
 
     if person == 'Maria':
         model_title = 'Example_model-biome-6.1'
@@ -90,7 +90,7 @@ if __name__=="__main__":
         biome_IDs = [1,2]
         x_filen_list=["trees.nc", "pr_mean.nc", "consec_dry_mean.nc", 
                   #"lightn.nc", "popDens.nc",
-                  "crop.nc", "pas.nc", 
+                  #"crop.nc", "pas.nc", 
                   "humid.nc", "csoil.nc", "tas_max.nc",
                   "totalVeg.nc"] 
 
@@ -107,7 +107,7 @@ if __name__=="__main__":
     dir_outputs = 'outputs/'
 
     dir_projecting = dir_training
-
+    #dir_projecting = "D:/Doutorado/Sanduiche/research/maxent-variables/2012-2021/"
     sample_for_plot = 20
     
     levels = [0, 0.1, 1, 2, 5, 10, 20, 50, 100] 

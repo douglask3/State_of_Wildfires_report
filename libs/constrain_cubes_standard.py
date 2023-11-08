@@ -337,7 +337,7 @@ def contrain_coords(cube, extent):
 
     
 def constrain_BR_biomes(cube, biome_ID):
-    mask = iris.load_cube('D:/Doutorado/Malhas/biomas/biomas_wgs84.nc')    
+    mask = iris.load_cube('data/BR_Biomes.nc')    
     return constrain_cube_by_cube_and_numericIDs (cube, mask, biome_ID)
 
 
