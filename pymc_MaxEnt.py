@@ -61,7 +61,7 @@ if __name__=="__main__":
     person = 'Maria'
 
     if person == 'Maria':
-        model_title = 'Example_model-biome-6'
+        model_title = 'Example_model-biome-6.1'
         #dir_training = "/gws/nopw/j04/jules/mbarbosa/driving_and_obs_overlap/AllConFire_2000_2009/"
         dir_training = "D:/Doutorado/Sanduiche/research/maxent-variables/2002-2011/"
 
@@ -97,7 +97,7 @@ if __name__=="__main__":
         cores = 1
         fraction_data_for_sample = 0.01
 
-    grab_old_trace = True # set to True till you get the code running. Then set to False when you start adding in new response curves
+    grab_old_trace = False # set to True till you get the code running. Then set to False when you start adding in new response curves
     
     niterations = 100
     min_data_points_for_sample = 1000
