@@ -71,7 +71,11 @@ def plot_BayesModel_signifcance_maps(Obs, Sim, lmask, plot_n = 1, Nrows = 3, Nco
     
     pos = np.mean(X[np.newaxis, :, :] > Y, axis = 0)
     pos[X == 0] = np.nan
+    sameness_test = np.nanmean(pos, axis = 0) == np.nanmin(pos, axis = 0)
+    pos[:, sameness_test] = np.nan
+    
     _, p_value = wilcoxon(pos - 0.5, axis = 0, nan_policy = 'omit')
+    
     apos = np.nanmean(pos, axis = 0)
 
     mask = lmask.reshape([ X.shape[0], int(lmask.shape[0]/X.shape[0])])[0]
@@ -193,6 +197,8 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
         'grab_old_trace': grab_old_trace}
     
     Sim = runSim_MaxEntFire(**common_args, run_name = "control", test_eg_cube = True)
+
+    # Maria add jakknife()
     
     ##include jackknife here 
     
@@ -250,6 +256,8 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
     for ct in ["standard", "potential", "sensitivity", "initial"]:
         response_curve(Sim[0], curve_type = ct, x_filen_list = x_filen_list, 
                        fig_dir = fig_dir, *args, **kw, **common_args)
+
+    
 
 if __name__=="__main__":
     """ Running optimization and basic analysis. 
