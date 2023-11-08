@@ -97,7 +97,7 @@ if __name__=="__main__":
         cores = 1
         fraction_data_for_sample = 0.01
 
-    grab_old_trace = False # set to True till you get the code running. Then set to False when you start adding in new response curves
+    grab_old_trace = True # set to True till you get the code running. Then set to False when you start adding in new response curves
     
     niterations = 100
     min_data_points_for_sample = 1000

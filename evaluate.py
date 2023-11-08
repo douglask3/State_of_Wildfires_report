@@ -6,7 +6,7 @@ from MaxEntFire import MaxEntFire
 
 from BayesScatter import *
 from response_curves import *
-from jackknife import *
+#from jackknife import *
 #from train import *
 
 from read_variable_from_netcdf import *
@@ -191,12 +191,60 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
         'lmask': lmask,
         'dir_samples': dir_samples,
         'grab_old_trace': grab_old_trace}
+    
     Sim = runSim_MaxEntFire(**common_args, run_name = "control", test_eg_cube = True)
     
-    ##include jackknife here
+    ##include jackknife here 
     
-    plot_jackknife(Sim, Xi, x_filen_list = x_filen_list, *args, **kw, **common_args)
+    contributions = np.zeros(X.shape[1]-1)
+    #contributions_percentage = []
     
+    for col in range(X.shape[1]-1):
+        
+        original_column = X[:, col]
+        
+        X = np.delete(X, col, axis=1)
+    
+        col_contributions = []
+    
+        #X_deleted = np.delete(X, col, axis=1)
+        
+        Sim2 = runSim_MaxEntFire(**common_args, run_name = "deleted", test_eg_cube = True)
+        
+        #variable_name = x_filen_list[col].replace('.nc', '')
+        #ax.set_title(variable_name)
+        
+        #def non_masked_data(cube):
+        #    return cube.data[cube.data.mask == False].data
+        
+        sim_final = (non_masked_data(Sim) - non_masked_data(Sim2))
+        sim_final = np.mean(sim_final)
+        #set_trace()
+        contributions[col] = sim_final
+
+    contributions_percentage = np.abs(contributions) /np.sum(np.abs(contributions)) * 100
+
+
+    # Sort variables by mean contribution in descending order
+    sorted_indices = np.argsort(contributions_percentage)[::-1]
+    actual_names = [filename.replace('.nc', '') for filename in x_filen_list]
+    sorted_contributions = contributions_percentage[sorted_indices]
+    #sorted_variable_names = [f"Variable {i + 1}" for i in sorted_indices]
+    sorted_variable_names = [actual_names[i] for i in sorted_indices]
+    #set_trace()
+    
+    # Create the bar plot
+    plt.figure(figsize=(10, 6))
+    plt.barh(sorted_variable_names, sorted_contributions, color='blue')
+    plt.xlabel('Contribution Percentage')
+    plt.title('Variable Contributions')
+    plt.grid(axis='x', linestyle='--', alpha=0.6)
+    plt.gca().invert_yaxis()  # Invert the y-axis to show the most important variables at the top
+    plt.show()
+    set_trace()
+    
+    #plot_jackknife(Sim, X)
+    #set_trace()
     compare_to_obs_maps(filename_out, dir_outputs, Obs, Sim, lmask, *args, **kw)
     Bayes_benchmark(filename_out, fig_dir, Sim, Obs, lmask)
     for ct in ["standard", "potential", "sensitivity", "initial"]:

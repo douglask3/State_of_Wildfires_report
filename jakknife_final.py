@@ -295,45 +295,43 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, CA_filen = None,
     
     Sim = runSim("control", X) 
     
-    # Initialize an array to store contributions
-    contributions = []
-
-    for col in range(X.shape[1] - 1):
+    contributions = np.zeros(X.shape[1]-1)
+    #contributions_percentage = []
+    
+    for col in range(X.shape[1]-1):
+        
         original_column = X[:, col]
+        
+        X = np.delete(X, col, axis=1)
+    
+        col_contributions = []
+    
+        #X_deleted = np.delete(X, col, axis=1)
+        
+        Sim2 = runSim("deleted", X) 
+        
+        #variable_name = x_filen_list[col].replace('.nc', '')
+        #ax.set_title(variable_name)
+        
+        #def non_masked_data(cube):
+        #    return cube.data[cube.data.mask == False].data
+        
+        sim_final = (non_masked_data(Sim) - non_masked_data(Sim2))
+        sim_final = np.mean(sim_final)
+        #set_trace()
+        contributions[col] = sim_final
 
-        # Create an array to store contributions for the current column
-        
-        
-        X_deleted = np.delete(X, col, axis=1)
-        
-        Sim2 = runSim("deleted", X_deleted)
-        
-        rw_contributions = []
-        
-        def non_masked_data(cube):
-        
-            return cube.data[cube.data.mask == False].data
-        
-        for rw in range(Sim.shape[0]):
-        
-            sim_final = (non_masked_data(Sim[rw]) - non_masked_data(Sim2[rw]))
-            
-            rw_contributions.append(np.mean(sim_final))
+    contributions_percentage = np.abs(contributions) /np.sum(np.abs(contributions)) * 100
 
-        contributions.append(np.mean(rw_contributions))
 
-    contributions = np.array(contributions)
-    contributions_percentage = np.abs(contributions) / np.sum(np.abs(contributions)) * 100
-
-    # Calculate the mean contribution percentage for each variable
-    mean_contributions = np.mean(contributions_percentage)
-    set_trace()
     # Sort variables by mean contribution in descending order
-    sorted_indices = np.argsort(mean_contributions)[::-1]
+    sorted_indices = np.argsort(contributions_percentage)[::-1]
     actual_names = [filename.replace('.nc', '') for filename in x_filen_list]
-    sorted_contributions = mean_contributions[sorted_indices]
+    sorted_contributions = contributions_percentage[sorted_indices]
+    #sorted_variable_names = [f"Variable {i + 1}" for i in sorted_indices]
     sorted_variable_names = [actual_names[i] for i in sorted_indices]
-
+    #set_trace()
+    
     # Create the bar plot
     plt.figure(figsize=(10, 6))
     plt.barh(sorted_variable_names, sorted_contributions, color='blue')
@@ -343,7 +341,6 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, CA_filen = None,
     plt.gca().invert_yaxis()  # Invert the y-axis to show the most important variables at the top
     plt.show()
     set_trace()
-
     '''    
     contributions_col = np.zeros(X.shape[1]-1)
     mean_values = []
