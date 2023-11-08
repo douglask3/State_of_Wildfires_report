@@ -58,7 +58,7 @@ if __name__=="__main__":
     """
     """ optimization """
 
-    person = 'Maria'
+    person = 'Doug'
 
     if person == 'Maria':
         model_title = 'Example_model-biome-6'
@@ -144,7 +144,7 @@ if __name__=="__main__":
         """
 
         evaluate_MaxEnt_model_from_namelist(variable_info_file, dir = dir_projecting,
-                                            grab_old_trace = True,
+                                            grab_old_trace = grab_old_trace,
                                             sample_for_plot = sample_for_plot,
                                             levels = levels, cmap = cmap,
                                             dlevels = dlevels, dcmap = dcmap)
