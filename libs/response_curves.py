@@ -8,7 +8,9 @@ import matplotlib.pyplot as plt
 from pdb import set_trace
 
 def non_masked_data(cube):
-        return cube.data[cube.data.mask == False].data
+    out = cube.data[cube.data.mask == False].data
+    return out[~np.isnan(out)]
+
 
 def initial_curve_experiment(*args, **kw):
 
