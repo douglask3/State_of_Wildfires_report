@@ -155,7 +155,7 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
     
     Returns:
         look in dir_outputs + model_title, and you'll see figure and tables from evaluation, 
-        projection, reponse curevs, jacknifes etc (not all implmenented yet)
+        projection, reponse curves, jackknifes etc (not all implmenented yet)
     """
     fig_dir = combine_path_and_make_dir(dir_outputs, '/figs/')
     trace = az.from_netcdf(trace_file)
@@ -199,9 +199,8 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
     Sim = runSim_MaxEntFire(**common_args, run_name = "control", test_eg_cube = True)
 
     # Maria add jakknife()
-    
-    ##include jackknife here 
-    
+
+    '''
     contributions = np.zeros(X.shape[1]-1)
     #contributions_percentage = []
     
@@ -248,7 +247,7 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
     plt.gca().invert_yaxis()  # Invert the y-axis to show the most important variables at the top
     plt.show()
     set_trace()
-    
+    '''
     #plot_jackknife(Sim, X)
     #set_trace()
     compare_to_obs_maps(filename_out, dir_outputs, Obs, Sim, lmask, *args, **kw)
