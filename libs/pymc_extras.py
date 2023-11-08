@@ -68,7 +68,7 @@ def runSim_MaxEntFire(trace, sample_for_plot, X, eg_cube, lmask, run_name,
                       dir_samples, grab_old_trace, 
                       class_object = MaxEntFire, method = 'burnt_area',
                       test_eg_cube = False):  
- 
+     
     def sample_model(i, run_name = 'control'):   
         dir_sample =  combine_path_and_make_dir(dir_samples, run_name)
         file_sample = dir_sample + '/sample-pred' + str(i) + '.nc'
