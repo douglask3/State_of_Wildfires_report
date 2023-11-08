@@ -8,7 +8,10 @@ sys.path.append('fire_model/')
 sys.path.append('libs/')
 
 from combine_path_and_make_dir import * 
-from MaxEntFire import MaxEntFire
+
+
+from FLAME import FLAME
+
 from iris_plus import insert_data_into_cube
 
 import pytensor

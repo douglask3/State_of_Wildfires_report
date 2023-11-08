@@ -2,11 +2,14 @@ import sys
 sys.path.append('fire_model/')
 sys.path.append('libs/')
 
-from MaxEntFire import MaxEntFire
+from FLAME import FLAME
 
 from BayesScatter import *
 from response_curves import *
-from jackknife import *
+try:
+    from jackknife import *
+except:
+    pass
 #from train import *
 
 from read_variable_from_netcdf import *

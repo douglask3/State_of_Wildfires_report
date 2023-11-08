@@ -2,7 +2,7 @@ import sys
 sys.path.append('fire_model/')
 sys.path.append('libs/')
 
-from MaxEntFire import MaxEntFire
+from FLAME import FLAME
 
 from read_variable_from_netcdf import *
 from combine_path_and_make_dir import * 
@@ -19,7 +19,7 @@ import pymc  as pm
 import arviz as az
 
 
-def fit_MaxEnt_probs_to_data(Y, X, CA = None, niterations = 100, *arg, **kw):
+def fit_MaxEnt_probs_to_data(Y, X, CA = None, niterations = 100, priors = None, *arg, **kw):
     """ Bayesian inerence routine that fits independant variables, X, to dependant, Y.
         Based on the MaxEnt solution of probabilities. 
     Arguments:
@@ -48,6 +48,7 @@ def fit_MaxEnt_probs_to_data(Y, X, CA = None, niterations = 100, *arg, **kw):
         ## set priors
         nvars = X.shape[1]
 
+        set_trace()
         priors = {"q":     pm.LogNormal('q', mu = 0.0, sigma = 1.0),
                   "lin_beta_constant": pm.Normal('lin_beta_constant', mu = 0, sigma = 100),
                   "lin_betas": pm.Normal('lin_betas', mu = 0, sigma = 100, shape = nvars),
@@ -61,7 +62,7 @@ def fit_MaxEnt_probs_to_data(Y, X, CA = None, niterations = 100, *arg, **kw):
                   }
 
         ## run model
-        model = MaxEntFire(priors, inference = True)
+        model = FLAME(priors, inference = True)
         prediction = model.burnt_area_spread(X)  
         
         ## define error measurement
@@ -272,6 +273,8 @@ if __name__=="__main__":
     filename = '_'.join([file[:-3] for file in x_filen_list]) + \
               '-frac_points_' + str(fraction_data_for_sample) + \
               '-Month_' +  '_'.join([str(mn) for mn in months_of_year])
+
+    
     
     """ 
         RUN optimization 
