@@ -2,9 +2,8 @@ import numpy as np
 from pdb import set_trace
 
 import iris
-from libs.iris_plus import *
-from libs.constrain_cubes_standard import *
-from libs.read_variable_from_netcdf import *
+from iris_plus import *
+from constrain_cubes_standard import *
 
 def read_variable_from_netcdf(filename, dir = '', subset_function = None, 
                               make_flat = False, units = None, 
