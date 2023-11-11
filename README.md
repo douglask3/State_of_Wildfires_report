@@ -11,7 +11,7 @@ FLAME (Fogo local Analisado pela Máxima Entropia) is a Bayesian inference imple
 ### Notes on constraining area
 
 
-#### Political areas
+#### *Political areas*
 When opening data, setting ''Country'' or ''Continent'' will constrain the extent to that country or continent, and mask areas outside of it. Uses Natural Earth. If you define a country, it one look at the continent. Use None is you don't want any. Continent options are:
 * 'South America'
 * 'Oceania'
@@ -20,7 +20,7 @@ When opening data, setting ''Country'' or ''Continent'' will constrain the exten
 * 'North America'
 * 'Asia'
 
-#### Ecoregions
+#### *Ecoregions*
 ''ecoregions'' is a numeric list (i.e [3, 7, 8]) where numbers pick Olson bomes and mask out everywhere else. If you  pick more than one, it returns a map of all of them.
 * **None** Return all areas.
 * **1** Tropical and subtropical moist broadleaf forests
@@ -38,13 +38,13 @@ When opening data, setting ''Country'' or ''Continent'' will constrain the exten
 * **13** Deserts and xeric shrublands
 * **14** Mangroves
 
-#### Brazillian legal Biomes
+#### *Brazillian legal Biomes*
 
-#### GFED Regions
+#### *GFED Regions*
 
-#### AR6 regions
+#### *AR6 regions*
 
-#### To year range
+#### *To year range*
 
-#### To months of year
+#### *To months of year*
 
