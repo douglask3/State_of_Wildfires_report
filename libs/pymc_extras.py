@@ -66,7 +66,7 @@ def logistic_how_likely(Y, X):
 
 def runSim_MaxEntFire(trace, sample_for_plot, X, eg_cube, lmask, run_name, 
                       dir_samples, grab_old_trace, 
-                      class_object = MaxEntFire, method = 'burnt_area',
+                      class_object = FLAME, method = 'burnt_area',
                       test_eg_cube = False):  
      
     def sample_model(i, run_name = 'control'):   

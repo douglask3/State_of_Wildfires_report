@@ -17,8 +17,9 @@ def select_key_or_defualt(dirc, key, default):
     else:
         return default
 
-class MaxEntFire(object):
+class FLAME(object):
     """
+    Fogo local Analisado pela Máxima Entropia
     Maximum Entropy fire model which takes independent variables and coefficients. 
     At the moment, just a linear model fed through a logistic function to convert to 
     burnt area/fire probablity. But we'll adapt that.  
