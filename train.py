@@ -88,7 +88,6 @@ def fit_MaxEnt_probs_to_data(Y, X, CA = None, niterations = 100, priors = None, 
                                 observed = Y)
                 
         ## sample model
-
         trace = pm.sample(niterations, return_inferencedata=True, 
                           callback = trace_callback, *arg, **kw)
         attempts = 1
