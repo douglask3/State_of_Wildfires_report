@@ -119,12 +119,13 @@ def train_MaxEnt_model_from_namelist(namelist = None, **kwargs):
 
 
 
-def train_MaxEnt_model(y_filen, x_filen_list, CA_filen = None, dir = '', filename_out = '',
+def train_MaxEnt_model(y_filen, x_filen_list, CA_filen = None, priors = None,
+                       dir = '', filename_out = '',
                        dir_outputs = '',
                        frac_random_sample = 1.0,
                        subset_function = None, subset_function_args = None,
                        niterations = 100, cores = 4, model_title = 'no_name', 
-                       grab_old_trace = False, priors = None, **kws):
+                       grab_old_trace = False, **kws):
                        
     ''' Opens up training data and trains and saves Bayesian Inference optimization of model. 
         see 'fit_MaxEnt_probs_to_data' for details how.
@@ -259,6 +260,18 @@ if __name__=="__main__":
         y_filen -- filename of dependant variable (i.e burnt area)
         x_filen_list -- filanames of independant variables
             (ie bioclimate, landscape metrics etc)
+        Priors -- A list of priors. Each prior goes:
+             {pname: 'parameter name', np: no. parameters, \
+              dist: 'pymc distribution name', **distribution setting}
+            Where:
+                - parameter name is a string that needs to match the parameters in the 
+                  fire model (i.e, in FLAME)
+                - no. of paramaters is either numierci, and is the amount of times you use 
+                  that parameter, or 'nvars', which means use as many parameters as variables.
+                - 'pymc distribution name' - pymc distribution or a string that matches one 
+                  of the distributions in pymc. See list: 
+                        https://www.pymc.io/projects/docs/en/stable/api/distributions.html
+                - **distribution setting are additional inputs it the distribution   
         cores - how many chains to start (confusiong name, I know).
             When running on slurm, also number of cores
         fraction_data_for_sample -- fraction of gridcells used for optimization
@@ -290,6 +303,12 @@ if __name__=="__main__":
     x_filen_list=["trees.nc","consec_dry_mean.nc",
                   "crop.nc", "pas.nc", "humid.nc", "totalVeg.nc"] 
 
+    priors =  [{'pname': "q",'np': 1, 'dist': 'LogNormal', 'mu': 0.0, 'sigma': 1.0},
+               {'pname': "lin_beta_constant",'np': 1, 'dist': 'Normal', 'mu': 0.0, 'sigma': 100},
+               {'pname': "lin_betas",'np': 'nvars', 'dist': 'Normal', 'mu': 0.0, 'sigma': 100},
+               {'pname': "pow_betas",'np': 'nvars', 'dist': 'Normal', 'mu': 0.0, 'sigma': 100},
+               {'pname': "pow_power",'np': 'nvars', 'dist': 'LogNormal', 'mu': 0.0, 'sigma': 1}]
+
     ### optimization info
     niterations = 100
     cores = 1
@@ -315,7 +334,8 @@ if __name__=="__main__":
         RUN optimization 
     """
     trace, scalers, variable_info_file = \
-                     train_MaxEnt_model(y_filen, x_filen_list, CA_filen , dir_training, 
+                     train_MaxEnt_model(y_filen, x_filen_list, CA_filen, priors, 
+                                        dir_training, 
                                         filename, dir_outputs,
                                         fraction_data_for_sample,
                                         subset_function, subset_function_args,

@@ -132,7 +132,7 @@ if __name__=="__main__":
 
         #### Optimize
         trace, scalers, variable_info_file = \
-                    train_MaxEnt_model(y_filen, x_filen_list, CA_filen , dir_training, 
+                    train_MaxEnt_model(y_filen, x_filen_list, CA_filen, None, dir_training, 
                                       filename, dir_outputs,
                                       fraction_data_for_sample,
                                       subset_function, subset_function_args,
