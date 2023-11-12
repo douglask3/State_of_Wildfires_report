@@ -48,20 +48,33 @@ def fit_MaxEnt_probs_to_data(Y, X, CA = None, niterations = 100, priors = None, 
         ## set priors
         nvars = X.shape[1]
 
-        
-        priors = {"q":     pm.LogNormal('q', mu = 0.0, sigma = 1.0),
-                  "lin_beta_constant": pm.Normal('lin_beta_constant', mu = 0, sigma = 100),
-                  "lin_betas": pm.Normal('lin_betas', mu = 0, sigma = 100, shape = nvars),
-                  "pow_betas": pm.Normal('pow_betas', mu = 0, sigma = 100, shape = nvars),
-                  "pow_power": pm.LogNormal('pow_power', mu = 0, sigma = 1, shape = nvars),
-                  "x2s_betas": pm.Normal('x2s_betas', mu = 0, sigma = 100, shape = nvars),
-                  "x2s_X0"   : pm.Normal('x2s_X0'   , mu = 0, sigma = 1, shape = nvars),
-                  "comb_betas": pm.Normal('comb_betas', mu = 0, sigma = 100, shape = nvars),
-                  "comb_X0": pm.Normal('comb_X0', mu = 0.5, sigma = 1, shape = nvars),
-                  "comb_p": pm.Normal('comb_p', mu = 0, sigma = 1 , shape = nvars)
-                  }
+        if priors is None:
+            priors = {"q":     pm.LogNormal('q', mu = 0.0, sigma = 1.0),
+                     "lin_beta_constant": pm.Normal('lin_beta_constant', mu = 0, sigma = 100),
+                     "lin_betas": pm.Normal('lin_betas', mu = 0, sigma = 100, shape = nvars),
+                     "pow_betas": pm.Normal('pow_betas', mu = 0, sigma = 100, shape = nvars),
+                     "pow_power": pm.LogNormal('pow_power', mu = 0, sigma = 1, shape = nvars),
+                     "x2s_betas": pm.Normal('x2s_betas', mu = 0, sigma = 100, shape = nvars),
+                     "x2s_X0"   : pm.Normal('x2s_X0'   , mu = 0, sigma = 1, shape = nvars),
+                     "comb_betas": pm.Normal('comb_betas', mu = 0, sigma = 100, shape = nvars),
+                     "comb_X0": pm.Normal('comb_X0', mu = 0.5, sigma = 1, shape = nvars),
+                     "comb_p": pm.Normal('comb_p', mu = 0, sigma = 1 , shape = nvars)
+                     }
+        else:
+            def define_prior(prior):
+                kws = prior.copy()
+                kws.pop('pname')
+                kws.pop('np')
+                kws.pop('dist')
+                shape = prior['np']
+                if shape == 'nvars': shape = nvars 
+                return getattr(pm, prior['dist'])(prior['pname'], shape = shape, **kws)
 
+            priors_names =[prior['pname'] for prior in priors]
+            priors = [define_prior(prior) for prior in priors]
+            priors = dict(zip(priors_names, priors))
         ## run model
+        
         model = FLAME(priors, inference = True)
         prediction = model.burnt_area_spread(X)  
         
@@ -112,7 +125,7 @@ def train_MaxEnt_model(y_filen, x_filen_list, CA_filen = None, dir = '', filenam
                        frac_random_sample = 1.0,
                        subset_function = None, subset_function_args = None,
                        niterations = 100, cores = 4, model_title = 'no_name', 
-                       grab_old_trace = False, **kws):
+                       grab_old_trace = False, priors = None, **kws):
                        
     ''' Opens up training data and trains and saves Bayesian Inference optimization of model. 
         see 'fit_MaxEnt_probs_to_data' for details how.
@@ -204,8 +217,8 @@ def train_MaxEnt_model(y_filen, x_filen_list, CA_filen = None, dir = '', filenam
         print("======================")
         print("Running trace")
         print("======================")
-        trace = fit_MaxEnt_probs_to_data(Y, X, CA = CA, 
-                                         niterations = niterations, cores = cores)
+        trace = fit_MaxEnt_probs_to_data(Y, X, CA = CA,  niterations = niterations, 
+                                         cores = cores, priors = priors)
     
         ## save trace file
         trace.to_netcdf(trace_file)
