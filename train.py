@@ -48,7 +48,7 @@ def fit_MaxEnt_probs_to_data(Y, X, CA = None, niterations = 100, priors = None, 
         ## set priors
         nvars = X.shape[1]
 
-        set_trace()
+        
         priors = {"q":     pm.LogNormal('q', mu = 0.0, sigma = 1.0),
                   "lin_beta_constant": pm.Normal('lin_beta_constant', mu = 0, sigma = 100),
                   "lin_betas": pm.Normal('lin_betas', mu = 0, sigma = 100, shape = nvars),
@@ -88,6 +88,23 @@ def fit_MaxEnt_probs_to_data(Y, X, CA = None, niterations = 100, priors = None, 
                 print("sampling attempt " + str(attempts) + " failed. Trying a max of 10 times")
                 attempts += 1
     return trace
+
+
+def train_MaxEnt_model_from_namelist(namelist = None, **kwargs):
+
+    variables = read_variable_from_namelist_with_overwite(namelist, **kwargs)
+
+    
+    variables['filename_out'] = \
+              '_'.join([file[:-3] for file in variables['x_filen_list']]) + \
+              '-frac_points_' + str(variables['fraction_data_for_sample'])
+    
+    if 'dir' not in variables and 'dir_training' in variables:
+        variables['dir'] = variables['dir_training']
+
+    
+    return train_MaxEnt_model(**variables)
+
 
 
 def train_MaxEnt_model(y_filen, x_filen_list, CA_filen = None, dir = '', filename_out = '',
@@ -241,10 +258,16 @@ if __name__=="__main__":
             This isn't totally infalable, so if doing a final run and in doubt, set to False
     Returns:
         outputs trace file and info (variable scalers) needed for evaluation and projection.
+    """ 
+    """ 
+        EXAMPLE 1 - namelist
     """
 
+    namelist = "namelists//simple_example_namelist.txt"
+
+    train_MaxEnt_model_from_namelist('namelists/simple_example.txt')
     """ 
-        SETPUT 
+        EXAMPLE 2 - python code 
     """
     ### input data paths and filenames
     model_title = 'simple_example_model'
