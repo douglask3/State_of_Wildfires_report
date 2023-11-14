@@ -300,7 +300,7 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, CA_filen = None,
     
     for col in range(X.shape[1]-1):
         
-        original_column = X[:, col]
+        #original_column = X[:, col]
         
         X = np.delete(X, col, axis=1)
     
@@ -313,8 +313,8 @@ def predict_MaxEnt_model(trace, y_filen, x_filen_list, scalers, CA_filen = None,
         #variable_name = x_filen_list[col].replace('.nc', '')
         #ax.set_title(variable_name)
         
-        #def non_masked_data(cube):
-        #    return cube.data[cube.data.mask == False].data
+        def non_masked_data(cube):
+            return cube.data[cube.data.mask == False].data
         
         sim_final = (non_masked_data(Sim) - non_masked_data(Sim2))
         sim_final = np.mean(sim_final)
