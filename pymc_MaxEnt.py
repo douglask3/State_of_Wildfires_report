@@ -58,10 +58,10 @@ if __name__=="__main__":
     """
     """ optimization """
 
-    person = 'Doug'
+    person = 'Maria'
 
     if person == 'Maria':
-        model_title = 'Example_model-biome-6'
+        model_title = 'Example_model-biome-1'
         #dir_training = "/gws/nopw/j04/jules/mbarbosa/driving_and_obs_overlap/AllConFire_2000_2009/"
         dir_training = "D:/Doutorado/Sanduiche/research/maxent-variables/2002-2011/"
 
@@ -71,7 +71,7 @@ if __name__=="__main__":
         
         CA_filen = "brazil_NAT.nc"
         #CA_filen = "brazil_NON.nc"
-        biome_IDs = [6]
+        biome_IDs = [1]
         
         x_filen_list=["consec_dry_mean.nc", "savanna.nc", "cveg.nc", "rhumid.nc",
                       "lightn.nc", "popDens.nc", "forest.nc", "precip.nc",
@@ -79,8 +79,12 @@ if __name__=="__main__":
                       "tas_max.nc", "tas_mean.nc", "tca.nc", "te.nc", "mpa.nc",
                       "totalVeg.nc", "vpd.nc", "csoil.nc", "SoilM.nc"]
 
-        cores = 2
-        fraction_data_for_sample = 0.05
+        cores = 5
+        fraction_data_for_sample = 0.1
+        
+        #cores = 2
+        #fraction_data_for_sample = 0.05
+        
     else:
         model_title = 'Example_model-q-reduced'
 
@@ -99,9 +103,11 @@ if __name__=="__main__":
 
     grab_old_trace = True # set to True till you get the code running. Then set to False when you start adding in new response curves
     
-    niterations = 100
-    min_data_points_for_sample = 1000
-    months_of_year = [7]
+    niterations = 200
+    #niterations = 100
+    min_data_points_for_sample = 1000 #minimum grid cells to use
+    months_of_year = [8,9,10]
+    #months_of_year = [7]
     
     """ Projection/evaluating """
     dir_outputs = 'outputs/'
@@ -124,10 +130,12 @@ if __name__=="__main__":
         subset_function = [sub_year_months, constrain_BR_biomes]  
         subset_function_args = [{'months_of_year': months_of_year}, {'biome_ID': [biome_ID]}]
 
-        filename = '_'.join([file[:-3] for file in x_filen_list]) + \
-                '-frac_points_' + str(fraction_data_for_sample) + \
-                '-Month_' +  '_'.join([str(mn) for mn in months_of_year]) + \
-                f'-Biome_{biome_ID}'
+        #filename = '_'.join([file[:-3] for file in x_filen_list]) + \
+         #       '-frac_points_' + str(fraction_data_for_sample) + \
+          #      '-Month_' +  '_'.join([str(mn) for mn in months_of_year]) + \
+             #   f'-Biome_{biome_ID}'
+             
+        filename = '_'.join([file[:-3] for file in x_filen_list])
     
 
         #### Optimize
