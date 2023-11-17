@@ -8,7 +8,8 @@ import matplotlib.pyplot as plt
 from pdb import set_trace
 
 def non_masked_data(cube):
-    out = cube.data[cube.data.mask == False].data
+    #set_trace()
+    out = cube.data[cube.data.mask == False]
     return out[~np.isnan(out)]
 
 
