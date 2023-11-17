@@ -8,8 +8,8 @@ import matplotlib.pyplot as plt
 from pdb import set_trace
 
 def non_masked_data(cube):
-    #set_trace()
-    out = cube.data[cube.data.mask == False]
+    if type(cube) is tuple: cube = cube[0]
+    out = cube.data[cube.data.mask == False].data
     return out[~np.isnan(out)]
 
 
