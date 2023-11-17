@@ -118,7 +118,8 @@ def evaluate_MaxEnt_model_from_namelist(training_namelist = None, evaluate_namel
                                         **kwargs):
 
     variables = read_variable_from_namelist_with_overwite(training_namelist, **kwargs)
-    
+    variables.update(read_variable_from_namelist_with_overwite(evaluate_namelist, **kwargs))
+   
     return evaluate_MaxEnt_model(**variables)
 
     
@@ -291,21 +292,13 @@ if __name__=="__main__":
     """
     ### input data paths and filenames
 
-    sample_for_plot = 200
-    levels = [0, 0.1, 1, 2, 5, 10, 20, 50, 100] 
-    dlevels = [-20, -10, -5, -2, -1, -0.1, 0.1, 1, 2, 5, 10, 20]
-    cmap = 'OrRd'
-    dcmap = 'RdBu_r'
-    dir_projecting = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
-    training_namelist = "outputs//simple_example_model/variables_info-trees_consec_dry_mean_crop_pas_humid_totalVeg-frac_points_0.1-Month_7.txt"
+    training_namelist = "outputs//simple_example_model/variables_info-trees_consec_dry_mean_crop_pas_humid_totalVeg-frac_points_0.1-Month_7-nvariables_-frac_random_sample0.1-nvars_6-niterations_100.txt"
+
+    config_namelist = "namelists/simple_example.txt"
 
     """ 
         RUN evaluation 
     """
-    evaluate_MaxEnt_model_from_namelist(training_namelist, dir = dir_projecting,
-                                        grab_old_trace = True,
-                                        sample_for_plot = sample_for_plot,
-                                        levels = levels, cmap = cmap,
-                                        dlevels = dlevels, dcmap = dcmap)
+    evaluate_MaxEnt_model_from_namelist(training_namelist, config_namelist)
     
     

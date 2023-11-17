@@ -1,5 +1,5 @@
 ## input data paths and filenames
-model_title::  'simple_example_model-Aug'
+model_title::  'simple_example_model'
 dir_training:: "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
 y_filen:: "GFED4.1s_Burned_Fraction.nc"
 CA_filen:: None
@@ -18,11 +18,16 @@ cores:: 1
 fraction_data_for_sample:: 0.005
 subset_function:: sub_year_months
 subset_function_args:: {'months_of_year': [7]}
-grab_old_trace:: True # set to True till you get the code running. 
+grab_old_trace:: False # set to True till you get the code running. 
                           # Then set to False when you start adding in new response curves
 ### output info
 dir_outputs:: 'outputs/'
 
+## evaluation info
+sample_for_plot:: 200
+levels:: [0, 0.1, 1, 2, 5, 10, 20, 50, 100] 
+dlevels:: [-20, -10, -5, -2, -1, -0.1, 0.1, 1, 2, 5, 10, 20]
+cmap:: 'OrRd'
+dcmap:: 'RdBu_r'
+dir_projecting:: "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
 
-
-    
