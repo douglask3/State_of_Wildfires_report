@@ -199,8 +199,32 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
     Sim = runSim_MaxEntFire(**common_args, run_name = "control", test_eg_cube = True)
 
     # Maria add jakknife()
-
     '''
+    contributions = {}
+    
+    for col in range(X.shape[1] - 1):
+    
+        x_copy = X[:, col].copy() 
+        
+        X[:, col] = 0
+        
+        Sim2 = runSim_MaxEntFire(**common_args, run_name = "deleted", test_eg_cube = True)
+        
+        contributions[col] = np.mean(np.abs(non_masked_data(Sim) - non_masked_data(Sim2))
+               
+        X[:, col] = x_copy 
+        
+    # Plot the jackknife variables contribution plot
+    fig, ax = plt.subplots()
+    ax.bar(range(len(contributions)), list(contributions.values()))
+    ax.set_xlabel('Variable')
+    ax.set_ylabel('Contribution')
+    plt.show()
+    set_trace()
+    
+    return contributions 
+
+    
     contributions = np.zeros(X.shape[1]-1)
     #contributions_percentage = []
     
