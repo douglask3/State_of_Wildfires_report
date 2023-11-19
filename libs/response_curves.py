@@ -109,13 +109,13 @@ def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask,
         plotN = Ncol * (col + 1)
         plotFun(Sim2, varname, plotN)
         if map_type == 2:
-            plotFun(Sim1, '', plotN + 2, figure_filename = figure_dir + 'absolute')
+            plotFun(Sim1, '', plotN + 2, figure_filename = figure_dir + varname + '-absolute')
 
         if Sim1 is not None:
             diff = Sim2.copy()
             diff.data = Sim2.data - Sim1.data
             plotFun(diff, '', plotN + 2 * map_type, dlevels, dcmap, 
-                    figure_filename = figure_dir + 'difference')
+                    figure_filename = figure_dir + varname + '-difference')
         else:
             diff = Sim2
                 
