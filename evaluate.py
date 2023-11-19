@@ -32,7 +32,8 @@ from scipy.stats import wilcoxon
 from pdb import set_trace
 
 
-def plot_BayesModel_signifcance_maps(Obs, Sim, lmask, plot_n = 1, Nrows = 3, Ncols = 2):
+def plot_BayesModel_signifcance_maps(Obs, Sim, lmask, plot_n = 1, Nrows = 3, Ncols = 2,
+                                     figure_filename = None):
     
     def flatten_to_dim0(cube):           
         x = cube.data.flatten()[lmask]        
@@ -63,9 +64,8 @@ def plot_BayesModel_signifcance_maps(Obs, Sim, lmask, plot_n = 1, Nrows = 3, Nco
     Sim[1].data.mask[Sim[1].data == 0] = True
     plot_BayesModel_maps(Sim[1], [0.0, 0.5, 0.75, 0.9, 0.95, 0.99, 1.0], 'copper', '', None, 
                          Nrows = Nrows, Ncols = Ncols, plot0 = plot_n, collapse_dim = 'time',
-                         scale = 1)
-
-
+                         scale = 1, figure_filename = figure_filename + 'obs_liklihood')
+    
     ax = plt.subplot(Nrows, Ncols, plot_n + 3)
     BayesScatter(Obs, Sim[0], lmask,  0.000001, 0.000001, ax)
     
@@ -84,11 +84,13 @@ def plot_BayesModel_signifcance_maps(Obs, Sim, lmask, plot_n = 1, Nrows = 3, Nco
 
     plot_annual_mean(apos_cube,[0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], 
                      'RdYlBu_r',  plot_name = "mean bias", 
-                     Nrows = Nrows, Ncols = Ncols, plot_n = plot_n + 4)
+                     Nrows = Nrows, Ncols = Ncols, plot_n = plot_n + 4,
+                     figure_filename = figure_filename + 'obs_post-Position.nc')
 
     plot_annual_mean(p_value_cube, np.array([0, 0.01, 0.05, 0.1, 0.5, 1.0]), 'copper',   
                      plot_name = "mean bias p-value", 
-                     Nrows = Nrows, Ncols = Ncols, plot_n = plot_n + 5)
+                     Nrows = Nrows, Ncols = Ncols, plot_n = plot_n + 5,
+                     figure_filename = figure_filename + 'obs_post-Pvalue.nc')
     
 
 
@@ -97,17 +99,18 @@ def compare_to_obs_maps(filename_out, dir_outputs, Obs, Sim, lmask, levels, cmap
                         dlevels = None, dcmap = None,
                         *args, **kw):    
     
-    plot_BayesModel_maps(Sim[0], levels, cmap, '', Obs, Nrows = 3, Ncols = 3)
-    plot_BayesModel_signifcance_maps(Obs, Sim, lmask, plot_n = 4, Nrows = 3, Ncols = 3)
+    fig_dir = combine_path_and_make_dir(dir_outputs, '/figs/')
+    figure_filename = fig_dir + filename_out + '-evaluation'
+    figure_dir =  combine_path_and_make_dir(figure_filename)
     
+    plot_BayesModel_maps(Sim[0], levels, cmap, '', Obs, Nrows = 3, Ncols = 3,
+                         figure_filename = figure_dir)
+    plot_BayesModel_signifcance_maps(Obs, Sim, lmask, plot_n = 4, Nrows = 3, Ncols = 3,
+                                     figure_filename = figure_dir)
     
-   
     plt.gcf().set_size_inches(12, 12)
     plt.gcf().tight_layout()
-    fig_dir = combine_path_and_make_dir(dir_outputs, '/figs/')
-
-    plt.savefig(fig_dir + filename_out + '-evaluation.png')
-
+    plt.savefig(figure_filename + '.png')
 
 
 def evaluate_MaxEnt_model_from_namelist(training_namelist = None, evaluate_namelist = None, 

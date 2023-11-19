@@ -18,26 +18,32 @@ from pdb import set_trace
 
 def plot_BayesModel_maps(Sim, levels, cmap, ylab = '', Obs = None, 
                          Nrows = 1, Ncols = 2, plot0 = 0, collapse_dim = 'realization',
-                         scale = 100*12,
+                         scale = 100*12, figure_filename = None,
                          *args, **kw):
     
     Sim = Sim.collapsed(collapse_dim, iris.analysis.PERCENTILE, percent=[10, 90])
     
-    def plot_map(cube, plot_name, plot_n):
+    def plot_map(cube, plot_name, plot_n, **kw2):
         plot_annual_mean(cube, levels, cmap, plot_name = plot_name, scale = scale, 
-                     Nrows = Nrows, Ncols = Ncols, plot_n = plot_n + plot0, *args, **kw)
+                     Nrows = Nrows, Ncols = Ncols, plot_n = plot_n + plot0, *args, **kw, **kw2)
         
         if plot_n == 1:
             plt.gca().text(-0.1, 0.5, ylab, fontsize=12, rotation=90, va='center', ha='right',
                            transform=plt.gca().transAxes)
+    def set_fig_fname(txt):
+        if  figure_filename is None:
+            return None
+        else:
+            return figure_filename + '-' + txt + '.nc'
     
     if Obs is None: 
         plot_n = 1
     else:
-        plot_map(Obs, "Observations", 1)
+        plot_map(Obs, "Observations", 1, figure_filename = set_fig_fname('obs'))
         plot_n = 2
-    plot_map(Sim[0,:], "Simulation - 10%", plot_n)
-    plot_map(Sim[1,:], "Simulation - 90%", plot_n+1)
+    
+    plot_map(Sim[0,:], "Simulation - 10%", plot_n, figure_filename = set_fig_fname('-sim10pc'))
+    plot_map(Sim[1,:], "Simulation - 90%", plot_n+1, figure_filename = set_fig_fname('-sim90pc'))
     
    
 def plot_annual_mean(cube, levels, cmap, plot_name = None, scale = None, 
@@ -68,7 +74,8 @@ def addColorbar(cf, ticks, *args, **kw):
     return cb
 
 def plot_cube(cube, N, M, n, cmap, levels = None, extend = 'neither', 
-             projection = ccrs.Robinson(), grayMask = False, fig = None):
+             projection = ccrs.Robinson(), grayMask = False, fig = None, 
+             figure_filename = None):
     if levels is None:
         levels, extend = hist_limits(cube, levels, 6)
 
@@ -102,7 +109,8 @@ def plot_cube(cube, N, M, n, cmap, levels = None, extend = 'neither',
         cf = iplt.pcolormesh(cube, cmap = cmap) 
     
     plt.gca().coastlines()
-
+    if figure_filename is not None:
+        iris.save(cube, figure_filename)
     return cf, levels, extend
 
 
