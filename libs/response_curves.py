@@ -60,6 +60,9 @@ def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask,
                    dir_samples, fig_dir, grab_old_trace, x_filen_list, 
                    levels, cmap, dlevels, dcmap, *args, **kw):  
 
+    figure_filename = fig_dir + curve_type + '-response'
+    figure_dir =  combine_path_and_make_dir(figure_filename + '-maps/') 
+    
     print("Plotting reponse curve: " + curve_type)
     
     map_type = 1
@@ -85,11 +88,11 @@ def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask,
     #fig_time_series, ax_time_series = plt.subplots()
 
     Ncol = 6 if map_type == 2 else 4
-    def plotFun(cube, ylab = '', plot0 = 0, lvls = levels, cm = cmap): 
+    def plotFun(cube, ylab = '', plot0 = 0, lvls = levels, cm = cmap, **kw2): 
         if map_type > 0:
             plot_BayesModel_maps(cube, lvls, cm, ylab = ylab,
                                  Nrows = len(x_filen_list) + 1, Ncols = Ncol, plot0 = plot0, 
-                                 colourbar = True, fig = fig_map)
+                                 colourbar = True, fig = fig_map, **kw2)
 
     #def dplotFun(cube, *args, **kw): plotFun(cube, dlevels, dcmap, *args, **kw)
     
@@ -106,12 +109,13 @@ def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask,
         plotN = Ncol * (col + 1)
         plotFun(Sim2, varname, plotN)
         if map_type == 2:
-            plotFun(Sim1, '', plotN + 2)
+            plotFun(Sim1, '', plotN + 2, figure_filename = figure_dir + 'absolute')
 
         if Sim1 is not None:
             diff = Sim2.copy()
             diff.data = Sim2.data - Sim1.data
-            plotFun(diff, '', plotN + 2 * map_type, dlevels, dcmap)
+            plotFun(diff, '', plotN + 2 * map_type, dlevels, dcmap, 
+                    figure_filename = figure_dir + 'difference')
         else:
             diff = Sim2
                 
@@ -148,15 +152,16 @@ def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask,
         ax.plot(bin_centers, median_values, marker='.', label='Median')
         ax.fill_between(bin_centers, percentile_10, percentile_90, alpha=0.3, 
                         label='10th-90th Percentiles')                           
-                
+    
+          
     if map_type > 0:
         fig_map.set_size_inches(12, 4*X.shape[1])
         fig_map.tight_layout()
         fig_map.subplots_adjust(left=0.15)
-        fig_map.savefig(fig_dir + curve_type + '-response-maps.png')
+        fig_map.savefig(figure_filename + '-maps.png')
     plt.close(fig_map)
     
-    fig_curve.savefig(fig_dir + curve_type + '-response-curves.png')   
+    fig_curve.savefig(figure_filename + '-curves.png')   
     plt.close(fig_curve)
     plt.clf()
 
