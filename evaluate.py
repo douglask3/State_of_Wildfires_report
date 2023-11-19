@@ -199,7 +199,7 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
     Sim = runSim_MaxEntFire(**common_args, run_name = "control", test_eg_cube = True)
 
     # Maria add jakknife()
-    '''
+    ''' 
     contributions = {}
     
     for col in range(X.shape[1] - 1):
@@ -210,7 +210,7 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
         
         Sim2 = runSim_MaxEntFire(**common_args, run_name = "deleted", test_eg_cube = True)
         
-        contributions[col] = np.mean(np.abs(non_masked_data(Sim) - non_masked_data(Sim2))
+        contributions[col] = np.mean(np.abs(non_masked_data(Sim) - non_masked_data(Sim2)))
                
         X[:, col] = x_copy 
         
@@ -221,7 +221,7 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
     ax.set_ylabel('Contribution')
     plt.show()
     set_trace()
-    
+    '''
     return contributions 
 
     
@@ -271,7 +271,7 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
     plt.gca().invert_yaxis()  # Invert the y-axis to show the most important variables at the top
     plt.show()
     set_trace()
-    '''
+    
     #plot_jackknife(Sim, X)
     #set_trace()
     compare_to_obs_maps(filename_out, dir_outputs, Obs, Sim, lmask, *args, **kw)
@@ -318,6 +318,7 @@ if __name__=="__main__":
     dcmap = 'RdBu_r'
     dir_projecting = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
     training_namelist = "outputs//simple_example_model/variables_info-trees_consec_dry_mean_crop_pas_humid_totalVeg-frac_points_0.1-Month_7.txt"
+    training_namelist = "outputs//simple_example_model/variables_info-trees_consec_dry_mean_crop_pas_totalVeg-frac_points_0.005-Month_7-nvariables_-frac_random_sample0.005-nvars_5-niterations_100.txt"
 
     """ 
         RUN evaluation 
