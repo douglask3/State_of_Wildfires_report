@@ -199,7 +199,7 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
     Sim = runSim_MaxEntFire(**common_args, run_name = "control", test_eg_cube = True)
 
     # Maria add jakknife()
-    
+    '''
     contributions = {}
     
     for col in range(X.shape[1] - 1):
@@ -234,7 +234,7 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
     plt.gca().invert_yaxis()
     plt.show()
     set_trace()
-    
+    '''
 
     compare_to_obs_maps(filename_out, dir_outputs, Obs, Sim, lmask, *args, **kw)
     Bayes_benchmark(filename_out, fig_dir, Sim, Obs, lmask)
