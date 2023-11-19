@@ -61,46 +61,25 @@ if __name__=="__main__":
     person = 'Maria'
 
     if person == 'Maria':
-        model_title = 'Example_model-biome-6'
-        #dir_training = "/gws/nopw/j04/jules/mbarbosa/driving_and_obs_overlap/AllConFire_2000_2009/"
-        dir_training = "D:/Doutorado/Sanduiche/research/maxent-variables/2002-2011/"
-
-        #y_filen = "GFED4.1s_Burned_Fraction.nc"
-        y_filen = "Area_burned_NAT.nc"
-        #y_filen = "Area_burned_NON.nc"
-        
-        CA_filen = "brazil_NAT.nc"
-        #CA_filen = "brazil_NON.nc"
-        #biome_IDs = [1]
-        biome_IDs = [6]
-        
-        x_filen_list=["consec_dry_mean.nc", "savanna.nc", "cveg.nc", "rhumid.nc",
-                      "lightn.nc", "popDens.nc", "forest.nc", "precip.nc",
-                      "crop.nc", "pas.nc", "grassland.nc", "ed.nc", "np.nc",
-                      "tas_max.nc", "tas_mean.nc", "tca.nc", "te.nc", "mpa.nc",
-                      "totalVeg.nc", "vpd.nc", "csoil.nc", "SoilM.nc"]
-
-        #cores = 5
-        #fraction_data_for_sample = 0.1
-        
-        cores = 2
-        fraction_data_for_sample = 0.05
-        
+        dir_training = "D:/Doutorado/Sanduiche/research/maxent-variables/2002-2011/" 
     else:
-        model_title = 'Example_model-q-reduced'
-
         dir_training = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
-        y_filen = "Area_burned_NAT.nc"
-        CA_filen = "brazil_NAT.nc"
-        biome_IDs = [1,2]
-        x_filen_list=["trees.nc", "pr_mean.nc", "consec_dry_mean.nc", 
-                  #"lightn.nc", "popDens.nc",
-                  #"crop.nc", "pas.nc", 
-                  "humid.nc", "csoil.nc", "tas_max.nc",
-                  "totalVeg.nc"] 
 
-        cores = 1
-        fraction_data_for_sample = 0.01
+    x_filen_list=["consec_dry_mean.nc", "savanna.nc", "cveg.nc", "rhumid.nc",
+                  "lightn.nc", "popDens.nc", "forest.nc", "precip.nc",
+                  "crop.nc", "pas.nc", "grassland.nc", "ed.nc", "np.nc",
+                  "tas_max.nc", "tas_mean.nc", "tca.nc", "te.nc", "mpa.nc",
+                  "totalVeg.nc", "vpd.nc", "csoil.nc", "SoilM.nc"]
+    
+    model_title = 'Biome_model'
+    CA_filen = "brazil_NAT.nc"
+    y_filen = "Area_burned_NAT.nc"
+    
+    cores = 5
+    fraction_data_for_sample = 0.1
+        
+    #cores = 2
+    #fraction_data_for_sample = 0.05
 
     grab_old_trace = True # set to True till you get the code running. Then set to False when you start adding in new response curves
     
