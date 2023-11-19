@@ -252,12 +252,12 @@ if __name__=="__main__":
     CA_filen = None
     
     x_filen_list=["trees.nc","consec_dry_mean.nc",
-                  "crop.nc", "pas.nc", "humid.nc", "totalVeg.nc"] 
+                  "crop.nc", "pas.nc",  "totalVeg.nc"] 
 
     ### optimization info
     niterations = 100
     cores = 1
-    fraction_data_for_sample = 0.1
+    fraction_data_for_sample = 0.005
     months_of_year = [7]
 
     subset_function = sub_year_months
