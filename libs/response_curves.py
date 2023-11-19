@@ -14,7 +14,6 @@ def non_masked_data(cube):
 
 
 def initial_curve_experiment(*args, **kw):
-
     Sim1, Sim2 = standard_curve_experiment(*args, **kw)
     return None, Sim2
 
