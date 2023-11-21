@@ -58,7 +58,7 @@ if __name__=="__main__":
     """
     """ optimization """
 
-    person = 'Maria'
+    person = 'Doug'
 
     if person == 'Maria':
         dir_training = "D:/Doutorado/Sanduiche/research/maxent-variables/2002-2011/" 
@@ -69,8 +69,10 @@ if __name__=="__main__":
                   "lightn.nc", "popDens.nc", "forest.nc", "precip.nc",
                   "crop.nc", "pas.nc", "grassland.nc", "ed.nc", "np.nc",
                   "tas_max.nc", "tas_mean.nc", "tca.nc", "te.nc", "mpa.nc",
-                  "totalVeg.nc", "vpd.nc", "csoil.nc", "SoilM.nc"]
+                  "totalVeg.nc", "vpd.nc", "csoil.nc", "soilM.nc"]
     
+    biome_IDs = range(1,7)
+
     model_title = 'Biome_model'
     CA_filen = "brazil_NAT.nc"
     y_filen = "Area_burned_NAT.nc"
