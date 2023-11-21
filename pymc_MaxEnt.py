@@ -89,11 +89,11 @@ if __name__=="__main__":
     #niterations = 200
     niterations = 100
     
-    #months_of_year = [8,9,10]
-    months_of_year = [7]
+    months_of_year = [8,9,10]
+    #months_of_year = [7]
     
     """ Projection/evaluating """
-    dir_outputs = 'outputs/'
+    dir_outputs0 = 'outputs/'
 
     dir_projecting = dir_training
     #dir_projecting = "D:/Doutorado/Sanduiche/research/maxent-variables/2012-2021/"
@@ -109,11 +109,11 @@ if __name__=="__main__":
         
     """
     for biome_ID in biome_IDs:
-    
+        dir_outputs = combine_path_and_make_dir(dir_outputs0,'/biome' + str(biome_ID))
         subset_function = [sub_year_months, constrain_BR_biomes]  
         subset_function_args = [{'months_of_year': months_of_year}, {'biome_ID': [biome_ID]}]
-
-        filename = '_'.join([file[:-3] for file in x_filen_list]) + \
+        
+        filename = '_' +  str(len(x_filen_list)) + \
                 '-frac_points_' + str(fraction_data_for_sample) + \
                 '-Month_' +  '_'.join([str(mn) for mn in months_of_year]) + \
                f'-Biome_{biome_ID}'
