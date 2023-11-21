@@ -76,7 +76,8 @@ if __name__=="__main__":
     y_filen = "Area_burned_NAT.nc"
     
     cores = 5
-    fraction_data_for_sample = 0.1
+    fraction_data_for_sample = 0.001
+    min_data_points_for_sample = 10 #minimum grid cells to use
         
     #cores = 2
     #fraction_data_for_sample = 0.05
@@ -85,7 +86,7 @@ if __name__=="__main__":
     
     #niterations = 200
     niterations = 100
-    min_data_points_for_sample = 1000 #minimum grid cells to use
+    
     #months_of_year = [8,9,10]
     months_of_year = [7]
     
