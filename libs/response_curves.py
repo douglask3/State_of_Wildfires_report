@@ -58,7 +58,7 @@ def sensitivity_curve_experiment(Sim, Xi, col, name, trace, sample_for_plot,
 
 def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask, 
                    dir_samples, fig_dir, grab_old_trace, x_filen_list, 
-                   levels, cmap, dlevels, dcmap, *args, **kw):  
+                   levels, cmap, dlevels, dcmap, scalers = None, *args, **kw):  
 
     figure_filename = fig_dir + curve_type + '-response'
     figure_dir =  combine_path_and_make_dir(figure_filename + '-maps/') 
@@ -125,6 +125,8 @@ def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask,
         ax.set_title(variable_name)
         
         num_bins = 10
+        
+        
         hist, bin_edges = np.histogram(X[:, col], bins=num_bins)
         bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
         median_values = []
@@ -132,7 +134,7 @@ def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask,
         percentile_90 = []
         
         for i in range(num_bins):
-        
+            
             mask = (X[:, col] >= bin_edges[i]) & (X[:, col] < bin_edges[i + 1])
             if np.any(mask):
                 values_in_bin = []
@@ -149,6 +151,9 @@ def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask,
                 percentile_10.append(np.nan)
                 percentile_90.append(np.nan)
         
+        
+        if scalers is not None:
+            bin_centers = bin_centers*(scalers[1, col] - scalers[0, col]) + scalers[0, col]
         ax.plot(bin_centers, median_values, marker='.', label='Median')
         ax.fill_between(bin_centers, percentile_10, percentile_90, alpha=0.3, 
                         label='10th-90th Percentiles')                           
