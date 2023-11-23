@@ -10,7 +10,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 def jackknife(x_filen_list, X, **common_args):
-
     
     contributions = {}
     
@@ -27,8 +26,6 @@ def jackknife(x_filen_list, X, **common_args):
         X[:, col] = 0.0 
         
         Sim2 = runSim_MaxEntFire(X = X, **common_args, run_name=varname + "deleted", test_eg_cube=True)
-        
-        #return Sim, Sim2
         
         contributions[varname] = np.mean(np.abs(non_masked_data(Sim) - non_masked_data(Sim2))) * 100
 
