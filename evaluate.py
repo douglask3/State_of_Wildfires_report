@@ -201,7 +201,7 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
     
     Sim = runSim_MaxEntFire(**common_args, run_name = "control", test_eg_cube = True)
 
-    jackknife(x_filen_list, **common_args)
+    jackknife(x_filen_list, fig_dir = fig_dir, **common_args)
     
     #set_trace()
 
