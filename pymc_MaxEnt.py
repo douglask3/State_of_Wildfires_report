@@ -58,40 +58,47 @@ if __name__=="__main__":
     """
     """ optimization """
 
-    person = 'Maria'
+    person = 'Doug'
+    quick = True
 
     if person == 'Maria':
         dir_training = "D:/Doutorado/Sanduiche/research/maxent-variables/2002-2011/" 
     else:
         dir_training = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
 
-    x_filen_list=["consec_dry_mean.nc", "savanna.nc", "cveg.nc", "rhumid.nc",
+    x_filen_list=["ed.nc", "consec_dry_mean.nc", "savanna.nc", "cveg.nc", "rhumid.nc",
                   "lightn.nc", "popDens.nc", "forest.nc", "precip.nc",
-                  "crop.nc", "pas.nc", "grassland.nc", "ed.nc", "np.nc",
+                  "crop.nc", "pas.nc", "grassland.nc", "np.nc",
                   "tas_max.nc", "tas_mean.nc", "tca.nc", "te.nc", "mpa.nc",
                   "totalVeg.nc", "vpd.nc", "csoil.nc", "soilM.nc"]
     
+    if quick:
+        model_title = 'model-test'
+        year_range = [2003, 2004]
+        biome_IDs = range(5,6)
+        fraction_data_for_sample = 0.001
+        min_data_points_for_sample = 10 #minimum grid cells to use
+        cores = 2
+        months_of_year = [7]
+        niterations = 100
+    else:
+        model_title = 'model-full'
+        biome_IDs = range(1,7)
+        year_range = [2002, 2009]
+        fraction_data_for_sample = 0.1
+        min_data_points_for_sample = 1000 #minimum grid cells to use
+        cores = 5
+       
+        months_of_year = [8,9,10]
+        niterations = 200
 
-    biome_IDs = range(5,6)
-
-    model_title = 'model-test'
     CA_filen = "brazil_NAT.nc"
     y_filen = "Area_burned_NAT.nc"
     
-    #cores = 5
-    fraction_data_for_sample = 0.001
-    min_data_points_for_sample = 10 #minimum grid cells to use
-        
-    cores = 2
-    #fraction_data_for_sample = 0.05
+  
 
     grab_old_trace = True # set to True till you get the code running. Then set to False when you start adding in new response curves
     
-    #niterations = 200
-    niterations = 100
-    
-    months_of_year = [8,9,10]
-    #months_of_year = [7]
     
     """ Projection/evaluating """
     dir_outputs0 = 'outputs/'
@@ -111,8 +118,12 @@ if __name__=="__main__":
     """
     for biome_ID in biome_IDs:
         dir_outputs = combine_path_and_make_dir(dir_outputs0,'/biome' + str(biome_ID))
-        subset_function = [sub_year_months, constrain_BR_biomes]  
-        subset_function_args = [{'months_of_year': months_of_year}, {'biome_ID': [biome_ID]}]
+
+        subset_function = [sub_year_range, 
+                            sub_year_months, constrain_BR_biomes]
+        subset_function_args = [{'year_range': year_range},
+                            {'months_of_year': months_of_year},
+                            {'biome_ID': [biome_ID]}]
         
         filename = '_' +  str(len(x_filen_list)) + \
                 '-frac_points_' + str(fraction_data_for_sample) + \
