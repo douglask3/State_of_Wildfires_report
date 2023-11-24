@@ -71,18 +71,18 @@ if __name__=="__main__":
                   "tas_max.nc", "tas_mean.nc", "tca.nc", "te.nc", "mpa.nc",
                   "totalVeg.nc", "vpd.nc", "csoil.nc", "soilM.nc"]
     
-    biome_IDs = range(1, 7)
+    biome_IDs = range(0, 7)
 
-    model_title = 'Example_model-biome'
+    model_title = 'quick_model-biome'
     CA_filen = "brazil_NAT.nc"
     y_filen = "Area_burned_NAT.nc"
     
-    #cores = 5
+    cores = 2
     #fraction_data_for_sample = 0.001
-    min_data_points_for_sample = 10 #minimum grid cells to use
+    min_data_points_for_sample = 100 #minimum grid cells to use
         
     cores = 2
-    fraction_data_for_sample = 0.05
+    fraction_data_for_sample = 0.001
 
     grab_old_trace = True # set to True till you get the code running. Then set to False when you start adding in new response curves
     
