@@ -63,6 +63,15 @@ When opening data, setting ''Country'' or ''Continent'' will constrain the exten
 
 #### *Brazillian legal Biomes*
 
+''Biomes'' is a numeric list where numbers pick Brazilian biomes and mask out everywhere else. If you pick more than one, it returns a map of all of them.
+
+* **1** Amazonia
+* **2** Caatinga
+* **3** Cerrado
+* **4** Atlantic Forest
+* **5** Pampa
+* **6** Pantanal
+
 #### *GFED Regions*
 
 #### *AR6 regions*
