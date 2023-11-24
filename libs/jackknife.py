@@ -9,20 +9,19 @@ from evaluate import *
 import numpy as np
 import matplotlib.pyplot as plt
 
-def jackknife(x_filen_list, X, **common_args):
+def jackknife(x_filen_list, X, Sim, **common_args):
     
     contributions = {}
 
     for col in range(X.shape[1] - 1):
-        
+        Xi = X.copy()
+        Xi[:, col] = 0.0
         varname = x_filen_list[col] 
         if varname.endswith(".nc"):
             varname = varname[:-3]
         makeDir(varname)
-
-        X = np.delete(X, col, axis=1)
         
-        Sim2 = runSim_MaxEntFire(X = X, **common_args, run_name=varname + "deleted", test_eg_cube=True)
+        Sim2 = runSim_MaxEntFire(X = Xi, **common_args, run_name = varname + "/to_zero", test_eg_cube=True)
 
         contributions[varname] = np.mean(np.abs(non_masked_data(Sim) - non_masked_data(Sim2))) * 100
 
