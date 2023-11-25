@@ -132,7 +132,7 @@ def train_MaxEnt_model(y_filen, x_filen_list, CA_filen = None, dir = '', filenam
     print("Optimization started")
     print("====================")
     dir_outputs = combine_path_and_make_dir(dir_outputs, model_title)
-    subfolder = combine_path_and_make_dir(dir_outputs, subfolder)
+    dir_outputs = combine_path_and_make_dir(dir_outputs, subfolder)
     out_file =   filename_out + '-nvariables_' + \
                  '-frac_random_sample' + str(frac_random_sample) + \
                  '-nvars_' +  str(len(x_filen_list)) + \
