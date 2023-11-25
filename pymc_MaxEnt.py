@@ -101,7 +101,7 @@ if __name__=="__main__":
     
     
     """ Projection/evaluating """
-    dir_outputs0 = 'outputs/'
+    dir_outputs = 'outputs/'
 
     dir_projecting = dir_training
     #dir_projecting = "D:/Doutorado/Sanduiche/research/maxent-variables/2012-2021/"
@@ -117,7 +117,7 @@ if __name__=="__main__":
         
     """
     for biome_ID in biome_IDs:
-        dir_outputs = combine_path_and_make_dir(dir_outputs0,'/biome' + str(biome_ID))
+        #dir_outputs = combine_path_and_make_dir(dir_outputs0,)
 
         subset_function = [sub_year_range, 
                             sub_year_months, constrain_BR_biomes]
@@ -139,7 +139,9 @@ if __name__=="__main__":
                                       filename, dir_outputs,
                                       fraction_data_for_sample,
                                       subset_function, subset_function_args,
-                                      niterations, cores, model_title, grab_old_trace,
+                                      niterations, cores, model_title,
+                                      '/biome' + str(biome_ID),
+                                      grab_old_trace,
                                       min_data_points_for_sample = min_data_points_for_sample)
 
         """ 
