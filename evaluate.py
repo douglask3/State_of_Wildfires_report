@@ -160,12 +160,15 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
         look in dir_outputs + model_title, and you'll see figure and tables from evaluation, 
         projection, reponse curves, jackknifes etc (not all implmenented yet)
     """
+    
+    dir_outputs = combine_path_and_make_dir(dir_outputs, model_title)
+    dir_samples = combine_path_and_make_dir(dir_outputs, '/samples/')     
+    dir_samples = combine_path_and_make_dir(dir_samples, filename_out)
+
     fig_dir = combine_path_and_make_dir(dir_outputs, '/figs/')
     trace = az.from_netcdf(trace_file)
     scalers = pd.read_csv(scale_file).values  
 
-    #plot_basic_parameter_info(trace, fig_dir)
-    #paramter_map(trace, x_filen_list, fig_dir) 
 
     common_args = {
         'y_filename': y_filen,
@@ -185,10 +188,10 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
     Obs = read_variable_from_netcdf(y_filen, dir,
                                     subset_function = subset_function, 
                                     subset_function_args = subset_function_args)
+
     
-    dir_outputs = combine_path_and_make_dir(dir_outputs, model_title)
-    dir_samples = combine_path_and_make_dir(dir_outputs, '/samples/')     
-    dir_samples = combine_path_and_make_dir(dir_samples, filename_out)
+    #plot_basic_parameter_info(trace, fig_dir)
+    #paramter_map(trace, x_filen_list, fig_dir) 
     
     common_args = {
         'trace': trace,
@@ -201,6 +204,7 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
     
     Sim = runSim_MaxEntFire(**common_args, run_name = "control", test_eg_cube = True)
 
+    common_args['Sim'] = Sim[0]
     jackknife(x_filen_list, fig_dir = fig_dir, **common_args)
     
     #set_trace()
@@ -208,7 +212,7 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
     compare_to_obs_maps(filename_out, dir_outputs, Obs, Sim, lmask, *args, **kw)
     Bayes_benchmark(filename_out, fig_dir, Sim, Obs, lmask)
     for ct in ["standard", "potential", "sensitivity", "initial"]:
-        response_curve(Sim[0], curve_type = ct, x_filen_list = x_filen_list, 
+        response_curve(curve_type = ct, x_filen_list = x_filen_list, 
                        fig_dir = fig_dir, scalers =  scalers, *args, **kw, **common_args)
     
     
