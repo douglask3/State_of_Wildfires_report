@@ -41,17 +41,31 @@ def read_variable_from_netcdf(filename, dir = '', subset_function = None,
         else:
             dataset = iris.load_cube(dir + filename[0], filename[1], callback=sort_time)
     except:
-        print("==============\nERROR!")
-        print("can't open data.")
-        print("Check directory (''" + dir + "''), filename (''" + filename + \
+        try:
+            dataset = iris.load_cube(dir + filename)
+        except:
+            print("==============\nERROR!")
+            print("can't open data.")
+            print("Check directory (''" + dir + "''), filename (''" + filename + \
               "'') or file format")
-        print("==============")
-        set_trace()
-        
+            print("==============")
+            set_trace()
+    coord_names = [coord.name() for coord in dataset.coords()]
     if dataset is None: return None
-    if time_points is not None:         
-        dataset = dataset.interpolate([('time', time_points)], iris.analysis.Linear())
-         
+    if time_points is not None:     
+        if 'time' in coord_names:
+            dataset = dataset.interpolate([('time', time_points)], iris.analysis.Linear())
+        else:   
+            def addTime(time_point):
+                time = iris.coords.DimCoord(np.array([time_point]), standard_name='time',
+                                            units = 'days since 1661-01-01 00:00:00')
+                dataset_cp = dataset.copy()
+                dataset_cp.add_aux_coord(time)
+                return dataset_cp
+
+            dataset_time = [addTime(time_point) for time_point in time_points]
+            dataset = iris.cube.CubeList(dataset_time).merge_cube()
+            dataset0 = dataset.copy()
     if units is not None: dataset.units = units
     if subset_function is not None:
         if isinstance(subset_function, list):
@@ -69,7 +83,10 @@ def read_variable_from_netcdf(filename, dir = '', subset_function = None,
     if make_flat: 
         if time_series is not None: years = dataset.coord('year').points
         
-        dataset = dataset.data.flatten()
+        try:    
+            dataset = dataset.data.flatten()
+        except:
+            set_trace()
         if time_series is not None:
             if not years[ 0] == time_series[0]:
                 dataset = np.append(np.repeat(np.nan, years[ 0]-time_series[0]), dataset)
@@ -132,8 +149,7 @@ def read_all_data_from_netcdf(y_filename, x_filename_list, CA_filename = None, a
     for i, filename in enumerate(x_filename_list):
         X[:, i]=read_variable_from_netcdf(filename, make_flat = True, time_points = time_points,
                                           *args, **kw)
-        
-
+    
     if add_1s_columne: 
         X = np.column_stack((X, np.ones(len(X)))) # add a column of ones to X 
     
@@ -147,8 +163,10 @@ def read_all_data_from_netcdf(y_filename, x_filename_list, CA_filename = None, a
         X = X[cells_we_want, :]
         
     if x_normalise01: 
-        scalers = np.array([np.min(X, axis=0), np.max(X, axis=0)])
-        
+        try:
+            scalers = np.array([np.min(X, axis=0), np.max(X, axis=0)])
+        except:
+            set_trace()
         squidge = (scalers[1,:]-scalers[0,:])/(X.shape[0])
         scalers[0,:] = scalers[0,:] - squidge
         scalers[1,:] = scalers[1,:] + squidge
