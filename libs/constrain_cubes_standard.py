@@ -148,6 +148,14 @@ def sub_year_range(cube, year_range):
         cube of just years between to years provided.
     """
     
+    try:
+        year_coord = cube.coord('year', dim_coords=True)
+    except iris.exceptions.CoordinateNotFoundError:
+        # If 'year' coordinate not found, add it
+        years = np.array([t.point.year for t in cube.coord('time').cells()])
+        year_coord = iris.coords.DimCoord(years, standard_name='year', units='years')
+        cube.add_dim_coord(year_coord, data_dim=0)
+    
     constraint = iris.Constraint(year=lambda cell: (year_range[0]-0.95) <= cell <= (year_range[1]+0.95))
     
     return cube.extract(constraint)
