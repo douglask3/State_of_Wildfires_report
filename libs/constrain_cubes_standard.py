@@ -203,7 +203,10 @@ def constrain_cube_by_cube_and_numericIDs(cube, regions, region):
     mask.data[mask.data.mask] = 0.0
     mask = mask.data == 0
 
+    if not cube.data.mask.shape == cube.data.shape:
+         cube.data.mask = np.isnan(cube.data)
     for layer in cube.data:
+        
         layer.mask[mask] = False
         layer[mask] = np.nan
     
