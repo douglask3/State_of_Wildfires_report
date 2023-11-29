@@ -58,19 +58,19 @@ if __name__=="__main__":
     """
     """ optimization """
 
-    person = 'Doug'
-    quick = True
+    person = 'Maria'
+    quick = False
 
     if person == 'Maria':
         dir_training = "D:/Doutorado/Sanduiche/research/maxent-variables/2002-2011/" 
     else:
         dir_training = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
 
-    x_filen_list=["ed.nc", "consec_dry_mean.nc", "savanna.nc", "cveg.nc", "rhumid.nc",
+    x_filen_list= ["ed.nc", "consec_dry_mean.nc", "savanna.nc", "cveg.nc", "rhumid.nc",
                   "lightn.nc", "popDens.nc", "forest.nc", "precip.nc",
-                  "crop.nc", "pas.nc", "grassland.nc", "np.nc",
-                  "tas_max.nc", "tas_mean.nc", "tca.nc", "te.nc", "mpa.nc",
-                  "totalVeg.nc", "vpd.nc", "csoil.nc", "soilM.nc"]
+                   "pasture.nc", "cropland.nc", "grassland.nc", "np.nc",
+                  "tas_max.nc", "tas_mean.nc", "te.nc", "mpa.nc",
+                  "vpd.nc", "csoil.nc", "soilM.nc", "road_density.nc"]
     
     if quick:
         model_title = 'model-test'
@@ -83,7 +83,7 @@ if __name__=="__main__":
         niterations = 100
     else:
         model_title = 'model-full'
-        biome_IDs = range(1,7)
+        biome_IDs = range(1,6)
         year_range = [2002, 2009]
         fraction_data_for_sample = 0.1
         min_data_points_for_sample = 1000 #minimum grid cells to use
@@ -94,8 +94,7 @@ if __name__=="__main__":
 
     CA_filen = "brazil_NAT.nc"
     y_filen = "Area_burned_NAT.nc"
-    
-  
+      
 
     grab_old_trace = True # set to True till you get the code running. Then set to False when you start adding in new response curves
     
