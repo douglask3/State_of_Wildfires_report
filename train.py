@@ -253,19 +253,19 @@ if __name__=="__main__":
     y_filen = "GFED4.1s_Burned_Fraction.nc"
     CA_filen = None
     
-    x_filen_list=["trees.nc","consec_dry_mean.nc",
+    x_filen_list=[ "road_density.nc","trees.nc","consec_dry_mean.nc",
                   "crop.nc", "pas.nc",  "totalVeg.nc"] 
 
     ### optimization info
     niterations = 100
-    cores = 1
+    cores = 2
     fraction_data_for_sample = 0.005
     months_of_year = [7]
 
     subset_function = sub_year_months
     subset_function_args = {'months_of_year': months_of_year}
 
-    grab_old_trace = True # set to True till you get the code running. 
+    grab_old_trace = False # set to True till you get the code running. 
                           # Then set to False when you start adding in new response curves
 
     ### output info
@@ -283,5 +283,5 @@ if __name__=="__main__":
                                         filename, dir_outputs,
                                         fraction_data_for_sample,
                                         subset_function, subset_function_args,
-                                        niterations, cores, model_title, grab_old_trace)
+                                        niterations, cores, model_title, '',  grab_old_trace)
     
