@@ -66,42 +66,48 @@ if __name__=="__main__":
     else:
         dir_training = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
 
-    x_filen_list=["road_density2.nc", "consec_dry_mean.nc", "cveg.nc", "rhumid.nc",
-                  "savanna.nc","ed.nc",
-                  "lightn.nc", "popDens.nc", "forest.nc", "precip.nc",
-                  "crop.nc", "pas.nc", "grassland.nc", "np.nc",
-                  "tas_max.nc", "tas_mean.nc", "tca.nc", "te.nc", "mpa.nc",
-                  "totalVeg.nc", "vpd.nc", "csoil.nc", "soilM.nc"]
-
 
 
     year_range = [2002, 2009]
+
+    x_filen_list= ["ed.nc", "consec_dry_mean.nc", "savanna.nc", "cveg.nc", "rhumid.nc",
+                   "lightn.nc", "popDens.nc", "forest.nc", "precip.nc",
+                   "pasture.nc", "cropland.nc", "grassland.nc", #"np.nc",
+                   "tas_max.nc", "mpa.nc", # "tca.nc",, "te.nc", "tas_mean.nc"
+                   "vpd.nc", "soilM.nc"]#, "road_density2.nc"] #, "csoil.nc"
+    
+
     if quick:
-        model_title = 'model-test'
+        model_title = 'model-test-eslr'
         biome_IDs = range(0,7)
         fraction_data_for_sample = 0.001
-        min_data_points_for_sample = 500 #minimum grid cells to use
+        min_data_points_for_sample = 1000 #minimum grid cells to use
         cores = 2
-        months_of_year = [7]
+        months_of_year = [8, 9, 10]
         niterations = 100
     else:
         model_title = 'model-full'
         biome_IDs = range(0,7)
-        
-        fraction_data_for_sample = 0.1
-        min_data_points_for_sample = 1000 #minimum grid cells to use
+        fraction_data_for_sample = 0.2
+        min_data_points_for_sample = 5000 #minimum grid cells to use
         cores = 5
        
         months_of_year = [8,9,10]
         niterations = 200
 
     CA_filen = "brazil_NAT.nc"
-    y_filen = "Area_burned_NAT.nc"
-    #y_filen = "GFED4.1s_Burned_Fraction.nc"
-    
-  
+    y_filen = "Area_burned_NAT"
 
-    grab_old_trace = False # set to True till you get the code running. Then set to False when you start adding in new response curves
+    CA_filen = "brazil_NON.nc"
+    y_filen = "Area_burned_NON"
+
+    CA_filen = None
+    y_filen = "GFED4.1s_Burned_Fraction"
+
+    model_title = model_title + y_filen
+    y_filen = y_filen + '.nc'
+
+    grab_old_trace = True # set to True till you get the code running. Then set to False when you start adding in new response curves
     
     
     """ Projection/evaluating """
@@ -109,7 +115,7 @@ if __name__=="__main__":
 
     dir_projecting = dir_training
     #dir_projecting = "D:/Doutorado/Sanduiche/research/maxent-variables/2012-2021/"
-    sample_for_plot = 20
+    sample_for_plot = 200
     
     levels = [0, 0.1, 1, 2, 5, 10, 20, 50, 100] 
     dlevels = [-20, -10, -5, -2, -1, -0.1, 0.1, 1, 2, 5, 10, 20]

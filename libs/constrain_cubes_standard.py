@@ -147,10 +147,12 @@ def sub_year_range(cube, year_range):
     Returns:
         cube of just years between to years provided.
     """
+    
     try:
         icc.add_year(cube, 'time')
     except:
         pass
+    
     constraint = iris.Constraint(year=lambda cell: (year_range[0]-0.95) <= cell <= (year_range[1]+0.95))
     
     return cube.extract(constraint)
