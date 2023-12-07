@@ -248,7 +248,7 @@ if __name__=="__main__":
         SETPUT 
     """
     ### input data paths and filenames
-    model_title = 'simple_example_model'
+    model_title = 'train_from_bottom'
     dir_training = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
     y_filen = "GFED4.1s_Burned_Fraction.nc"
     CA_filen = None
@@ -260,12 +260,13 @@ if __name__=="__main__":
     niterations = 100
     cores = 2
     fraction_data_for_sample = 0.005
+    min_data_points_for_sample = 1000
     months_of_year = [7]
 
     subset_function = sub_year_months
     subset_function_args = {'months_of_year': months_of_year}
 
-    grab_old_trace = False # set to True till you get the code running. 
+    grab_old_trace = True # set to True till you get the code running. 
                           # Then set to False when you start adding in new response curves
 
     ### output info
@@ -283,5 +284,6 @@ if __name__=="__main__":
                                         filename, dir_outputs,
                                         fraction_data_for_sample,
                                         subset_function, subset_function_args,
-                                        niterations, cores, model_title, '',  grab_old_trace)
+                                        niterations, cores, model_title, '',  grab_old_trace
+                                      min_data_points_for_sample = min_data_points_for_sample)
     
