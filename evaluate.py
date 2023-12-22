@@ -245,7 +245,7 @@ if __name__=="__main__":
     """
     ### input data paths and filenames
 
-    sample_for_plot = 200
+    sample_for_plot = 100
     levels = [0, 0.1, 1, 2, 5, 10, 20, 50, 100] 
     dlevels = [-20, -10, -5, -2, -1, -0.1, 0.1, 1, 2, 5, 10, 20]
     cmap = 'OrRd'
@@ -263,6 +263,7 @@ if __name__=="__main__":
     training_namelist = "outputs//train_from_bottom-biome-justLinPow///variables_info-ed_consec_dry_mean_savanna_cveg_rhumid_lightn_popDens_forest_precip_pasture_cropland_grassland_tas_max_mpa_vpd_soilM-frac_points_0.005-Month_7-nvariables_-frac_random_sample0.005-nvars_16-niterations_200.txt"
 #    training_namelist = "outputs//train_from_bottom-biome-all///variables_info--frac_points_0.00516-Month_7-nvariables_-frac_random_sample0.005-nvars_16-niterations_200.txt"
 
+    training_namelist = "outputs//train_from_bottom-biome-all-controls-4///variables_info--frac_points_0.00516-Month_7-nvariables_-frac_random_sample0.005-nvars_16-niterations_200.txt"
     """ 
         RUN evaluation 
     """
