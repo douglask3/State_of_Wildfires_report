@@ -13,29 +13,40 @@ def non_masked_data(cube):
     return out[~np.isnan(out)]
 
 
-def initial_curve_experiment(*args, **kw):
-    Sim1, Sim2 = standard_curve_experiment(*args, **kw)
-    return None, Sim2
+def initial_curve_experiment(Sim, Xi, col_to_keep, name, trace, sample_for_plot, 
+                              eg_cube, lmask, *args, **kw):
+    Sim1, Sim2 = standard_curve_experiment(Sim, Xi, col_to_keep, name, trace, sample_for_plot, 
+                              eg_cube, lmask, *args, **kw)
+    X = Xi.copy()
+    X[:,:] = 0.0
+    Sim1 = runSim_MaxEntFire(trace, sample_for_plot, X, eg_cube, lmask, 
+                             "/all_to_0", *args, **kw)
+    #set_trace()
+    return Sim1, Sim2
+
 
 def standard_curve_experiment(Sim, Xi, col_to_keep, name, trace, sample_for_plot, 
                               eg_cube, lmask, *args, **kw):
     X = Xi.copy()
-    other_cols = np.arange(X.shape[1]-1)  # Create an array of all columns
+    other_cols = np.arange(X.shape[1])  # Create an array of all columns
     other_cols = other_cols[other_cols != col_to_keep]  # Exclude col_to_keep
     
-    X[:, other_cols] = 0.0  
+    
+    X[:, other_cols] = 0.0 
     
     Sim2 = runSim_MaxEntFire(trace, sample_for_plot, X, eg_cube, lmask, 
-                             name + "/all_but_to_zero", *args, **kw)
+                             name + "/all_but_to_0", *args, **kw)
+
+    
     return Sim, Sim2
 
 def potential_curve_experiment(Sim, Xi, col_to_go, name, trace, sample_for_plot, 
                               eg_cube, lmask, *args, **kw):
     X = Xi.copy()
-    X[:, col_to_go] = 0.0  
+    X[:, col_to_go] = 0.0
         
     Sim2 = runSim_MaxEntFire(trace, sample_for_plot, X, eg_cube, lmask, 
-                             name + "/to_zero", *args, **kw)
+                             name + "/to_0", *args, **kw)
     return Sim, Sim2
 
 
@@ -85,11 +96,13 @@ def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask,
 
     fcol = math.floor(math.sqrt(X.shape[1]))
     frw = math.ceil(X.shape[1]/fcol)
-    #fig_time_series, ax_time_series = plt.subplots()
-
-    Ncol = 6 if map_type == 2 else 4
+    
+    Ncol = 6
+    if map_type == 0: Ncol = 3
+    if map_type == 2: Ncol = 7
+    
     def plotFun(cube, ylab = '', plot0 = 0, lvls = levels, cm = cmap, **kw2): 
-        if map_type > 0:
+        if map_type > -1:
             plot_BayesModel_maps(cube, lvls, cm, ylab = ylab,
                                  Nrows = len(x_filen_list) + 1, Ncols = Ncol, plot0 = plot0, 
                                  colourbar = True, fig = fig_map, **kw2)
@@ -107,25 +120,27 @@ def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask,
                                       eg_cube, lmask, dir_samples, grab_old_trace)
         
         plotN = Ncol * (col + 1)
-        plotFun(Sim2, varname, plotN)
+        if map_type > 0: plotFun(Sim2, varname, plotN)
         if map_type == 2:
             plotFun(Sim1, '', plotN + 2, figure_filename = figure_dir + varname + '-absolute')
 
         if Sim1 is not None:
             diff = Sim2.copy()
             diff.data = Sim2.data - Sim1.data
-            plotFun(diff, '', plotN + 2 * map_type, dlevels, dcmap, 
-                    figure_filename = figure_dir + varname + '-difference')
         else:
             diff = Sim2
-                
+        
+        diffP = diff.collapsed('time', iris.analysis.MEAN) 
+        
+        plotFun(diffP, '', plotN + 2 * map_type, dlevels, dcmap, 
+                figure_filename = figure_dir + varname + '-difference')    
+
         ax = fig_curve.add_subplot(frw,fcol, col + 1)  # Select the corresponding subplot
         
         variable_name = x_filen_list[col].replace('.nc', '')
         ax.set_title(variable_name)
         
         num_bins = 10
-        
         
         hist, bin_edges = np.histogram(X[:, col], bins=num_bins)
         bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
@@ -151,7 +166,6 @@ def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask,
                 percentile_10.append(np.nan)
                 percentile_90.append(np.nan)
         
-        
         if scalers is not None:
             bin_centers = bin_centers*(scalers[1, col] - scalers[0, col]) + scalers[0, col]
         ax.plot(bin_centers, median_values, marker='.', label='Median')
@@ -159,7 +173,7 @@ def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask,
                         label='10th-90th Percentiles')                           
     
           
-    if map_type > 0:
+    if map_type > -1:
         fig_map.set_size_inches(12, 4*X.shape[1])
         fig_map.tight_layout()
         fig_map.subplots_adjust(left=0.15)
