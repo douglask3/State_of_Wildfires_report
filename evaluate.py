@@ -60,8 +60,9 @@ def plot_BayesModel_signifcance_maps(Obs, Sim, lmask, plot_n = 1, Nrows = 3, Nco
     plt.xticks(at, 10**at)
     labels = np.array([0, 0.3, 0.5, 0.7, 0.8, 0.9, 0.95, 0.99])
     plt.yticks(10**labels, labels)
-    
+    #set_trace()
     Sim[1].data.mask[Sim[1].data == 0] = True
+    
     plot_BayesModel_maps(Sim[1], [0.0, 0.5, 0.75, 0.9, 0.95, 0.99, 1.0], 'copper', '', None, 
                          Nrows = Nrows, Ncols = Ncols, plot0 = plot_n, collapse_dim = 'time',
                          scale = 1, figure_filename = figure_filename + 'obs_liklihood')
@@ -169,7 +170,7 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
     trace = az.from_netcdf(trace_file)
     scalers = pd.read_csv(scale_file).values  
 
-
+     
     common_args = {
         'y_filename': y_filen,
         'x_filename_list': x_filen_list,
@@ -203,15 +204,13 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
         'grab_old_trace': grab_old_trace}
     
     Sim = runSim_MaxEntFire(**common_args, run_name = "control", test_eg_cube = True)
-
-    common_args['Sim'] = Sim[0]
-    jackknife(x_filen_list, fig_dir = fig_dir, **common_args)
     
-    #set_trace()
+    common_args['Sim'] = Sim[0]
+    #jackknife(x_filen_list, fig_dir = fig_dir, **common_args)
 
     compare_to_obs_maps(filename_out, dir_outputs, Obs, Sim, lmask, *args, **kw)
     Bayes_benchmark(filename_out, fig_dir, Sim, Obs, lmask)
-    for ct in ["standard", "potential", "sensitivity", "initial"]:
+    for ct in ["initial", "standard", "potential", "sensitivity"]:
         response_curve(curve_type = ct, x_filen_list = x_filen_list, 
                        fig_dir = fig_dir, scalers =  scalers, *args, **kw, **common_args)
     
@@ -254,6 +253,15 @@ if __name__=="__main__":
     dir_projecting = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
     training_namelist = "outputs//simple_example_model/variables_info-trees_consec_dry_mean_crop_pas_humid_totalVeg-frac_points_0.1-Month_7.txt"
     training_namelist = "outputs//simple_example_model/variables_info-trees_consec_dry_mean_crop_pas_totalVeg-frac_points_0.005-Month_7-nvariables_-frac_random_sample0.005-nvars_5-niterations_100.txt"
+
+    
+    training_namelist = "outputs/train_from_bottom-biome/variables_info-road_density_trees_consec_dry_mean_crop_pas_totalVeg-frac_points_0.005-Month_7-nvariables_-frac_random_sample0.005-nvars_6-niterations_200.txt"
+
+    training_namelist = "outputs/train_from_bottom-biome-nojules//variables_info-road_density_trees_consec_dry_mean_crop_pas_savanna_grassland-frac_points_0.005-Month_7-nvariables_-frac_random_sample0.005-nvars_7-niterations_200.txt"
+
+    training_namelist = "outputs//train_from_bottom-biome-justLin///variables_info-ed_consec_dry_mean_savanna_cveg_rhumid_lightn_popDens_forest_precip_pasture_cropland_grassland_tas_max_mpa_vpd_soilM-frac_points_0.005-Month_7-nvariables_-frac_random_sample0.005-nvars_16-niterations_200.txt"
+    training_namelist = "outputs//train_from_bottom-biome-justLinPow///variables_info-ed_consec_dry_mean_savanna_cveg_rhumid_lightn_popDens_forest_precip_pasture_cropland_grassland_tas_max_mpa_vpd_soilM-frac_points_0.005-Month_7-nvariables_-frac_random_sample0.005-nvars_16-niterations_200.txt"
+#    training_namelist = "outputs//train_from_bottom-biome-all///variables_info--frac_points_0.00516-Month_7-nvariables_-frac_random_sample0.005-nvars_16-niterations_200.txt"
 
     """ 
         RUN evaluation 

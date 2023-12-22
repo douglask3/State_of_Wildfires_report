@@ -248,13 +248,19 @@ if __name__=="__main__":
         SETPUT 
     """
     ### input data paths and filenames
-    model_title = 'train_from_bottom'
+    model_title = 'train_from_bottom-biome-all'
     dir_training = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
     y_filen = "GFED4.1s_Burned_Fraction.nc"
     CA_filen = None
     
-    x_filen_list=[ "road_density.nc","trees.nc","consec_dry_mean.nc",
-                  "crop.nc", "pas.nc",  "totalVeg.nc"] 
+    x_filen_list=["road_density.nc","trees.nc","consec_dry_mean.nc",
+                  "crop.nc", "pas.nc",  "savanna.nc", "grassland.nc"] 
+
+    x_filen_list= ["ed.nc", "consec_dry_mean.nc", "savanna.nc", "cveg.nc", "rhumid.nc",
+                   "lightn.nc", "popDens.nc", "forest.nc", "precip.nc",
+                   "pasture.nc", "cropland.nc", "grassland.nc", #"np.nc",
+                   "tas_max.nc", "mpa.nc", # "tca.nc",, "te.nc", "tas_mean.nc"
+                   "vpd.nc", "soilM.nc"]
 
     ### optimization info
     niterations = 100
@@ -262,9 +268,14 @@ if __name__=="__main__":
     fraction_data_for_sample = 0.005
     min_data_points_for_sample = 1000
     months_of_year = [7]
+    year_range = [2002, 2009]
+    biome_ID = 0
 
-    subset_function = sub_year_months
-    subset_function_args = {'months_of_year': months_of_year}
+    subset_function = [sub_year_range, 
+                       sub_year_months, constrain_BR_biomes]
+    subset_function_args = [{'year_range': year_range},
+                            {'months_of_year': months_of_year},
+                            {'biome_ID': [biome_ID]}]
 
     grab_old_trace = True # set to True till you get the code running. 
                           # Then set to False when you start adding in new response curves
@@ -272,9 +283,9 @@ if __name__=="__main__":
     ### output info
     dir_outputs = 'outputs/'
 
-    filename = '_'.join([file[:-3] for file in x_filen_list]) + \
-              '-frac_points_' + str(fraction_data_for_sample) + \
+    filename = '-frac_points_' + str(fraction_data_for_sample) + str(len(x_filen_list)) + \
               '-Month_' +  '_'.join([str(mn) for mn in months_of_year])
+#'_'.join([file[:-3] for file in x_filen_list]) + \
     
     """ 
         RUN optimization 
@@ -284,6 +295,6 @@ if __name__=="__main__":
                                         filename, dir_outputs,
                                         fraction_data_for_sample,
                                         subset_function, subset_function_args,
-                                        niterations, cores, model_title, '',  grab_old_trace
-                                      min_data_points_for_sample = min_data_points_for_sample)
+                                        niterations, cores, model_title, '',  grab_old_trace,
+                                        min_data_points_for_sample = min_data_points_for_sample)
     
