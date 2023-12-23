@@ -253,7 +253,6 @@ if __name__=="__main__":
     dcmap = 'RdBu_r'
     dir_projecting = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
     training_namelist = "outputs//simple_example_model/variables_info-trees_consec_dry_mean_crop_pas_humid_totalVeg-frac_points_0.1-Month_7.txt"
-    training_namelist = "outputs//simple_example_model/variables_info-trees_consec_dry_mean_crop_pas_totalVeg-frac_points_0.005-Month_7-nvariables_-frac_random_sample0.005-nvars_5-niterations_100.txt"
 
     """ 
         RUN evaluation 
