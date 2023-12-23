@@ -69,7 +69,8 @@ def sensitivity_curve_experiment(Sim, Xi, col, name, trace, sample_for_plot,
 
 def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask, 
                    dir_samples, fig_dir, grab_old_trace, x_filen_list, 
-                   levels, cmap, dlevels, dcmap, scalers = None, *args, **kw):  
+                   levels, cmap, dlevels, dcmap, scalers = None, 
+                   response_grouping = None, *args, **kw):  
 
     figure_filename = fig_dir + curve_type + '-response'
     figure_dir =  combine_path_and_make_dir(figure_filename + '-maps/') 
@@ -107,7 +108,9 @@ def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask,
                                  Nrows = len(x_filen_list) + 1, Ncols = Ncol, plot0 = plot0, 
                                  colourbar = True, fig = fig_map, **kw2)
 
-    #def dplotFun(cube, *args, **kw): plotFun(cube, dlevels, dcmap, *args, **kw)
+    ## Maria - adaptcode here to do response variable groups rather than each variable in turn
+    if response_grouping is not None:
+        set_trace()
     
     plotFun(Sim, 'Control')
     for col in range(X.shape[1]-1):
@@ -117,7 +120,7 @@ def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask,
             varname = varname[:-3]
         makeDir(varname)
         Sim1, Sim2 = response_FUN(Sim, X, col, varname, trace, sample_for_plot, 
-                                      eg_cube, lmask, dir_samples, grab_old_trace)
+                                  eg_cube, lmask, dir_samples, grab_old_trace)
         
         plotN = Ncol * (col + 1)
         if map_type > 0: plotFun(Sim2, varname, plotN)

@@ -109,7 +109,6 @@ if __name__=="__main__":
 
     grab_old_trace = True # set to True till you get the code running. Then set to False when you start adding in new response curves
     
-    
     """ Projection/evaluating """
     dir_outputs = 'outputs/'
 
@@ -121,6 +120,10 @@ if __name__=="__main__":
     dlevels = [-20, -10, -5, -2, -1, -0.1, 0.1, 1, 2, 5, 10, 20]
     cmap = 'OrRd'
     dcmap = 'RdBu_r'
+
+    #Maria set groupings here
+    response_grouping= [["ed.nc", "consec_dry_mean.nc", "savanna.nc", "cveg.nc", "rhumid.nc"],
+                        ["lightn.nc", "popDens.nc", "forest.nc", "precip.nc"]]
      
     """ 
         RUN optimization 
@@ -158,5 +161,6 @@ if __name__=="__main__":
                                             grab_old_trace = grab_old_trace,
                                             sample_for_plot = sample_for_plot,
                                             levels = levels, cmap = cmap,
-                                            dlevels = dlevels, dcmap = dcmap)
+                                            dlevels = dlevels, dcmap = dcmap
+                                            response_grouping = response_grouping)
         
