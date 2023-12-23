@@ -18,10 +18,16 @@ from pdb import set_trace
 
 def plot_BayesModel_maps(Sim, levels, cmap, ylab = '', Obs = None, 
                          Nrows = 1, Ncols = 2, plot0 = 0, collapse_dim = 'realization',
-                         scale = 100*12, figure_filename = None,
+                         scale = 100*12, figure_filename = None, set_traceT = False,
                          *args, **kw):
-    
-    Sim = Sim.collapsed(collapse_dim, iris.analysis.PERCENTILE, percent=[10, 90])
+    try:
+        if collapse_dim != 'time': Sim = Sim.collapsed('time', iris.analysis.MEAN) 
+    except:
+        pass
+    try:
+        Sim = Sim.collapsed(collapse_dim, iris.analysis.PERCENTILE, percent=[10, 90])
+    except:
+        set_trace()
     
     def plot_map(cube, plot_name, plot_n, **kw2):
         plot_annual_mean(cube, levels, cmap, plot_name = plot_name, scale = scale, 
