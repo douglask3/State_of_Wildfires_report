@@ -127,25 +127,17 @@ if __name__=="__main__":
         
     """
     for biome_ID in biome_IDs:
-        #dir_outputs = combine_path_and_make_dir(dir_outputs0,)
-
         subset_function = [sub_year_range, 
                             sub_year_months, constrain_BR_biomes]
         subset_function_args = [{'year_range': year_range},
                             {'months_of_year': months_of_year},
                             {'biome_ID': [biome_ID]}]
 
-        #subset_function = sub_year_months
-        #subset_function_args = {'months_of_year': months_of_year}
-
         
         filename = '_' +  str(len(x_filen_list)) + \
                 '-frac_points_' + str(fraction_data_for_sample) + \
                 '-Month_' +  '_'.join([str(mn) for mn in months_of_year]) + \
                f'-Biome_{biome_ID}'
-             
-        #filename = '_'.join([file[:-3] for file in x_filen_list])
-    
 
         #### Optimize
         trace, scalers, variable_info_file = \
