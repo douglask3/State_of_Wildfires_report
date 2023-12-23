@@ -63,39 +63,6 @@ class MaxEntFire(object):
     def controls(self, Xi):
         def normalize(vector):
             return vector / (self.numPCK.sum(vector**2)**(0.5))
-
-# Function to project points onto a plane perpendicular to the line defined by the gradient
-
-        def get_orthogonal_vector(gradient):
-            # Define a set of basis vectors
-            basis = self.numPCK.eye(self.nvars)
-            set_trace()
-            # Compute the projection of the gradient onto each basis vector
-            projections = [self.numPCK.dot(gradient, basis[i]) for i in range(self.nvars)]
-            # Subtract the projections to get an orthogonal vector
-            orthogonal_vector = gradient - sum(proj * basis[i] for i, proj in enumerate(projections))
-            orthogonal_vector /= normalize(orthogonal_vector)
-        
-            return orthogonal_vector
-        
-        def reduction_onto_plane(point, gradient_unit):
-            #gradient_unit = normalize(gradient)
-            # Generating a random vector orthogonal to the gradient vector
-            
-            orthogonal_vector = get_orthogonal_vector(gradient_unit)
-    
-            # Projecting point onto the plane perpendicular to the line
-            reduction = self.numPCK.dot(point, orthogonal_vector) * orthogonal_vector
-            
-            return reduction
-
-        def compute_dot_product(matrix, vector):
-            dot_products = []
-            for i in range(self.npoints):
-                dot = self.numPCK.sum(matrix[i,:] * vector)
-                dot_products.append(dot)
-            return self.numPCK.stack(dot_products)
-
         try:
             self.ncontrols = self.control_betas.shape.eval()[1]
             self.nvars = self.control_betas.shape.eval()[0]
@@ -105,19 +72,11 @@ class MaxEntFire(object):
 
         def make_control(X, params):
             params = 2.0 * params - 1.0
-            params = normalize(params)#/self.numPCK.sum(params**2)**(0.5)
-            #control = self.numPCK.sum(X * params, axis = 1)
+            params = normalize(params)
             
             control = self.numPCK.dot(X, params)
             X = X - (self.numPCK.dot(X, params)[:, None] * params)
             
-            #try:
-            #    reduction = self.numPCK.stack([reduction_onto_plane(point, params) for point in X])
-            #    
-            #except:
-            #    reduction = pytensor.map(lambda point: reduction_onto_plane(point, params), X)[0]
-                #set_trace()
-            #set_trace()
             return control, X
 
         X = Xi.copy()
@@ -126,10 +85,9 @@ class MaxEntFire(object):
             control, X = make_control(X, self.control_betas[:,i])
             controls.append(control)
             
-        
         controls = self.numPCK.transpose(self.numPCK.stack(controls))
         
-        return controls #self.numPCK.dot(X, self.control_betas) 
+        return controls
 
     def burnt_area(self, X):
         """calculated predicted burnt area based on indepedant variables. 
