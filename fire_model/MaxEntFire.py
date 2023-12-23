@@ -17,27 +17,6 @@ def select_key_or_defualt(dirc, key, default):
     else:
         return default
 
-from sklearn.decomposition import PCA
-
-class PCATransform(tt.Op):
-    # Initialize the PCA transform with desired components
-    def __init__(self, n_components):
-        self.n_components = n_components
-
-    # Perform PCA transformation
-    def perform(self, node, inputs, outputs):
-        data = inputs[0]
-        pca = PCA(n_components=self.n_components)
-        transformed_data = pca.fit_transform(data)
-        outputs[0][0] = transformed_data
-
-    def grad(self, inputs, gradients):
-        return [gradients[0]]
-
-# Define a function to create a Theano variable representing the PCA transformation
-def pca_transform(data, n_components):
-    return tt.dot(data - tt.mean(data, axis=0), PCATransform(n_components)())
-
 
 class MaxEntFire(object):
     """
