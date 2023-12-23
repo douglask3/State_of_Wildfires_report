@@ -250,7 +250,7 @@ if __name__=="__main__":
         SETPUT 
     """
     ### input data paths and filenames
-    model_title = 'train_from_bottom-biome-all-controls-4-pca'
+    model_title = 'train_from_bottom-biome-all-controls-4-pca-pm1'
     dir_training = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
     y_filen = "GFED4.1s_Burned_Fraction.nc"
     CA_filen = None
