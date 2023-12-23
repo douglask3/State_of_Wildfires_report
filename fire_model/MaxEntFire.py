@@ -80,16 +80,49 @@ class MaxEntFire(object):
         #Maria: add your response curve parameter selection thing
         
     def controls(self, Xi):
+        def normalize(vector):
+            return vector / (self.numPCK.sum(vector**2)**(0.5))
+
+# Function to project points onto a plane perpendicular to the line defined by the gradient
+        def project_onto_plane(point, gradient_unit):
+            #gradient_unit = normalize(gradient)
+            # Generating a random vector orthogonal to the gradient vector
+            v = np.random.randn(self.nvars)
+            orthogonal_vector = v - self.numPCK.dot(v, gradient_unit) * gradient_unit
+            orthogonal_vector = normalize(orthogonal_vector)
+    
+            # Projecting point onto the plane perpendicular to the line
+            projection = point - self.numPCK.dot(point, orthogonal_vector) * orthogonal_vector
+            return projection
+
+        def compute_dot_product(matrix, vector):
+            dot_products = []
+            for row in matrix:
+                dot = 0
+                for i in range(self.nvars):
+                    dot += row[i] * vector[i]
+                dot_products.append(dot)
+            return np.array(dot_products)
+
         try:
             self.ncontrols = self.control_betas.shape.eval()[1]
+            self.nvars = self.control_betas.shape.eval()[0]
         except:
             self.ncontrols = self.control_betas.shape[1]
+            self.nvars = self.control_betas.shape[0]
 
         def make_control(X, params):
+            params = 2.0 * params - 1.0
+            params = normalize(params)#/self.numPCK.sum(params**2)**(0.5)
+            control = self.numPCK.sum(X * params, axis = 1)
+            #control = compute_dot_product(X, params)
             
-            params = params/self.numPCK.sum(params**2)**(0.5)
-            control = self.numPCK.dot(X, params)
-            X = X - X * params
+            try:
+                X = self.numPCK.stack([project_onto_plane(point, params) for point in X])
+            except:
+                X = pytensor.map(lambda point: project_onto_plane(point, params), X)[0]
+                #set_trace()
+            
             return control, X
 
         X = Xi.copy()
@@ -97,7 +130,10 @@ class MaxEntFire(object):
         for i in range(self.ncontrols):
             control, X = make_control(X, self.control_betas[:,i])
             controls.append(control)
+            
+        
         controls = self.numPCK.transpose(self.numPCK.stack(controls))
+        
         return controls #self.numPCK.dot(X, self.control_betas) 
 
     def burnt_area(self, X):
@@ -111,6 +147,7 @@ class MaxEntFire(object):
             numpy or tensor (depending on 'inference' option) 1 d array of length equal to 
 	    no. rows in X of burnt area/fire probabilities.
         """
+        
         self.X_controls = self.controls(X)
         
         y = self.numPCK.dot(self.X_controls, self.lin_betas)
@@ -124,7 +161,7 @@ class MaxEntFire(object):
         y = add_response_curve(self.pow_betas, self.power_response_curve, y)
         y = add_response_curve(self.x2s_betas, self.X2_response_curve   , y)
         y = add_response_curve(self.comb_betas, self.linear_combined_response_curve , y)
-        #set_trace()
+         
         # y = add_response_curve(paramers, function, y)
         # Maria: add yours here 
 
