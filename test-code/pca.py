@@ -1,43 +1,40 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 
-# Function to normalize a vector
-def normalize(vector):
-    return vector / np.linalg.norm(vector)
+# Define the 2-dimensional vector 'v'
+v = np.array([2, 1])  # Replace this with your 2-dimensional vector
 
-# Function to project points onto a plane perpendicular to the line defined by the gradient
-def project_onto_plane(point, gradient):
-    gradient_unit = normalize(gradient)
-    # Generating a random vector orthogonal to the gradient vector
-    v = np.random.randn(len(gradient))
-    orthogonal_vector = v - np.dot(v, gradient_unit) * gradient_unit
-    orthogonal_vector = normalize(orthogonal_vector)
-    
-    # Projecting point onto the plane perpendicular to the line
-    projection = point - np.dot(point, orthogonal_vector) * orthogonal_vector
-    return projection
+# Define the points as a NumPy array
+points = np.array([
+    [1, 2],
+    [3, 2],
+    [5, 4],
+    [7, 5]
+])  # Replace this with your points
 
-# Generating random scatter points in 3D
-np.random.seed(42)
-scatter_points = np.random.randn(100, 3)  # 100 random 3D points
-gradient_vector = np.array([1, 2, 1])     # Example gradient vector
+# Calculate the projection onto the line perpendicular to 'v'
+projection = points - np.dot(points, v)[:, np.newaxis] * v / np.dot(v, v)
 
-# Projecting scatter points onto the plane perpendicular to the line defined by the gradient vector
-collapsed_points = np.array([project_onto_plane(point, gradient_vector) for point in scatter_points])
+# Create a plot
+plt.figure(figsize=(6, 6))
 
-# Plotting the original scatter points in 3D
-fig = plt.figure()
-ax = fig.add_subplot(111, projection='3d')
+# Plot original points
+plt.scatter(points[:, 0], points[:, 1], color='blue', label='Original Points')
 
-ax.scatter(scatter_points[:, 0], scatter_points[:, 1], scatter_points[:, 2], c='blue', label='Original Points')
-ax.set_xlabel('X')
-ax.set_ylabel('Y')
-ax.set_zlabel('Z')
+# Plot the projected points onto the line perpendicular to 'v'
+plt.scatter(projection[:, 0], projection[:, 1], color='red', label='Projected Points')
 
-# Plotting the collapsed points onto the plane perpendicular to the line
-ax.scatter(collapsed_points[:, 0], collapsed_points[:, 1], collapsed_points[:, 2], c='red', label='Collapsed Points')
-ax.legend()
-plt.title('Scatter points and their projections onto the plane perpendicular to the gradient vector')
+# Plot the vector 'v'
+plt.quiver(0, 0, v[0], v[1], angles='xy', scale_units='xy', scale=1, color='green', label='Vector v')
+
+# Set plot labels and legend
+plt.xlabel('X-axis')
+plt.ylabel('Y-axis')
+plt.axhline(0, color='black',linewidth=0.5)
+plt.axvline(0, color='black',linewidth=0.5)
+plt.legend()
+plt.grid(visible=True)
+
+plt.title('Projection of Points onto Line Perpendicular to Vector')
 plt.show()
 

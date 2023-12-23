@@ -86,7 +86,7 @@ class MaxEntFire(object):
     
             # Projecting point onto the plane perpendicular to the line
             reduction = self.numPCK.dot(point, orthogonal_vector) * orthogonal_vector
-            set_trace()
+            
             return reduction
 
         def compute_dot_product(matrix, vector):
@@ -108,15 +108,16 @@ class MaxEntFire(object):
             params = normalize(params)#/self.numPCK.sum(params**2)**(0.5)
             #control = self.numPCK.sum(X * params, axis = 1)
             
-            control = compute_dot_product(X, params)
-            #set_trace()
-            try:
-                reduction = self.numPCK.stack([reduction_onto_plane(point, params) for point in X])
-                
-            except:
-                reduction = pytensor.map(lambda point: reduction_onto_plane(point, params), X)[0]
+            control = self.numPCK.dot(X, params)
+            X = X - (self.numPCK.dot(X, params)[:, None] * params)
+            
+            #try:
+            #    reduction = self.numPCK.stack([reduction_onto_plane(point, params) for point in X])
+            #    
+            #except:
+            #    reduction = pytensor.map(lambda point: reduction_onto_plane(point, params), X)[0]
                 #set_trace()
-            set_trace()
+            #set_trace()
             return control, X
 
         X = Xi.copy()
