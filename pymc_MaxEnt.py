@@ -59,7 +59,7 @@ if __name__=="__main__":
     """ optimization """
 
     person = 'Doug'
-    quick = True
+    quick = False
 
     if person == 'Maria':
         dir_training = "D:/Doutorado/Sanduiche/research/maxent-variables/2002-2011/" 
