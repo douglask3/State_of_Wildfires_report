@@ -56,6 +56,8 @@ class MaxEntFire(object):
         self.comb_betas = select_key_or_defualt(params, 'comb_betas', None)   
         self.comb_X0 = select_key_or_defualt(params, 'comb_X0', None) 
         self.comb_p = select_key_or_defualt(params, 'comb_p', None)
+
+        
         #Maria: add your response curve parameter selection thing
         
     def controls(self, Xi):
@@ -63,25 +65,36 @@ class MaxEntFire(object):
             return vector / (self.numPCK.sum(vector**2)**(0.5))
 
 # Function to project points onto a plane perpendicular to the line defined by the gradient
-        def project_onto_plane(point, gradient_unit):
+
+        def get_orthogonal_vector(gradient):
+            # Define a set of basis vectors
+            basis = self.numPCK.eye(self.nvars)
+            set_trace()
+            # Compute the projection of the gradient onto each basis vector
+            projections = [self.numPCK.dot(gradient, basis[i]) for i in range(self.nvars)]
+            # Subtract the projections to get an orthogonal vector
+            orthogonal_vector = gradient - sum(proj * basis[i] for i, proj in enumerate(projections))
+            orthogonal_vector /= normalize(orthogonal_vector)
+        
+            return orthogonal_vector
+        
+        def reduction_onto_plane(point, gradient_unit):
             #gradient_unit = normalize(gradient)
             # Generating a random vector orthogonal to the gradient vector
-            v = np.random.randn(self.nvars)
-            orthogonal_vector = v - self.numPCK.dot(v, gradient_unit) * gradient_unit
-            orthogonal_vector = normalize(orthogonal_vector)
+            
+            orthogonal_vector = get_orthogonal_vector(gradient_unit)
     
             # Projecting point onto the plane perpendicular to the line
-            projection = point - self.numPCK.dot(point, orthogonal_vector) * orthogonal_vector
-            return projection
+            reduction = self.numPCK.dot(point, orthogonal_vector) * orthogonal_vector
+            set_trace()
+            return reduction
 
         def compute_dot_product(matrix, vector):
             dot_products = []
-            for row in matrix:
-                dot = 0
-                for i in range(self.nvars):
-                    dot += row[i] * vector[i]
+            for i in range(self.npoints):
+                dot = self.numPCK.sum(matrix[i,:] * vector)
                 dot_products.append(dot)
-            return np.array(dot_products)
+            return self.numPCK.stack(dot_products)
 
         try:
             self.ncontrols = self.control_betas.shape.eval()[1]
@@ -93,15 +106,17 @@ class MaxEntFire(object):
         def make_control(X, params):
             params = 2.0 * params - 1.0
             params = normalize(params)#/self.numPCK.sum(params**2)**(0.5)
-            control = self.numPCK.sum(X * params, axis = 1)
-            #control = compute_dot_product(X, params)
+            #control = self.numPCK.sum(X * params, axis = 1)
             
+            control = compute_dot_product(X, params)
+            #set_trace()
             try:
-                X = self.numPCK.stack([project_onto_plane(point, params) for point in X])
+                reduction = self.numPCK.stack([reduction_onto_plane(point, params) for point in X])
+                
             except:
-                X = pytensor.map(lambda point: project_onto_plane(point, params), X)[0]
+                reduction = pytensor.map(lambda point: reduction_onto_plane(point, params), X)[0]
                 #set_trace()
-            
+            set_trace()
             return control, X
 
         X = Xi.copy()
@@ -126,7 +141,7 @@ class MaxEntFire(object):
             numpy or tensor (depending on 'inference' option) 1 d array of length equal to 
 	    no. rows in X of burnt area/fire probabilities.
         """
-        
+        self.npoints = X.shape[0]
         self.X_controls = self.controls(X)
         
         y = self.numPCK.dot(self.X_controls, self.lin_betas)
