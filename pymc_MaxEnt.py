@@ -59,7 +59,7 @@ if __name__=="__main__":
     """ optimization """
 
     person = 'Maria'
-    quick = False
+    quick = True
 
     if person == 'Maria':
         dir_training = "D:/Doutorado/Sanduiche/research/maxent-variables/2002-2011/" 
@@ -73,9 +73,9 @@ if __name__=="__main__":
                   "vpd.nc", "csoil.nc", "soilM.nc", "road_density.nc"]
     
     if quick:
-        model_title = 'model-test'
+        model_title = 'model-test-7'
         year_range = [2003, 2004]
-        biome_IDs = range(5,6)
+        biome_IDs = range(4,5)
         fraction_data_for_sample = 0.001
         min_data_points_for_sample = 10 #minimum grid cells to use
         cores = 2
