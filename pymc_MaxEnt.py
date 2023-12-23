@@ -72,13 +72,13 @@ if __name__=="__main__":
 
     x_filen_list= ["ed.nc", "consec_dry_mean.nc", "savanna.nc", "cveg.nc", "rhumid.nc",
                    "lightn.nc", "popDens.nc", "forest.nc", "precip.nc",
-                   "pasture.nc", "cropland.nc", "grassland.nc", #"np.nc",
-                   "tas_max.nc", "mpa.nc", # "tca.nc",, "te.nc", "tas_mean.nc"
-                   "vpd.nc", "soilM.nc"]#, "road_density2.nc"] #, "csoil.nc"
+                   "pasture.nc", "cropland.nc", "grassland.nc", "np.nc",
+                   "tas_max.nc", "mpa.nc", "tca.nc", "tas_mean.nc", "csoil.nc",
+                   "vpd.nc", "soilM.nc", "road_density2.nc"] 
     
 
     if quick:
-        model_title = 'model-test-eslr'
+        model_title = 'model-test-eslr-pca'
         biome_IDs = range(0,7)
         fraction_data_for_sample = 0.001
         min_data_points_for_sample = 1000 #minimum grid cells to use
@@ -86,7 +86,7 @@ if __name__=="__main__":
         months_of_year = [8, 9, 10]
         niterations = 100
     else:
-        model_title = 'model-full'
+        model_title = 'model-full-pca'
         biome_IDs = range(0,7)
         fraction_data_for_sample = 0.2
         min_data_points_for_sample = 5000 #minimum grid cells to use
