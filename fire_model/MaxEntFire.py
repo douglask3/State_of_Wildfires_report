@@ -17,6 +17,7 @@ def select_key_or_defualt(dirc, key, default):
     else:
         return default
 
+
 class MaxEntFire(object):
     """
     Maximum Entropy fire model which takes independent variables and coefficients. 
@@ -45,6 +46,7 @@ class MaxEntFire(object):
        
         
         self.lin_betas = params['lin_betas']
+        self.control_betas = params['control_betas']
         self.lin_beta_constant = select_key_or_defualt(params, 'lin_beta_constant', 0.0)
         self.pow_betas = select_key_or_defualt(params, 'pow_betas', None)
         self.pow_power = select_key_or_defualt(params, 'pow_power', None)
@@ -54,8 +56,38 @@ class MaxEntFire(object):
         self.comb_betas = select_key_or_defualt(params, 'comb_betas', None)   
         self.comb_X0 = select_key_or_defualt(params, 'comb_X0', None) 
         self.comb_p = select_key_or_defualt(params, 'comb_p', None)
+
+        
         #Maria: add your response curve parameter selection thing
         
+    def controls(self, Xi):
+        def normalize(vector):
+            return vector / (self.numPCK.sum(vector**2)**(0.5))
+        try:
+            self.ncontrols = self.control_betas.shape.eval()[1]
+            self.nvars = self.control_betas.shape.eval()[0]
+        except:
+            self.ncontrols = self.control_betas.shape[1]
+            self.nvars = self.control_betas.shape[0]
+
+        def make_control(X, params):
+            params = 2.0 * params - 1.0
+            params = normalize(params)
+            
+            control = self.numPCK.dot(X, params)
+            X = X - (self.numPCK.dot(X, params)[:, None] * params)
+            
+            return control, X
+
+        X = Xi.copy()
+        controls = []
+        for i in range(self.ncontrols):
+            control, X = make_control(X, self.control_betas[:,i])
+            controls.append(control)
+            
+        controls = self.numPCK.transpose(self.numPCK.stack(controls))
+        
+        return controls
 
     def burnt_area(self, X):
         """calculated predicted burnt area based on indepedant variables. 
@@ -68,19 +100,21 @@ class MaxEntFire(object):
             numpy or tensor (depending on 'inference' option) 1 d array of length equal to 
 	    no. rows in X of burnt area/fire probabilities.
         """
+        self.npoints = X.shape[0]
+        self.X_controls = self.controls(X)
         
-        y = self.numPCK.dot(X, self.lin_betas)
-
+        y = self.numPCK.dot(self.X_controls, self.lin_betas)
+        
         def add_response_curve(Rbetas, FUN, y):
             if Rbetas is not None:
-                XR = FUN(X)
+                XR = FUN(self.X_controls)
                 y = y + self.numPCK.dot(XR, Rbetas) 
             return(y)
 
         y = add_response_curve(self.pow_betas, self.power_response_curve, y)
         y = add_response_curve(self.x2s_betas, self.X2_response_curve   , y)
         y = add_response_curve(self.comb_betas, self.linear_combined_response_curve , y)
-        
+         
         # y = add_response_curve(paramers, function, y)
         # Maria: add yours here 
 
