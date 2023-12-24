@@ -127,7 +127,8 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
                          dir = '', 
                          dir_outputs = '', model_title = '', filename_out = '',
                          subset_function = None, subset_function_args = None,
-                         sample_for_plot = 1, grab_old_trace = False,
+                         sample_for_plot = 1, grab_old_trace = False, 
+                         response_grouping = None,
                          *args, **kw):
 
     """ Runs prediction and evalutation of the sampled model based on previously run trace.
@@ -213,6 +214,11 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
     for ct in ["initial", "standard", "potential", "sensitivity"]:
         response_curve(curve_type = ct, x_filen_list = x_filen_list, 
                        fig_dir = fig_dir, scalers =  scalers, *args, **kw, **common_args)
+        if response_grouping is not None:
+            response_curve(curve_type = ct, x_filen_list = x_filen_list, 
+                           response_grouping = response_grouping,
+                           fig_dir = fig_dir, scalers =  scalers, 
+                           *args, **kw, **common_args)
     
     
 
@@ -260,6 +266,7 @@ if __name__=="__main__":
                                         grab_old_trace = True,
                                         sample_for_plot = sample_for_plot,
                                         levels = levels, cmap = cmap,
-                                        dlevels = dlevels, dcmap = dcmap)
+                                        dlevels = dlevels, dcmap = dcmap,
+                                       response_grouping = [["pasture.nc", "cropland.nc"]])
     
     
