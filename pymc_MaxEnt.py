@@ -59,7 +59,7 @@ if __name__=="__main__":
     """ optimization """
 
     person = 'Maria'
-    quick = False
+    quick = True
 
     if person == 'Maria':
         dir_training = "D:/Doutorado/Sanduiche/research/maxent-variables/2002-2011/" 
@@ -74,13 +74,13 @@ if __name__=="__main__":
                    "lightn.nc", "popDens.nc", "forest.nc", "precip.nc",
                    "pasture.nc", "cropland.nc", "grassland.nc", "np.nc",
                    "tas_max.nc", "mpa.nc", "tca.nc", "tas_mean.nc", "csoil.nc",
-                   "vpd.nc", "soilM.nc", "road_density2.nc"] 
+                   "vpd.nc", "soilM.nc", "road_density.nc"] 
     
 
     if quick:
 
         model_title = 'model-test-eslr-pca'
-        biome_IDs = range(0,7)
+        biome_IDs = range(1,2)
 
         fraction_data_for_sample = 0.001
         min_data_points_for_sample = 1000 #minimum grid cells to use
@@ -97,14 +97,14 @@ if __name__=="__main__":
         months_of_year = [8,9,10]
         niterations = 200
 
-    CA_filen = "brazil_NAT.nc"
-    y_filen = "Area_burned_NAT"
+    #CA_filen = "brazil_NAT.nc"
+    #y_filen = "Area_burned_NAT"
 
     CA_filen = "brazil_NON.nc"
     y_filen = "Area_burned_NON"
 
-    CA_filen = None
-    y_filen = "GFED4.1s_Burned_Fraction"
+    #CA_filen = None
+    #y_filen = "GFED4.1s_Burned_Fraction"
 
     model_title = model_title + y_filen
     y_filen = y_filen + '.nc'
@@ -163,6 +163,6 @@ if __name__=="__main__":
                                             grab_old_trace = grab_old_trace,
                                             sample_for_plot = sample_for_plot,
                                             levels = levels, cmap = cmap,
-                                            dlevels = dlevels, dcmap = dcmap
+                                            dlevels = dlevels, dcmap = dcmap,
                                             response_grouping = response_grouping)
         
