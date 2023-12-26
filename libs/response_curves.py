@@ -66,16 +66,17 @@ def sensitivity_curve_experiment(Sim, Xi, col, name, trace, sample_for_plot,
                              name + "/add_" + str(dx/2.0), *args, **kw)
     return Sim1, Sim2
 
+                                 
 
 def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask, 
                    dir_samples, fig_dir, grab_old_trace, x_filen_list, 
-                   levels, cmap, dlevels, dcmap, scalers = None, 
-                   response_grouping = None, *args, **kw):  
+                   levels, cmap, dlevels, dcmap, scalers=None, 
+                   response_grouping=None, *args, **kw):  
 
     figure_filename = fig_dir + curve_type + '-response'
-    figure_dir =  combine_path_and_make_dir(figure_filename + '-maps/') 
+    figure_dir = combine_path_and_make_dir(figure_filename + '-maps/') 
     
-    print("Plotting reponse curve: " + curve_type)
+    print("Plotting response curve: " + curve_type)
     
     map_type = 1
     if curve_type == "initial":
@@ -91,100 +92,169 @@ def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask,
     else:
         set_trace()
 
-    #fig_map, ax_map = plt.subplots(len(x_filen_list) + 1, 4* map_type)
     fig_curve = plt.figure()
     fig_map = plt.figure()
 
     fcol = math.floor(math.sqrt(X.shape[1]))
-    frw = math.ceil(X.shape[1]/fcol)
+    frw = math.ceil(X.shape[1] / fcol)
     
     Ncol = 6
-    if map_type == 0: Ncol = 3
-    if map_type == 2: Ncol = 7
+    if map_type == 0:
+        Ncol = 3
+    if map_type == 2:
+        Ncol = 7
     
-    def plotFun(cube, ylab = '', plot0 = 0, lvls = levels, cm = cmap, **kw2): 
+    def plotFun(cube, ylab='', plot0=0, lvls=levels, cm=cmap, **kw2): 
         if map_type > -1:
-            plot_BayesModel_maps(cube, lvls, cm, ylab = ylab,
-                                 Nrows = len(x_filen_list) + 1, Ncols = Ncol, plot0 = plot0, 
-                                 colourbar = True, fig = fig_map, **kw2)
-
-    ## Maria - adaptcode here to do response variable groups rather than each variable in turn
-    if response_grouping is not None:
-        set_trace()
+            plot_BayesModel_maps(cube, lvls, cm, ylab=ylab,
+                                 Nrows=len(x_filen_list) + 1, Ncols=Ncol, plot0=plot0, 
+                                 colourbar=True, fig=fig_map, **kw2)
     
     plotFun(Sim, 'Control')
-    for col in range(X.shape[1]-1):
-        
-        varname = x_filen_list[col]
-        if varname.endswith(".nc"):
-            varname = varname[:-3]
-        makeDir(varname)
-        Sim1, Sim2 = response_FUN(Sim, X, col, varname, trace, sample_for_plot, 
-                                  eg_cube, lmask, dir_samples, grab_old_trace)
-        
-        plotN = Ncol * (col + 1)
-        if map_type > 0: plotFun(Sim2, varname, plotN)
-        if map_type == 2:
-            plotFun(Sim1, '', plotN + 2, figure_filename = figure_dir + varname + '-absolute')
 
-        if Sim1 is not None:
-            diff = Sim2.copy()
-            diff.data = Sim2.data - Sim1.data
-        else:
-            diff = Sim2
+    if response_grouping is not None:
+        for group_index, group in enumerate(response_grouping):
         
-        diffP = diff.collapsed('time', iris.analysis.MEAN) 
-        
-        plotFun(diffP, '', plotN + 2 * map_type, dlevels, dcmap, 
-                figure_filename = figure_dir + varname + '-difference')    
+            varname = f"group_{group_index}" 
+            makeDir(varname)
+            Sim1, Sim2 = response_FUN(Sim, X, group_index, f"group_{group_index}", trace, 
+                                      sample_for_plot, eg_cube, lmask, dir_samples, 
+                                      grab_old_trace)
+            plotN = Ncol * (group_index + 1)
+            if map_type > 0:
+                plotFun(Sim2, f"group_{group_index}", plotN)
+            if map_type == 2:
+                plotFun(Sim1, '', plotN + 2, figure_filename=figure_dir + f"group_{group_index}-absolute")
 
-        ax = fig_curve.add_subplot(frw,fcol, col + 1)  # Select the corresponding subplot
+            diff = Sim2.copy() - Sim1.data if Sim1 is not None else Sim2
+            diffP = diff.collapsed('time', iris.analysis.MEAN) 
         
-        variable_name = x_filen_list[col].replace('.nc', '')
-        ax.set_title(variable_name)
+            plotFun(diffP, '', plotN + 2 * map_type, dlevels, dcmap, 
+                    figure_filename=figure_dir + f"group_{group_index}-difference")    
+
+            ax = fig_curve.add_subplot(frw,fcol, group_index + 1)  # Select the corresponding subplot
         
-        num_bins = 10
+            variable_name = f"group_{group_index}"
+            ax.set_title(variable_name)
         
-        hist, bin_edges = np.histogram(X[:, col], bins=num_bins)
-        bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
-        median_values = []
-        percentile_10 = []
-        percentile_90 = []
+            num_bins = 10
         
-        for i in range(num_bins):
+            hist, bin_edges = np.histogram(X[:, group_index], bins=num_bins)
+            bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
+            median_values = []
+            percentile_10 = []
+            percentile_90 = []
+        
+            for i in range(num_bins):
             
-            mask = (X[:, col] >= bin_edges[i]) & (X[:, col] < bin_edges[i + 1])
-            if np.any(mask):
-                values_in_bin = []
+                mask = (X[:, group_index] >= bin_edges[i]) & (X[:, group_index] < bin_edges[i + 1])
+                if np.any(mask):
+                    values_in_bin = []
         
-                for rw in range(Sim2.shape[0]):
-                    values_in_bin.append(non_masked_data(diff[rw])[mask])
-                values_in_bin = np.array(values_in_bin).flatten()    
+                    for rw in range(Sim2.shape[0]):
+                        values_in_bin.append(non_masked_data(diff[rw])[mask])
+                    values_in_bin = np.array(values_in_bin).flatten()    
                    
-                median_values.append(np.median(values_in_bin))
-                percentile_10.append(np.percentile(values_in_bin, 10))
-                percentile_90.append(np.percentile(values_in_bin, 90))
-            else:
-                median_values.append(np.nan)
-                percentile_10.append(np.nan)
-                percentile_90.append(np.nan)
+                    median_values.append(np.median(values_in_bin))
+                    percentile_10.append(np.percentile(values_in_bin, 10))
+                    percentile_90.append(np.percentile(values_in_bin, 90))
+                else:
+                    median_values.append(np.nan)
+                    percentile_10.append(np.nan)
+                    percentile_90.append(np.nan)
         
-        if scalers is not None:
-            bin_centers = bin_centers*(scalers[1, col] - scalers[0, col]) + scalers[0, col]
-        ax.plot(bin_centers, median_values, marker='.', label='Median')
-        ax.fill_between(bin_centers, percentile_10, percentile_90, alpha=0.3, 
-                        label='10th-90th Percentiles')                           
+            if scalers is not None:
+                bin_centers = bin_centers*(scalers[1, group_index] - scalers[0, group_index]) + scalers[0, group_index]
+            ax.plot(bin_centers, median_values, marker='.', label='Median')
+            ax.fill_between(bin_centers, percentile_10, percentile_90, alpha=0.3, 
+                            label='10th-90th Percentiles')                           
     
           
-    if map_type > -1:
-        fig_map.set_size_inches(12, 4*X.shape[1])
-        fig_map.tight_layout()
-        fig_map.subplots_adjust(left=0.15)
-        fig_map.savefig(figure_filename + '-maps.png')
-    plt.close(fig_map)
+        if map_type > -1:
+            fig_map.set_size_inches(12, 4*X.shape[1])
+            fig_map.tight_layout()
+            fig_map.subplots_adjust(left=0.15)
+            fig_map.savefig(figure_filename + '-maps.png')
+        plt.close(fig_map)
     
-    fig_curve.savefig(figure_filename + '-curves.png')   
-    plt.close(fig_curve)
-    plt.clf()
+        fig_curve.savefig(figure_filename + '-curves.png')   
+        plt.close(fig_curve)
+        plt.clf()
+
+    else:
+        # Process variables individually as before
+        for col in range(X.shape[1]-1):
+        
+            varname = x_filen_list[col]
+            if varname.endswith(".nc"):
+                varname = varname[:-3]
+            #makeDir(varname)
+            Sim1, Sim2 = response_FUN(Sim, X, col, varname, trace, sample_for_plot, 
+                                    eg_cube, lmask, dir_samples, grab_old_trace)
+        
+            plotN = Ncol * (col + 1)
+            if map_type > 0: plotFun(Sim2, varname, plotN)
+            if map_type == 2:
+                plotFun(Sim1, '', plotN + 2, figure_filename = figure_dir + varname + '-absolute')
+
+            if Sim1 is not None:
+                diff = Sim2.copy()
+                diff.data = Sim2.data - Sim1.data
+            else:
+                diff = Sim2
+        
+            diffP = diff.collapsed('time', iris.analysis.MEAN) 
+        
+            plotFun(diffP, '', plotN + 2 * map_type, dlevels, dcmap, 
+                    figure_filename = figure_dir + varname + '-difference')    
+
+            ax = fig_curve.add_subplot(frw,fcol, col + 1)  # Select the corresponding subplot
+        
+            variable_name = x_filen_list[col].replace('.nc', '')
+            ax.set_title(variable_name)
+        
+            num_bins = 10
+        
+            hist, bin_edges = np.histogram(X[:, col], bins=num_bins)
+            bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
+            median_values = []
+            percentile_10 = []
+            percentile_90 = []
+        
+            for i in range(num_bins):
+            
+                mask = (X[:, col] >= bin_edges[i]) & (X[:, col] < bin_edges[i + 1])
+                if np.any(mask):
+                    values_in_bin = []
+        
+                    for rw in range(Sim2.shape[0]):
+                        values_in_bin.append(non_masked_data(diff[rw])[mask])
+                    values_in_bin = np.array(values_in_bin).flatten()    
+                   
+                    median_values.append(np.median(values_in_bin))
+                    percentile_10.append(np.percentile(values_in_bin, 10))
+                    percentile_90.append(np.percentile(values_in_bin, 90))
+                else:
+                    median_values.append(np.nan)
+                    percentile_10.append(np.nan)
+                    percentile_90.append(np.nan)
+        
+            if scalers is not None:
+                bin_centers = bin_centers*(scalers[1, col] - scalers[0, col]) + scalers[0, col]
+            ax.plot(bin_centers, median_values, marker='.', label='Median')
+            ax.fill_between(bin_centers, percentile_10, percentile_90, alpha=0.3, 
+                            label='10th-90th Percentiles')                           
+    
+          
+        if map_type > -1:
+            fig_map.set_size_inches(12, 4*X.shape[1])
+            fig_map.tight_layout()
+            fig_map.subplots_adjust(left=0.15)
+            fig_map.savefig(figure_filename + '-maps.png')
+        plt.close(fig_map)
+    
+        fig_curve.savefig(figure_filename + '-curves.png')   
+        plt.close(fig_curve)
+        plt.clf()
 
 

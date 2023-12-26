@@ -212,7 +212,8 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
     Bayes_benchmark(filename_out, fig_dir, Sim, Obs, lmask)
     for ct in ["initial", "standard", "potential", "sensitivity"]:
         response_curve(curve_type = ct, x_filen_list = x_filen_list, 
-                       fig_dir = fig_dir, scalers =  scalers, *args, **kw, **common_args)
+                       fig_dir = fig_dir, scalers =  scalers,
+                       *args, **kw, **common_args)
     
     
 

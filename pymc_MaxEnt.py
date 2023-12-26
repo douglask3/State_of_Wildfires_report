@@ -124,8 +124,13 @@ if __name__=="__main__":
     dcmap = 'RdBu_r'
 
     #Maria set groupings here
-    response_grouping= [["ed.nc", "consec_dry_mean.nc", "savanna.nc", "cveg.nc", "rhumid.nc"],
-                        ["lightn.nc", "popDens.nc", "forest.nc", "precip.nc"]]
+    response_grouping= [["ed.nc", "tca.nc", "np.nc", "mpa.nc"], ["consec_dry_mean.nc", 
+                        "precip.nc", "tas_max.nc", "tas_mean.nc", "vpd.nc", "rhumid.nc",
+                        "soilM.nc"], ["savanna.nc", "forest.nc", "pasture.nc", "grassland.nc",
+                        "cropland.nc"], ["cveg.nc", "csoil.nc"], ["lightn.nc", "popDens.nc", 
+                        "road_density.nc"]] 
+
+
      
     """ 
         RUN optimization 
