@@ -180,7 +180,10 @@ def train_MaxEnt_model(y_filen, x_filen_list, CA_filen = None, dir = '', filenam
             print("target variable does not meet expected unit range " + \
                   "(i.e, data poimts should be fractions, but values found less than " + \
                   "0 or greater than 1)")
-            sys.exit() 
+            if np.mean(Y>1.0) > 0.01:
+                sys.exit() 
+            else:
+                Y[Y>1.0] = 0.9999999999999
         if np.min(Y) > 1.0:
             if np.max(Y) < 50:
                 print("WARNING: target variable has values greater than 1 all less than 50." + \

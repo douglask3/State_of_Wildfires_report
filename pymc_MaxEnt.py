@@ -59,7 +59,7 @@ if __name__=="__main__":
     """ optimization """
 
     person = 'Doug'
-    quick = True
+    quick = False
 
     if person == 'Maria':
         dir_training = "D:/Doutorado/Sanduiche/research/maxent-variables/2002-2011/" 
@@ -72,13 +72,13 @@ if __name__=="__main__":
 
     x_filen_list= ["ed.nc", "consec_dry_mean.nc", "savanna.nc", "cveg.nc", "rhumid.nc",
                    "lightn.nc", "popDens.nc", "forest.nc", "precip.nc",
-                   "pasture.nc", "cropland.nc", "grassland.nc", #"np.nc",
-                   "tas_max.nc", "mpa.nc", # "tca.nc",, "te.nc", "tas_mean.nc"
-                   "vpd.nc", "soilM.nc"]#, "road_density2.nc"] #, "csoil.nc"
+                   "pasture.nc", "cropland.nc", "grassland.nc", "np.nc",
+                   "tas_max.nc", "mpa.nc", "tca.nc", "tas_mean.nc", "csoil.nc",
+                   "vpd.nc", "soilM.nc", "road_density2.nc"] 
     
 
     if quick:
-        model_title = 'model-test-eslr'
+        model_title = 'model-test-eslr-pca'
         biome_IDs = range(0,7)
         fraction_data_for_sample = 0.001
         min_data_points_for_sample = 1000 #minimum grid cells to use
@@ -86,7 +86,7 @@ if __name__=="__main__":
         months_of_year = [8, 9, 10]
         niterations = 100
     else:
-        model_title = 'model-full'
+        model_title = 'model-full-pca'
         biome_IDs = range(0,7)
         fraction_data_for_sample = 0.2
         min_data_points_for_sample = 5000 #minimum grid cells to use
@@ -109,7 +109,6 @@ if __name__=="__main__":
 
     grab_old_trace = True # set to True till you get the code running. Then set to False when you start adding in new response curves
     
-    
     """ Projection/evaluating """
     dir_outputs = 'outputs/'
 
@@ -121,31 +120,27 @@ if __name__=="__main__":
     dlevels = [-20, -10, -5, -2, -1, -0.1, 0.1, 1, 2, 5, 10, 20]
     cmap = 'OrRd'
     dcmap = 'RdBu_r'
+
+    #Maria set groupings here
+    response_grouping= [["ed.nc", "consec_dry_mean.nc", "savanna.nc", "cveg.nc", "rhumid.nc"],
+                        ["lightn.nc", "popDens.nc", "forest.nc", "precip.nc"]]
      
     """ 
         RUN optimization 
         
     """
     for biome_ID in biome_IDs:
-        #dir_outputs = combine_path_and_make_dir(dir_outputs0,)
-
         subset_function = [sub_year_range, 
                             sub_year_months, constrain_BR_biomes]
         subset_function_args = [{'year_range': year_range},
                             {'months_of_year': months_of_year},
                             {'biome_ID': [biome_ID]}]
 
-        #subset_function = sub_year_months
-        #subset_function_args = {'months_of_year': months_of_year}
-
         
         filename = '_' +  str(len(x_filen_list)) + \
                 '-frac_points_' + str(fraction_data_for_sample) + \
                 '-Month_' +  '_'.join([str(mn) for mn in months_of_year]) + \
                f'-Biome_{biome_ID}'
-             
-        #filename = '_'.join([file[:-3] for file in x_filen_list])
-    
 
         #### Optimize
         trace, scalers, variable_info_file = \
@@ -166,5 +161,6 @@ if __name__=="__main__":
                                             grab_old_trace = grab_old_trace,
                                             sample_for_plot = sample_for_plot,
                                             levels = levels, cmap = cmap,
-                                            dlevels = dlevels, dcmap = dcmap)
+                                            dlevels = dlevels, dcmap = dcmap
+                                            response_grouping = response_grouping)
         

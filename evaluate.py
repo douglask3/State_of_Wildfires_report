@@ -127,7 +127,8 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
                          dir = '', 
                          dir_outputs = '', model_title = '', filename_out = '',
                          subset_function = None, subset_function_args = None,
-                         sample_for_plot = 1, grab_old_trace = False,
+                         sample_for_plot = 1, grab_old_trace = False, 
+                         response_grouping = None,
                          *args, **kw):
 
     """ Runs prediction and evalutation of the sampled model based on previously run trace.
@@ -213,6 +214,11 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
     for ct in ["initial", "standard", "potential", "sensitivity"]:
         response_curve(curve_type = ct, x_filen_list = x_filen_list, 
                        fig_dir = fig_dir, scalers =  scalers, *args, **kw, **common_args)
+        if response_grouping is not None:
+            response_curve(curve_type = ct, x_filen_list = x_filen_list, 
+                           response_grouping = response_grouping,
+                           fig_dir = fig_dir, scalers =  scalers, 
+                           *args, **kw, **common_args)
     
     
 
@@ -251,10 +257,8 @@ if __name__=="__main__":
     cmap = 'OrRd'
     dcmap = 'RdBu_r'
     dir_projecting = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
-    training_namelist = "outputs//simple_example_model/variables_info-trees_consec_dry_mean_crop_pas_humid_totalVeg-frac_points_0.1-Month_7.txt"
-    training_namelist = "outputs//simple_example_model/variables_info-trees_consec_dry_mean_crop_pas_totalVeg-frac_points_0.005-Month_7-nvariables_-frac_random_sample0.005-nvars_5-niterations_100.txt"
-
     
+<<<<<<< HEAD
     training_namelist = "outputs/train_from_bottom-biome/variables_info-road_density_trees_consec_dry_mean_crop_pas_totalVeg-frac_points_0.005-Month_7-nvariables_-frac_random_sample0.005-nvars_6-niterations_200.txt"
 
     training_namelist = "outputs/train_from_bottom-biome-nojules//variables_info-road_density_trees_consec_dry_mean_crop_pas_savanna_grassland-frac_points_0.005-Month_7-nvariables_-frac_random_sample0.005-nvars_7-niterations_200.txt"
@@ -264,6 +268,9 @@ if __name__=="__main__":
 #    training_namelist = "outputs//train_from_bottom-biome-all///variables_info--frac_points_0.00516-Month_7-nvariables_-frac_random_sample0.005-nvars_16-niterations_200.txt"
 
     training_namelist = "outputs/train_from_bottom-biome-all-controls-4-pca-pm1-ConFire-noq/variables_info--frac_points_0.00516-Month_7-nvariables_-frac_random_sample0.005-nvars_16-niterations_200.txt"
+=======
+    training_namelist = "outputs//train_from_bottom-biome-all-controls-4-pca-pm1///variables_info--frac_points_0.00516-Month_7-nvariables_-frac_random_sample0.005-nvars_16-niterations_200.txt"
+>>>>>>> pymc_iris_version
     """ 
         RUN evaluation 
     """
@@ -271,6 +278,7 @@ if __name__=="__main__":
                                         grab_old_trace = True,
                                         sample_for_plot = sample_for_plot,
                                         levels = levels, cmap = cmap,
-                                        dlevels = dlevels, dcmap = dcmap)
+                                        dlevels = dlevels, dcmap = dcmap,
+                                       response_grouping = [["pasture.nc", "cropland.nc"]])
     
     
