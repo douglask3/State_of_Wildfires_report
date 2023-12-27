@@ -87,7 +87,7 @@ if __name__=="__main__":
         niterations = 100
     else:
         model_title = 'model-full-pca'
-        biome_IDs = range(1,7)
+        biome_IDs = range(0,7)
         fraction_data_for_sample = 0.2
         min_data_points_for_sample = 5000 #minimum grid cells to use
         cores = 5
@@ -98,11 +98,11 @@ if __name__=="__main__":
     CA_filen = "brazil_NAT.nc"
     y_filen = "Area_burned_NAT"
 
-    CA_filen = "brazil_NON.nc"
-    y_filen = "Area_burned_NON"
+    #CA_filen = "brazil_NON.nc"
+    #y_filen = "Area_burned_NON"
 
-    CA_filen = None
-    y_filen = "GFED4.1s_Burned_Fraction"
+    #CA_filen = None
+    #y_filen = "GFED4.1s_Burned_Fraction"
 
     model_title = model_title + y_filen
     y_filen = y_filen + '.nc'
