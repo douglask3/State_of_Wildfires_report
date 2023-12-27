@@ -103,23 +103,27 @@ class MaxEntFire(object):
         self.npoints = X.shape[0]
         self.X_controls = self.controls(X)
         
-        y = self.numPCK.dot(self.X_controls, self.lin_betas)
-        
-        def add_response_curve(Rbetas, FUN, y):
-            if Rbetas is not None:
-                XR = FUN(self.X_controls)
-                y = y + self.numPCK.dot(XR, Rbetas) 
-            return(y)
+        #y = self.numPCK.dot(self.X_controls, self.lin_betas)
+        def response_curve(i):
+            
+            def add_response_curve(Rbetas, FUN, y):
+                if Rbetas is not None:
+                    XR = FUN(self.X_controls[:,i], i)
+                    y = y + XR * Rbetas[i]#self.numPCK.dot(XR, Rbetas) 
+                return(y)
+            
+            y = self.X_controls[:,i] * self.lin_betas[i]
+            y = add_response_curve(self.pow_betas, self.power_response_curve, y)
+            y = add_response_curve(self.x2s_betas, self.X2_response_curve   , y)
+            y = add_response_curve(self.comb_betas, self.linear_combined_response_curve , y)
+            
+            #y = add_response_curve(paramers, function, y)
+            # Maria: add yours here 
+            
+            return 1.0/(1.0 + self.numPCK.exp(-y))
+        limitations = self.numPCK.stack([response_curve(i) for i in range(self.ncontrols)])
+        BA = self.numPCK.prod(limitations, axis = 0)
 
-        y = add_response_curve(self.pow_betas, self.power_response_curve, y)
-        y = add_response_curve(self.x2s_betas, self.X2_response_curve   , y)
-        y = add_response_curve(self.comb_betas, self.linear_combined_response_curve , y)
-         
-        # y = add_response_curve(paramers, function, y)
-        # Maria: add yours here 
-
-        BA = 1.0/(1.0 + self.numPCK.exp(-y))
-        
         return BA
     
     def burnt_area_spread(self, X):
@@ -127,12 +131,12 @@ class MaxEntFire(object):
         if self.q == 0.0: return BA
         return BA / (1 + self.q * (1 - BA))
      
-    def power_response_curve(self, X):  
-        return self.pow_power**X
+    def power_response_curve(self, X, i):  
+        return self.pow_power[i]**X
 
 
-    def X2_response_curve(self, X):  
-        return (X - self.x2s_X0)**2.0
+    def X2_response_curve(self, X, i):  
+        return (X - self.x2s_X0[i])**2.0
 
-    def linear_combined_response_curve(self, X):
-        return np.log(((np.exp(X - self.comb_X0)) ** self.comb_p) + 1)
+    def linear_combined_response_curve(self, X, i):
+        return np.log(((np.exp(X - self.comb_X0[i])) ** self.comb_p[i]) + 1)
