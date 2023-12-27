@@ -48,7 +48,7 @@ def fit_MaxEnt_probs_to_data(Y, X, CA = None, niterations = 100, *arg, **kw):
         ## set priors
         nvars = X.shape[1]
         ncontrols = 4
-        priors = {"q":     pm.LogNormal('q', mu = 0.0, sigma = 1.0),
+        priors = {#"q":     pm.LogNormal('q', mu = 0.0, sigma = 1.0),
                   "lin_beta_constant": pm.Normal('lin_beta_constant', mu = 0, sigma = 100),
                   "control_betas": pm.LogitNormal('control_betas', mu = 0, sigma = 2, 
                                              shape=(nvars, ncontrols)),
@@ -250,7 +250,7 @@ if __name__=="__main__":
         SETPUT 
     """
     ### input data paths and filenames
-    model_title = 'train_from_bottom-biome-all-controls-4-pca-pm1'
+    model_title = 'train_from_bottom-biome-all-controls-4-pca-pm1-ConFire-noq'
     dir_training = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
     y_filen = "GFED4.1s_Burned_Fraction.nc"
     CA_filen = None
