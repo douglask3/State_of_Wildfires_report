@@ -87,6 +87,7 @@ def read_variable_from_netcdf(filename, dir = '', subset_function = None,
             dataset = dataset.data.flatten()
         except:
             set_trace()
+            
         if time_series is not None:
             if not years[ 0] == time_series[0]:
                 dataset = np.append(np.repeat(np.nan, years[ 0]-time_series[0]), dataset)
@@ -142,7 +143,6 @@ def read_all_data_from_netcdf(y_filename, x_filename_list, CA_filename = None, a
     
     n=len(Y)
     m=len(x_filename_list)
-    
     
     X = np.zeros([n,m])
     
