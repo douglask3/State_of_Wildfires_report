@@ -1,6 +1,6 @@
 #!/bin/bash -l
 #SBATCH --qos=long  #high #long
-#SBATCH --mem=15000  # 50000
+#SBATCH --mem=15000  # 100000
 #SBATCH --ntasks-per-node=5            # Number of tasks per node
 #SBATCH --nodes=1                      # Number of nodes
 #SBATCH --output=outputs/output_%j.txt         # Output file (%j expands to job ID)
