@@ -205,9 +205,9 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
         'grab_old_trace': grab_old_trace}
     
     Sim = runSim_MaxEntFire(**common_args, run_name = "control", test_eg_cube = True)
-    controls = [runSim_MaxEntFire(**common_args, run_name = "control_controls-" + str(i), 
-                                 test_eg_cube = False, out_index = i, return_controls = True) \
-                    for i in range(4)]
+    #controls = [runSim_MaxEntFire(**common_args, run_name = "control_controls-" + str(i), 
+    #                             test_eg_cube = False, out_index = i, return_controls = True) \
+    #                for i in range(4)]
 
     #set_trace()
     
@@ -260,7 +260,7 @@ if __name__=="__main__":
     dcmap = 'RdBu_r'
     dir_projecting = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
     
-    training_namelist = "outputs//train_from_bottom-biome-all-controls-4-pca-pm1-ConFire-noq-forced-lin-spread///variables_info--frac_points_0.00516-Month_7-nvariables_-frac_random_sample0.005-nvars_16-niterations_200.txt"
+    training_namelist = "outputs//train_from_bottom-biome-all-controls-4-pca-pm1-ConFire-noq-forced-lin-PropSpread2///variables_info--frac_points_0.00516-Month_7-nvariables_-frac_random_sample0.005-nvars_16-niterations_200.txt"
     """ 
         RUN evaluation 
     """
