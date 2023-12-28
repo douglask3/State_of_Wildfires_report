@@ -163,12 +163,12 @@ if __name__=="__main__":
 
         """ 
             RUN projection 
-        """
-
+       
+        
         evaluate_MaxEnt_model_from_namelist(variable_info_file, dir = dir_projecting,
                                             grab_old_trace = grab_old_trace,
                                             sample_for_plot = sample_for_plot,
                                             levels = levels, cmap = cmap,
                                             dlevels = dlevels, dcmap = dcmap,
                                             response_grouping = response_grouping)
-        
+         """

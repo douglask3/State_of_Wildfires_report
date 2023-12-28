@@ -126,7 +126,8 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
                          dir = '', 
                          dir_outputs = '', model_title = '', filename_out = '',
                          subset_function = None, subset_function_args = None,
-                         sample_for_plot = 1, grab_old_trace = False,
+                         sample_for_plot = 1, grab_old_trace = False, 
+                         response_grouping = None,
                          *args, **kw):
 
     """ Runs prediction and evalutation of the sampled model based on previously run trace.
@@ -203,6 +204,11 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
         'grab_old_trace': grab_old_trace}
     
     Sim = runSim_MaxEntFire(**common_args, run_name = "control", test_eg_cube = True)
+    controls = [runSim_MaxEntFire(**common_args, run_name = "control_controls-" + str(i), 
+                                 test_eg_cube = False, out_index = i, return_controls = True) \
+                    for i in range(4)]
+
+    #set_trace()
     
     common_args['Sim'] = Sim[0]
     #jackknife(x_filen_list, fig_dir = fig_dir, **common_args)
@@ -213,6 +219,7 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
         response_curve(curve_type = ct, x_filen_list = x_filen_list, 
                        fig_dir = fig_dir, scalers =  scalers,
                        *args, **kw, **common_args)
+
     
     
 
@@ -260,6 +267,7 @@ if __name__=="__main__":
                                         grab_old_trace = True,
                                         sample_for_plot = sample_for_plot,
                                         levels = levels, cmap = cmap,
-                                        dlevels = dlevels, dcmap = dcmap)
+                                        dlevels = dlevels, dcmap = dcmap,
+                                       response_grouping = [["pasture.nc", "cropland.nc"]])
     
     
