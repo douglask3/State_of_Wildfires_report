@@ -39,7 +39,6 @@ def plot_BayesModel_signifcance_maps(Obs, Sim, lmask, plot_n = 1, Nrows = 3, Nco
         x = cube.data.flatten()[lmask]        
         x = x.reshape([cube.shape[0], int(len(x)/cube.shape[0])])
         return x
-    
     X = flatten_to_dim0(Obs) 
     pv = flatten_to_dim0(Sim[1])    
         
@@ -207,7 +206,7 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
     
     common_args['Sim'] = Sim[0]
     #jackknife(x_filen_list, fig_dir = fig_dir, **common_args)
-
+    #set_trace()
     compare_to_obs_maps(filename_out, dir_outputs, Obs, Sim, lmask, *args, **kw)
     Bayes_benchmark(filename_out, fig_dir, Sim, Obs, lmask)
     for ct in ["initial", "standard", "potential", "sensitivity"]:

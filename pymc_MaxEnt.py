@@ -59,7 +59,7 @@ if __name__=="__main__":
     """ optimization """
 
     person = 'Maria'
-    quick = True
+    quick = False
 
     if person == 'Maria':
         dir_training = "D:/Doutorado/Sanduiche/research/maxent-variables/2002-2011/" 
@@ -79,8 +79,8 @@ if __name__=="__main__":
 
     if quick:
 
-        model_title = 'model-test-eslr-pca'
-        biome_IDs = range(1,2)
+        model_title = 'model-test-eslr-pca-'
+        biome_IDs = range(2,7)
 
         fraction_data_for_sample = 0.001
         min_data_points_for_sample = 1000 #minimum grid cells to use
@@ -88,8 +88,8 @@ if __name__=="__main__":
         months_of_year = [8, 9, 10]
         niterations = 100
     else:
-        model_title = 'model-full-pca'
-        biome_IDs = range(0,7)
+        model_title = 'model-full-pca-'
+        biome_IDs = range(1,7)
         fraction_data_for_sample = 0.2
         min_data_points_for_sample = 5000 #minimum grid cells to use
         cores = 5
@@ -97,11 +97,11 @@ if __name__=="__main__":
         months_of_year = [8,9,10]
         niterations = 200
 
-    #CA_filen = "brazil_NAT.nc"
-    #y_filen = "Area_burned_NAT"
+    CA_filen = "brazil_NAT.nc"
+    y_filen = "Area_burned_NAT"
 
-    CA_filen = "brazil_NON.nc"
-    y_filen = "Area_burned_NON"
+    #CA_filen = "brazil_NON.nc"
+    #y_filen = "Area_burned_NON"
 
     #CA_filen = None
     #y_filen = "GFED4.1s_Burned_Fraction"
@@ -124,6 +124,7 @@ if __name__=="__main__":
     dcmap = 'RdBu_r'
 
     #Maria set groupings here
+    
     response_grouping= [["ed.nc", "tca.nc", "np.nc", "mpa.nc"], ["consec_dry_mean.nc", 
                         "precip.nc", "tas_max.nc", "tas_mean.nc", "vpd.nc", "rhumid.nc",
                         "soilM.nc"], ["savanna.nc", "forest.nc", "pasture.nc", "grassland.nc",
