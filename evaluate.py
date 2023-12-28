@@ -205,6 +205,11 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
         'grab_old_trace': grab_old_trace}
     
     Sim = runSim_MaxEntFire(**common_args, run_name = "control", test_eg_cube = True)
+    controls = [runSim_MaxEntFire(**common_args, run_name = "control_controls-" + str(i), 
+                                 test_eg_cube = False, out_index = i, return_controls = True) \
+                    for i in range(4)]
+
+    #set_trace()
     
     common_args['Sim'] = Sim[0]
     #jackknife(x_filen_list, fig_dir = fig_dir, **common_args)

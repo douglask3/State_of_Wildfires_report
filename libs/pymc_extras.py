@@ -67,7 +67,7 @@ def logistic_how_likely(Y, X):
 def runSim_MaxEntFire(trace, sample_for_plot, X, eg_cube, lmask, run_name, 
                       dir_samples, grab_old_trace, 
                       class_object = MaxEntFire, method = 'burnt_area',
-                      test_eg_cube = False):  
+                      test_eg_cube = False, out_index = None, *args, **kw):  
      
     def sample_model(i, run_name = 'control'):   
         dir_sample =  combine_path_and_make_dir(dir_samples, run_name)
@@ -99,8 +99,9 @@ def runSim_MaxEntFire(trace, sample_for_plot, X, eg_cube, lmask, run_name,
         param_in = [param[i] if param.ndim == 1 else param[i,:] for param in params]
         param_in = dict(zip(params_names, param_in))
         obj = class_object(param_in)
-        out = getattr(obj, method)(X)
+        out = getattr(obj, method)(X, *args, **kw)
         
+        if out_index is not None: out = out[:, out_index]
         if test_eg_cube: 
             prob = logistic_how_likely(eg_cube.data.flatten()[lmask], out)
             prob = make_into_cube(prob, file_prob)       
@@ -110,6 +111,7 @@ def runSim_MaxEntFire(trace, sample_for_plot, X, eg_cube, lmask, run_name,
             return out, prob
         else:
             return out
+        
 
     params, params_names = select_post_param(trace)  
     nits = len(trace.posterior.chain)*len(trace.posterior.draw)
@@ -121,6 +123,10 @@ def runSim_MaxEntFire(trace, sample_for_plot, X, eg_cube, lmask, run_name,
         prob = prob.collapsed('realization', iris.analysis.MEAN)
         return iris.cube.CubeList(out[:,0]).merge_cube(), prob
     else:
-        return iris.cube.CubeList(out).merge_cube()
+        try:
+            return iris.cube.CubeList(out).merge_cube()
+        except:
+            out = np.array(list(map(lambda id: sample_model(id, run_name), idx)))
+            return iris.cube.CubeList(out).merge_cube()
         
 
