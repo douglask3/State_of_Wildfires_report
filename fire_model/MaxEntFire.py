@@ -89,7 +89,7 @@ class MaxEntFire(object):
         
         return controls
 
-    def burnt_area(self, X):
+    def burnt_area(self, X, return_controls = False):
         """calculated predicted burnt area based on indepedant variables. 
             At the moment, just a linear model fed through a logistic function to convert to 
             burnt area/fire probablity. But we'll adapt that.   
@@ -102,7 +102,8 @@ class MaxEntFire(object):
         """
         self.npoints = X.shape[0]
         self.X_controls = self.controls(X)
-        
+        if return_controls: return self.X_controls
+
         y = self.numPCK.dot(self.X_controls, self.lin_betas)
         
         def add_response_curve(Rbetas, FUN, y):
