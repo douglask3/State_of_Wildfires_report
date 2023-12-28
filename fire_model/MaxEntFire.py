@@ -24,7 +24,7 @@ class MaxEntFire(object):
     At the moment, just a linear model fed through a logistic function to convert to 
     burnt area/fire probablity. But we'll adapt that.  
     """ 
-    def __init__(self, params, inference = False):
+    def __init__(self, params, inference = False, ConFire = False):
         """
         Sets up the model based on betas and repsonse curve pararameters (response curve 
             not yet implmented
@@ -57,25 +57,27 @@ class MaxEntFire(object):
         self.comb_X0 = select_key_or_defualt(params, 'comb_X0', None) 
         self.comb_p = select_key_or_defualt(params, 'comb_p', None)
 
-        
-        #Maria: add your response curve parameter selection thing
-        
-    def controls(self, Xi):
-        def normalize(vector):
-            return vector / (self.numPCK.sum(vector**2)**(0.5))
         try:
             self.ncontrols = self.control_betas.shape.eval()[1]
             self.nvars = self.control_betas.shape.eval()[0]
         except:
             self.ncontrols = self.control_betas.shape[1]
             self.nvars = self.control_betas.shape[0]
+        self.ConFire = ConFire     
+        
+        #Maria: add your response curve parameter selection thing
+        
+    def controls(self, Xi):
+        def normalize(vector):
+            return vector / (self.numPCK.sum(vector**2)**(0.5))
+        
 
         def make_control(X, params):
             params = 2.0 * params - 1.0
             params = normalize(params)
             
             control = self.numPCK.dot(X, params)
-            #X = X - (self.numPCK.dot(X, params)[:, None] * params)
+            X = X - (self.numPCK.dot(X, params)[:, None] * params)
             
             return control, X
 
@@ -103,34 +105,53 @@ class MaxEntFire(object):
         self.npoints = X.shape[0]
         self.X_controls = self.controls(X)
         
-        #y = self.numPCK.dot(self.X_controls, self.lin_betas)
-        def response_curve(i):
+        if self.ConFire:
+            def response_curve(i):
+                def add_response_curve(Rbetas, FUN, y):
+                    if Rbetas is not None:
+                        XR = FUN(self.X_controls[:,i], i)
+                        y = y + XR * Rbetas[i]
+                    return(y)
+                
+                y = self.X_controls[:,i] * self.lin_betas[i]
+                y = add_response_curve(self.pow_betas, self.power_response_curve, y)
+                y = add_response_curve(self.x2s_betas, self.X2_response_curve   , y)
+                y = add_response_curve(self.comb_betas, self.linear_combined_response_curve , y)
             
+                #y = add_response_curve(paramers, function, y)
+                # Maria: add yours here 
+                
+            
+                return 1.0/(1.0 + self.numPCK.exp(-y))
+            limitations = self.numPCK.stack([response_curve(i) for i in range(self.ncontrols)])
+            BA = self.numPCK.prod(limitations, axis = 0)
+        else:
+            y = self.numPCK.dot(self.X_controls, self.lin_betas)
+        
             def add_response_curve(Rbetas, FUN, y):
                 if Rbetas is not None:
-                    XR = FUN(self.X_controls[:,i], i)
-                    y = y + XR * Rbetas[i]#self.numPCK.dot(XR, Rbetas) 
+                    XR = FUN(self.X_controls)
+                    y = y + self.numPCK.dot(XR, Rbetas) 
                 return(y)
             
-            y = self.X_controls[:,i] * self.lin_betas[i]
             y = add_response_curve(self.pow_betas, self.power_response_curve, y)
             y = add_response_curve(self.x2s_betas, self.X2_response_curve   , y)
             y = add_response_curve(self.comb_betas, self.linear_combined_response_curve , y)
-            
-            #y = add_response_curve(paramers, function, y)
+             
+            # y = add_response_curve(paramers, function, y)
             # Maria: add yours here 
-            if ((2+0.5)/self.ncontrols)>0.5:  y = -y
-            
-            return 1.0/(1.0 + self.numPCK.exp(-y))
-        limitations = self.numPCK.stack([response_curve(i) for i in range(self.ncontrols)])
-        BA = self.numPCK.prod(limitations, axis = 0)
 
+            BA = 1.0/(1.0 + self.numPCK.exp(-y))
         return BA
     
-    def burnt_area_spread(self, X):
+    def burnt_area_no_spread(self, X):
         BA = self.burnt_area(X)
         if self.q == 0.0: return BA
         return BA / (1 + self.q * (1 - BA))
+
+    def burnt_area_spread(self, BA):
+        if self.q == 0.0: return BA
+        return BA *(1 + self.q) / (BA * self.q + 1)
      
     def power_response_curve(self, X, i):  
         return self.pow_power[i]**X
