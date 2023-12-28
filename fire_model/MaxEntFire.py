@@ -75,7 +75,7 @@ class MaxEntFire(object):
             params = normalize(params)
             
             control = self.numPCK.dot(X, params)
-            X = X - (self.numPCK.dot(X, params)[:, None] * params)
+            #X = X - (self.numPCK.dot(X, params)[:, None] * params)
             
             return control, X
 
@@ -119,6 +119,7 @@ class MaxEntFire(object):
             
             #y = add_response_curve(paramers, function, y)
             # Maria: add yours here 
+            if ((2+0.5)/self.ncontrols)>0.5:  y = -y
             
             return 1.0/(1.0 + self.numPCK.exp(-y))
         limitations = self.numPCK.stack([response_curve(i) for i in range(self.ncontrols)])
