@@ -44,11 +44,15 @@ def fit_MaxEnt_probs_to_data(Y, X, CA = None, niterations = 100, *arg, **kw):
     except:
         pass        
 
+    try:
+        Y = Y.data
+    except:
+        pass
     with pm.Model() as max_ent_model:
         ## set priors
         nvars = X.shape[1]
         ncontrols = 4
-        priors = {"q":     pm.LogNormal('q', mu = 0.0, sigma = 1.0),
+        priors = {"q":     pm.LogNormal('q', mu = 2.0, sigma = 1.0),
                   "lin_beta_constant": pm.Normal('lin_beta_constant', mu = 0, sigma = 100),
                   "control_betas": pm.LogitNormal('control_betas', mu = 0, sigma = 2, 
                                              shape=(nvars, ncontrols)),
@@ -64,16 +68,20 @@ def fit_MaxEnt_probs_to_data(Y, X, CA = None, niterations = 100, *arg, **kw):
 
         ## run model
         model = MaxEntFire(priors, inference = True)
-        prediction = model.burnt_area_spread(X)  
+        prediction = model.burnt_area(X)  
+        #target = model.burnt_area_spread(Y)
+        #Y = Y/np.max(Y)
         
         ## define error measurement
         if CA is None:
-            error = pm.DensityDist("error", prediction, logp = logistic_probability_tt, 
-                                observed = Y)
+            error = pm.DensityDist("error", prediction, priors['q'], 
+                                   logp = logistic_probability_tt, 
+                                   observed = Y)
         else:
             CA = CA.data
-            error = pm.DensityDist("error", prediction, CA, logp = logistic_probability_tt, 
-                                observed = Y)
+            error = pm.DensityDist("error", prediction, priors['q'], CA, 
+                                   logp = logistic_probability_tt, 
+                                   observed = Y)
                 
         ## sample model
 
@@ -253,7 +261,7 @@ if __name__=="__main__":
         SETPUT 
     """
     ### input data paths and filenames
-    model_title = 'train_from_bottom-biome-all-controls-4-pca-pm1'
+    model_title = 'train_from_bottom-biome-all-controls-4-pca-pm1-ConFire-noq-forced-all-PropSpread2'
     dir_training = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
     y_filen = "GFED4.1s_Burned_Fraction.nc"
     CA_filen = None

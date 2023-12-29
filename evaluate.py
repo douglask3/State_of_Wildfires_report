@@ -206,6 +206,7 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
     
     Sim = runSim_MaxEntFire(**common_args, run_name = "control", test_eg_cube = True)
 
+
     if False:
         controls = [runSim_MaxEntFire(**common_args, run_name = "control_controls-" + str(i),  
                                      test_eg_cube = False, out_index = i, return_controls = True)  \
@@ -268,7 +269,7 @@ if __name__=="__main__":
     dcmap = 'RdBu_r'
     dir_projecting = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
     
-    training_namelist = "outputs//train_from_bottom-biome-all-controls-4-pca-pm1///variables_info--frac_points_0.00516-Month_7-nvariables_-frac_random_sample0.005-nvars_16-niterations_200.txt"
+    training_namelist = "outputs//train_from_bottom-biome-all-controls-4-pca-pm1-ConFire-noq-forced-all-PropSpread2///variables_info--frac_points_0.00516-Month_7-nvariables_-frac_random_sample0.005-nvars_16-niterations_200.txt"
     """ 
         RUN evaluation 
     """
@@ -277,6 +278,6 @@ if __name__=="__main__":
                                         sample_for_plot = sample_for_plot,
                                         levels = levels, cmap = cmap,
                                         dlevels = dlevels, dcmap = dcmap,
-                                       response_grouping = [["pasture.nc", "cropland.nc"]])
+                                        response_grouping = None)
     
     
