@@ -206,17 +206,19 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
     
     Sim = runSim_MaxEntFire(**common_args, run_name = "control", test_eg_cube = True)
 
-    if False:
+    if True:
         controls = [runSim_MaxEntFire(**common_args, run_name = "control_controls-" + str(i),  
                                      test_eg_cube = False, out_index = i, return_controls = True)  \
                        for i in range(4)] 
     
-        plot_BayesModel_maps(controls[0], [-1.0, -0.75, -0.5, -0.25, 0.0, 0.25, 0.5, 0.75, 1.0], 
-                             'PiYG', '', None, 
-                             Nrows = 1, Ncols = 2, plot0 = 0,
-                             scale = 1, figure_filename = None)#figure_filename + 'obs_liklihood')
+        for i in range(controls.shape[0]):
+            plot_BayesModel_maps(controls[0], 
+                                 [-1.0, -0.75, -0.5, -0.25, 0.0, 0.25, 0.5, 0.75, 1.0], 
+                                 'PiYG', '', None, 
+                                 Nrows = 1, Ncols = 2, plot0 = i,
+                                 scale = 1, figure_filename = None)#figure_filename + 'obs_liklihood')
     
-    
+    set_trace()
     common_args['Sim'] = Sim[0]
     #jackknife(x_filen_list, fig_dir = fig_dir, **common_args)
 
