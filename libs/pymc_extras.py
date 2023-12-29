@@ -29,7 +29,7 @@ def select_post_param(trace):
     params = [select_post_param_name(var) for var in params_names]
     return params, [var for var in params_names]
 
-def logistic_probability_tt(Y, fx, CA = None):
+def logistic_probability_tt(Y, fx, qSpread = None, CA = None):
     """calculates the log-transformed continuous logit likelihood for Y given fx when Y
        and fx are probabilities between 0-1 with relative areas, CA
        Works with tensor variables.   
@@ -44,6 +44,9 @@ def logistic_probability_tt(Y, fx, CA = None):
     fx = tt.switch(
         tt.lt(fx, 0.0000000000000000001),
         0.0000000000000000001, fx)
+    
+    if qSpread is not None:
+        Y = Y *(1 + qSpread) / (Y * qSpread + 1)
       
     if CA is not None: 
         prob =  Y*CA*tt.log(fx) + (1.0-Y)*CA*tt.log((1-fx))
@@ -63,7 +66,7 @@ def logistic_how_likely(Y, X):
 
 def runSim_MaxEntFire(trace, sample_for_plot, X, eg_cube, lmask, run_name, 
                       dir_samples, grab_old_trace, 
-                      class_object = MaxEntFire, method = 'burnt_area',
+                      class_object = MaxEntFire, method = 'burnt_area_no_spread',
                       test_eg_cube = False, out_index = None, *args, **kw):  
      
     def sample_model(i, run_name = 'control'):   

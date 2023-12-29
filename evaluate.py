@@ -204,12 +204,21 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
         'grab_old_trace': grab_old_trace}
     
     Sim = runSim_MaxEntFire(**common_args, run_name = "control", test_eg_cube = True)
-    controls = [runSim_MaxEntFire(**common_args, run_name = "control_controls-" + str(i), 
-                                 test_eg_cube = False, out_index = i, return_controls = True) \
-                    for i in range(4)]
 
-    #set_trace()
+
+    if False:
+        controls = [runSim_MaxEntFire(**common_args, run_name = "control_controls-" + str(i),  
+                                     test_eg_cube = False, out_index = i, return_controls = True)  \
+                       for i in range(4)] 
     
+        for i in range(controls.shape[0]):
+            plot_BayesModel_maps(controls[0], 
+                                 [-1.0, -0.75, -0.5, -0.25, 0.0, 0.25, 0.5, 0.75, 1.0], 
+                                 'PiYG', '', None, 
+                                 Nrows = 1, Ncols = 2, plot0 = i,
+                                 scale = 1, figure_filename = None)#figure_filename + 'obs_liklihood')
+    
+    set_trace()
     common_args['Sim'] = Sim[0]
     jackknife(x_filen_list, fig_dir = fig_dir, **common_args)
     #set_trace()
@@ -252,14 +261,14 @@ if __name__=="__main__":
     """
     ### input data paths and filenames
 
-    sample_for_plot = 100
+    sample_for_plot = 20
     levels = [0, 0.1, 1, 2, 5, 10, 20, 50, 100] 
     dlevels = [-20, -10, -5, -2, -1, -0.1, 0.1, 1, 2, 5, 10, 20]
     cmap = 'OrRd'
     dcmap = 'RdBu_r'
     dir_projecting = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
     
-    training_namelist = "outputs//train_from_bottom-biome-all-controls-4-pca-pm1///variables_info--frac_points_0.00516-Month_7-nvariables_-frac_random_sample0.005-nvars_16-niterations_200.txt"
+    training_namelist = "outputs//train_from_bottom-biome-all-controls-4-pca-pm1-ConFire-noq-forced-all-PropSpread2///variables_info--frac_points_0.00516-Month_7-nvariables_-frac_random_sample0.005-nvars_16-niterations_200.txt"
     """ 
         RUN evaluation 
     """
@@ -268,6 +277,6 @@ if __name__=="__main__":
                                         sample_for_plot = sample_for_plot,
                                         levels = levels, cmap = cmap,
                                         dlevels = dlevels, dcmap = dcmap,
-                                       response_grouping = [["pasture.nc", "cropland.nc"]])
+                                        response_grouping = None)
     
     
