@@ -105,7 +105,7 @@ class MaxEntFire(object):
         self.npoints = X.shape[0]
         self.X_controls = self.controls(X)
 
-        
+        if return_controls: return self.X_controls
         def response_curve(i):
             def add_response_curve(Rbetas, FUN, y):
                 if Rbetas is not None:
