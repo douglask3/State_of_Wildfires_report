@@ -211,7 +211,7 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
     #set_trace()
     
     common_args['Sim'] = Sim[0]
-    #jackknife(x_filen_list, fig_dir = fig_dir, **common_args)
+    jackknife(x_filen_list, fig_dir = fig_dir, **common_args)
     #set_trace()
     compare_to_obs_maps(filename_out, dir_outputs, Obs, Sim, lmask, *args, **kw)
     Bayes_benchmark(filename_out, fig_dir, Sim, Obs, lmask)

@@ -125,12 +125,13 @@ if __name__=="__main__":
 
     #Maria set groupings here
     
-    response_grouping= [["ed.nc", "tca.nc", "np.nc", "mpa.nc"], ["consec_dry_mean.nc", 
-                        "precip.nc", "tas_max.nc", "tas_mean.nc", "vpd.nc", "rhumid.nc",
-                        "soilM.nc"], ["savanna.nc", "forest.nc", "pasture.nc", "grassland.nc",
-                        "cropland.nc"], ["cveg.nc", "csoil.nc"], ["lightn.nc", "popDens.nc", 
-                        "road_density.nc"]] 
-
+    #response_grouping= [["ed.nc", "tca.nc", "np.nc", "mpa.nc"], ["consec_dry_mean.nc", 
+    #                    "precip.nc", "tas_max.nc", "tas_mean.nc", "vpd.nc", "rhumid.nc",
+    #                    "soilM.nc"], ["savanna.nc", "forest.nc", "pasture.nc", "grassland.nc",
+    #                    "cropland.nc"], ["cveg.nc", "csoil.nc"], ["lightn.nc", "popDens.nc", 
+    #                    "road_density.nc"]] 
+    
+    response_grouping = None
 
      
     """ 
@@ -164,11 +165,11 @@ if __name__=="__main__":
         """ 
             RUN projection 
        
-        
+        """
         evaluate_MaxEnt_model_from_namelist(variable_info_file, dir = dir_projecting,
                                             grab_old_trace = grab_old_trace,
                                             sample_for_plot = sample_for_plot,
                                             levels = levels, cmap = cmap,
                                             dlevels = dlevels, dcmap = dcmap,
                                             response_grouping = response_grouping)
-         """
+        
