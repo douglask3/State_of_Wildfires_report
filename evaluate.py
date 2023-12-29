@@ -208,7 +208,7 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
     #Sim = runSim_MaxEntFire(**common_args, run_name = "control", test_eg_cube = True)
 
     ## needs moving into own function
-    if True:
+    if False:
         limitations = [runSim_MaxEntFire(**common_args, run_name = "control_controls-" + str(i),  
                                      test_eg_cube = False, out_index = i, 
                                      method = 'burnt_area', return_limitations = True)  \
