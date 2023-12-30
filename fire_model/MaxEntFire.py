@@ -46,7 +46,7 @@ class MaxEntFire(object):
        
         
         self.lin_betas = params['lin_betas']
-        self.control_betas = params['control_betas']
+        self.control_betas = select_key_or_defualt(params, 'control_betas', None)#params['control_betas']
         self.lin_beta_constant = select_key_or_defualt(params, 'lin_beta_constant', 0.0)
         self.pow_betas = select_key_or_defualt(params, 'pow_betas', None)
         self.pow_power = select_key_or_defualt(params, 'pow_power', None)
@@ -57,17 +57,27 @@ class MaxEntFire(object):
         self.comb_X0 = select_key_or_defualt(params, 'comb_X0', None) 
         self.comb_p = select_key_or_defualt(params, 'comb_p', None)
 
-        try:
-            self.ncontrols = self.control_betas.shape.eval()[1]
-            self.nvars = self.control_betas.shape.eval()[0]
-        except:
-            self.ncontrols = self.control_betas.shape[1]
-            self.nvars = self.control_betas.shape[0]
-        self.ConFire = ConFire     
-        
         #Maria: add your response curve parameter selection thing
+
+        try:
+            self.nvars = self.lin_betas.shape.eval()[0]
+        except:
+            self.nvars = self.lin_betas.shape[0]
+
+        if self.control_betas is None:
+            self.control_based = False
+            self.ncontrols = self.nvars
+        else:
+            self.control_based = True
+            self.ConFire = ConFire 
+            try:
+                self.ncontrols = self.control_betas.shape.eval()[1]
+            except:
+                self.ncontrols = self.control_betas.shape[1]        
         
     def controls(self, Xi):
+        if not self.control_based: return Xi
+
         def normalize(vector):
             return vector / (self.numPCK.sum(vector**2)**(0.5))
         
@@ -104,7 +114,7 @@ class MaxEntFire(object):
         """
         self.npoints = X.shape[0]
         self.X_controls = self.controls(X)
-
+        
         if return_controls: return self.X_controls
         def response_curve(i):
             def add_response_curve(Rbetas, FUN, y):
