@@ -62,7 +62,7 @@ if __name__=="__main__":
     quick = True
 
     if person == 'Maria':
-        dir_training = "D:/Doutorado/Sanduiche/research/maxent-variables/2002-2011/" 
+        dir_training = "D:/Doutorado/Sanduiche/research/maxent-variables/variables_masked_na/fixed_gfed_reference/2002-2021/" 
     else:
         dir_training = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
 
@@ -70,17 +70,26 @@ if __name__=="__main__":
 
     year_range = [2002, 2009]
 
-    x_filen_list= ["ed.nc", "consec_dry_mean.nc", "savanna.nc", "cveg.nc", "rhumid.nc",
-                   "lightn.nc", "popDens.nc", "forest.nc", "precip.nc",
-                   "pasture.nc", "cropland.nc", "grassland.nc", "np.nc",
-                   "tas_max.nc", "mpa.nc", "tca.nc", "tas_mean.nc", "csoil.nc",
-                   "vpd.nc", "soilM.nc", "road_density.nc"] 
+    #x_filen_list= ["ed.nc", "consec_dry_mean.nc", "savanna.nc", "cveg.nc", "rhumid.nc",
+    #               "lightn.nc", "popDen.nc", "forest.nc", "precip.nc",
+    #               "pasture.nc", "cropland.nc", "grassland.nc", "np.nc",
+    #               "tas_max.nc", "mpa.nc", "tca.nc", "tas_mean.nc", "csoil.nc",
+    #               "vpd.nc", "soilM.nc", "road_density.nc"]
+                   
+    #x_filen_list= ["tas_max.nc", "precip.nc", "ed.nc", "csoil.nc", 
+    #                "road_density.nc", "forest.nc", "pasture.nc",
+    #                "lightn.nc", "grassland.nc", "consec_dry_mean.nc", 
+    #                "cropland.nc", "soilM.nc", "savanna.nc", "rhumid.nc"] 
+
+    x_filen_list= ["tas_max.nc", "precip.nc", "ed.nc", "csoil.nc", 
+                    "road_density.nc", "forest.nc", "pasture.nc"]                    
+                  
     
 
     if quick:
 
-        model_title = 'model-test-pca-2-'
-        biome_IDs = range(1,7)
+        model_title = 'model-test-7-'
+        biome_IDs = range(0,1)
 
         fraction_data_for_sample = 0.001
         min_data_points_for_sample = 1000 #minimum grid cells to use
@@ -97,14 +106,14 @@ if __name__=="__main__":
         months_of_year = [8,9,10]
         niterations = 200
 
-    CA_filen = "brazil_NAT.nc"
-    y_filen = "Area_burned_NAT"
+    #CA_filen = "brazil_NAT.nc"
+    #y_filen = "Area_burned_NAT"
 
     #CA_filen = "brazil_NON.nc"
     #y_filen = "Area_burned_NON"
 
-    #CA_filen = None
-    #y_filen = "GFED4.1s_Burned_Fraction"
+    CA_filen = None
+    y_filen = "GFED4.1s_Burned_Fraction"
 
     model_title = model_title + y_filen
     y_filen = y_filen + '.nc'
@@ -123,13 +132,13 @@ if __name__=="__main__":
     cmap = 'OrRd'
     dcmap = 'RdBu_r'
 
-    #Maria set groupings here
+    response_grouping = None
     
-    response_grouping= [["ed.nc", "tca.nc", "np.nc", "mpa.nc"], ["consec_dry_mean.nc", 
-                        "precip.nc", "tas_max.nc", "tas_mean.nc", "vpd.nc", "rhumid.nc",
-                        "soilM.nc"], ["savanna.nc", "forest.nc", "pasture.nc", "grassland.nc",
-                        "cropland.nc"], ["cveg.nc", "csoil.nc"], ["lightn.nc", "popDens.nc", 
-                        "road_density.nc"]] 
+    #response_grouping= [["ed.nc", "tca.nc", "np.nc", "mpa.nc"], ["consec_dry_mean.nc", 
+    #                    "precip.nc", "tas_max.nc", "tas_mean.nc", "vpd.nc", "rhumid.nc",
+    #                    "soilM.nc"], ["savanna.nc", "forest.nc", "pasture.nc", "grassland.nc",
+    #                    "cropland.nc"], ["cveg.nc", "csoil.nc"], ["lightn.nc", "popDens.nc", 
+    #                    "road_density.nc"]] 
     
      
     """ 
