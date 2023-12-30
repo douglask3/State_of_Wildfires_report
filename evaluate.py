@@ -28,6 +28,7 @@ import matplotlib as mpl
 import arviz as az
 
 from scipy.stats import wilcoxon
+from scipy.optimize import linear_sum_assignment
 
 from pdb import set_trace
 
@@ -120,7 +121,54 @@ def evaluate_MaxEnt_model_from_namelist(training_namelist = None, evaluate_namel
     
     return evaluate_MaxEnt_model(**variables)
 
-    
+def plot_limitation_maps(fig_dir, filename_out, **common_args):
+    limitations = [runSim_MaxEntFire(**common_args, run_name = "control_controls-" + str(i),  
+                                     test_eg_cube = False, out_index = i, 
+                                     method = 'burnt_area', return_limitations = True)  \
+                   for i in range(4)] 
+        
+    for i in range(len(limitations)):
+        coord = iris.coords.DimCoord(i, "model_level_number")
+        limitations[i].add_aux_coord(coord)
+    limitations = iris.cube.CubeList(limitations).merge_cube()
+    mn = np.mean(limitations.data, axis = tuple([2, 3, 4]))
+    std = np.std(limitations.data, axis = tuple([2, 3, 4]))
+    limitations = limitations-mn [:, :, None, None, None]
+    limitations = limitations/std[:, :, None, None, None]
+
+    def select_limitations(slice_B, slice_A):
+        dists = [np.sum(np.abs((slice_A[i] - slice_B).data), axis = tuple([1, 2, 3])) \
+                 for i in range(slice_A.shape[0])]
+        
+        dists = np.array(dists)            
+            
+        row_ind, col_ind = linear_sum_assignment(dists)
+            
+        return col_ind   
+
+    # Iterate through each B slice and apply the function
+    sorted_indices = []
+    for b_index in range(limitations.shape[1]):  # Loop through B dimension
+        print(b_index)
+        sorted_index = select_limitations(limitations[:, b_index, :], limitations[:, 0, :])
+        sorted_indices.append(sorted_index)
+    sorted_indices = np.transpose(np.array(sorted_indices))
+
+    sorted_lim = limitations.copy()
+    sorted_lim.data = np.take_along_axis(limitations.data, 
+                                         sorted_indices[:, :, None,None, None], axis=1)
+        
+    figName = fig_dir + filename_out + '-limitation_maps'
+    for i in range(sorted_lim.shape[0]):
+        plot_BayesModel_maps(sorted_lim[i], 
+                             [-2.5, -2.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 2.0, 2.5], 
+                             'PiYG', '', None, 
+                             Nrows = 5, Ncols = 2, plot0 = i*2,
+                             scale = 1, figure_filename = figName)
+            
+    plt.gcf().set_size_inches(8, 12)
+    plt.gcf().tight_layout()
+    plt.savefig(figName + '.png')
 
 def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_filen = None, 
                          dir = '', 
@@ -204,21 +252,9 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
         'grab_old_trace': grab_old_trace}
     
     Sim = runSim_MaxEntFire(**common_args, run_name = "control", test_eg_cube = True)
-
-
-    if False:
-        controls = [runSim_MaxEntFire(**common_args, run_name = "control_controls-" + str(i),  
-                                     test_eg_cube = False, out_index = i, return_controls = True)  \
-                       for i in range(4)] 
     
-        for i in range(controls.shape[0]):
-            plot_BayesModel_maps(controls[0], 
-                                 [-1.0, -0.75, -0.5, -0.25, 0.0, 0.25, 0.5, 0.75, 1.0], 
-                                 'PiYG', '', None, 
-                                 Nrows = 1, Ncols = 2, plot0 = i,
-                                 scale = 1, figure_filename = None)#figure_filename + 'obs_liklihood')
-    
-    #set_trace()
+    #plot_limitation_maps(fig_dir, filename_out, **common_args)
+        
     common_args['Sim'] = Sim[0]
     jackknife(x_filen_list, fig_dir = fig_dir, **common_args)
     #set_trace()
@@ -268,7 +304,7 @@ if __name__=="__main__":
     dcmap = 'RdBu_r'
     dir_projecting = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
     
-    training_namelist = "outputs//train_from_bottom-biome-all-controls-4-pca-pm1-ConFire-noq-forced-all-PropSpread2///variables_info--frac_points_0.00516-Month_7-nvariables_-frac_random_sample0.005-nvars_16-niterations_200.txt"
+    training_namelist = "outputs//train_from_bottom-biome-all-controls-4-pca-pm1-ConFire-noq-forced-lin_pow-PropSpread2///variables_info--frac_points_0.00516-Month_7-nvariables_-frac_random_sample0.005-nvars_16-niterations_200.txt"
     """ 
         RUN evaluation 
     """

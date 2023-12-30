@@ -54,16 +54,16 @@ def fit_MaxEnt_probs_to_data(Y, X, CA = None, niterations = 100, *arg, **kw):
         ncontrols = 4
         priors = {"q":     pm.LogNormal('q', mu = 2.0, sigma = 1.0),
                   "lin_beta_constant": pm.Normal('lin_beta_constant', mu = 0, sigma = 100),
-                  "control_betas": pm.LogitNormal('control_betas', mu = 0, sigma = 2, 
-                                             shape=(nvars, ncontrols)),
-                  "lin_betas": pm.Normal('lin_betas', mu = 0, sigma = 100, shape = ncontrols),
-                  "pow_betas": pm.Normal('pow_betas', mu = 0, sigma = 100, shape = ncontrols),
-                  "pow_power": pm.LogNormal('pow_power', mu = 0, sigma = 1, shape = ncontrols),
-                  "x2s_betas": pm.Normal('x2s_betas', mu = 0, sigma = 100, shape = ncontrols),
-                  "x2s_X0"   : pm.Normal('x2s_X0'   , mu = 0, sigma = 1, shape = ncontrols),
-                  "comb_betas": pm.Normal('comb_betas', mu = 0, sigma = 100, shape = ncontrols),
-                  "comb_X0": pm.Normal('comb_X0', mu = 0.5, sigma = 1, shape = ncontrols),
-                  "comb_p": pm.Normal('comb_p', mu = 0, sigma = 1 , shape = ncontrols)
+                  #"control_betas": pm.LogitNormal('control_betas', mu = 0, sigma = 2, 
+                  #                           shape=(nvars, ncontrols)),
+                  "lin_betas": pm.Normal('lin_betas', mu = 0, sigma = 100, shape = nvars),
+                  "pow_betas": pm.Normal('pow_betas', mu = 0, sigma = 100, shape = nvars),
+                  "pow_power": pm.LogNormal('pow_power', mu = 0, sigma = 1, shape = nvars),
+                  #"x2s_betas": pm.Normal('x2s_betas', mu = 0, sigma = 100, shape = ncontrols),
+                  #"x2s_X0"   : pm.Normal('x2s_X0'   , mu = 0, sigma = 1, shape = ncontrols),
+                  #"comb_betas": pm.Normal('comb_betas', mu = 0, sigma = 100, shape = ncontrols),
+                  #"comb_X0": pm.Normal('comb_X0', mu = 0.5, sigma = 1, shape = ncontrols),
+                  #"comb_p": pm.Normal('comb_p', mu = 0, sigma = 1 , shape = ncontrols)
                   }
 
         ## run model
@@ -261,7 +261,7 @@ if __name__=="__main__":
         SETPUT 
     """
     ### input data paths and filenames
-    model_title = 'train_from_bottom-biome-all-controls-4-pca-pm1-ConFire-noq-forced-all-PropSpread2'
+    model_title = 'train_from_bottom-biome-all-lin_pow-PropSpread2'
     dir_training = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
     y_filen = "GFED4.1s_Burned_Fraction.nc"
     CA_filen = None
@@ -276,8 +276,8 @@ if __name__=="__main__":
                    "vpd.nc", "soilM.nc"]
 
     ### optimization info
-    niterations = 100
-    cores = 2
+    niterations = 400
+    cores = 1
     fraction_data_for_sample = 0.005
     min_data_points_for_sample = 500
     months_of_year = [7]
