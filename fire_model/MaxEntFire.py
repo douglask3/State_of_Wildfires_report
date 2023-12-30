@@ -67,6 +67,7 @@ class MaxEntFire(object):
         if self.control_betas is None:
             self.control_based = False
             self.ncontrols = self.nvars
+            self.ConFire = False 
         else:
             self.control_based = True
             self.ConFire = ConFire 
