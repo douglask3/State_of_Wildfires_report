@@ -218,15 +218,15 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
                                  Nrows = 1, Ncols = 2, plot0 = i,
                                  scale = 1, figure_filename = None)#figure_filename + 'obs_liklihood')
     
-    set_trace()
+    #set_trace()
     common_args['Sim'] = Sim[0]
     jackknife(x_filen_list, fig_dir = fig_dir, **common_args)
     #set_trace()
     compare_to_obs_maps(filename_out, dir_outputs, Obs, Sim, lmask, *args, **kw)
     Bayes_benchmark(filename_out, fig_dir, Sim, Obs, lmask)
     for ct in ["initial", "standard", "potential", "sensitivity"]:
-        response_curve(curve_type = ct, x_filen_list = x_filen_list, 
-                       fig_dir = fig_dir, scalers =  scalers,
+        response_curve(curve_type = ct, x_filen_list = x_filen_list, response_grouping = response_grouping,
+                       fig_dir = fig_dir, scalers =  scalers, 
                        *args, **kw, **common_args)
 
     
@@ -277,6 +277,6 @@ if __name__=="__main__":
                                         sample_for_plot = sample_for_plot,
                                         levels = levels, cmap = cmap,
                                         dlevels = dlevels, dcmap = dcmap,
-                                        response_grouping = None)
+                                        response_grouping = response_grouping)
     
     

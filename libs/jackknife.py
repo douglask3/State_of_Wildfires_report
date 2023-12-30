@@ -22,9 +22,17 @@ def jackknife(x_filen_list, X, Sim, fig_dir, **common_args):
         makeDir(varname)
         Sim2 = runSim_MaxEntFire(X = Xi, **common_args, run_name = varname + "/deleted", 
                                  test_eg_cube=True)
+                                 
+        # Calculating the variance of Sim and Sim2
+        var_Sim = np.var(non_masked_data(Sim))
+        var_Sim2 = np.var(non_masked_data(Sim2))
 
-        contributions[varname] = \
-            np.mean(np.abs(non_masked_data(Sim) - non_masked_data(Sim2))) * 100
+        # Calculating the difference in variance and transforming into percentage
+        contribution = (var_Sim - var_Sim2)/var_Sim * 100
+        contributions[varname] = abs(contribution)
+
+        #contributions[varname] = \
+        #    np.mean(np.abs(non_masked_data(Sim) - non_masked_data(Sim2))) * 100
 
     sorted_contributions = {k: v for k, v in sorted(contributions.items(), key=lambda item: item[1], reverse=True)}
     sorted_variable_names = list(sorted_contributions.keys())

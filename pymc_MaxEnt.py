@@ -59,7 +59,7 @@ if __name__=="__main__":
     """ optimization """
 
     person = 'Maria'
-    quick = False
+    quick = True
 
     if person == 'Maria':
         dir_training = "D:/Doutorado/Sanduiche/research/maxent-variables/2002-2011/" 
@@ -79,8 +79,8 @@ if __name__=="__main__":
 
     if quick:
 
-        model_title = 'model-test-eslr-pca-'
-        biome_IDs = range(2,7)
+        model_title = 'model-test-pca-2-'
+        biome_IDs = range(1,7)
 
         fraction_data_for_sample = 0.001
         min_data_points_for_sample = 1000 #minimum grid cells to use
@@ -125,14 +125,12 @@ if __name__=="__main__":
 
     #Maria set groupings here
     
-    #response_grouping= [["ed.nc", "tca.nc", "np.nc", "mpa.nc"], ["consec_dry_mean.nc", 
-    #                    "precip.nc", "tas_max.nc", "tas_mean.nc", "vpd.nc", "rhumid.nc",
-    #                    "soilM.nc"], ["savanna.nc", "forest.nc", "pasture.nc", "grassland.nc",
-    #                    "cropland.nc"], ["cveg.nc", "csoil.nc"], ["lightn.nc", "popDens.nc", 
-    #                    "road_density.nc"]] 
+    response_grouping= [["ed.nc", "tca.nc", "np.nc", "mpa.nc"], ["consec_dry_mean.nc", 
+                        "precip.nc", "tas_max.nc", "tas_mean.nc", "vpd.nc", "rhumid.nc",
+                        "soilM.nc"], ["savanna.nc", "forest.nc", "pasture.nc", "grassland.nc",
+                        "cropland.nc"], ["cveg.nc", "csoil.nc"], ["lightn.nc", "popDens.nc", 
+                        "road_density.nc"]] 
     
-    response_grouping = None
-
      
     """ 
         RUN optimization 
