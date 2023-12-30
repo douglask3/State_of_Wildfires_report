@@ -205,7 +205,7 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
         'dir_samples': dir_samples,
         'grab_old_trace': grab_old_trace}
     
-    #Sim = runSim_MaxEntFire(**common_args, run_name = "control", test_eg_cube = True)
+    Sim = runSim_MaxEntFire(**common_args, run_name = "control", test_eg_cube = True)
 
     ## needs moving into own function
     if False:
