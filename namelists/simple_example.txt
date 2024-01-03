@@ -19,7 +19,7 @@ priors:: {'pname': "pow_power",'np': 'nvars', 'dist': 'LogNormal', 'mu': 0.0, 's
 ### optimization info
 niterations:: 100
 cores:: 1
-fraction_data_for_sample:: 0.00005
+fraction_data_for_sample:: 0.005
 subset_function:: sub_year_months
 subset_function_args:: {'months_of_year': [7]}
 grab_old_trace:: False # set to True till you get the code running. 
