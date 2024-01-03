@@ -51,7 +51,6 @@ def fit_MaxEnt_probs_to_data(Y, X, CA = None, niterations = 100, priors = None, 
     with pm.Model() as max_ent_model:
         ## set priors
         nvars = X.shape[1]
-        ncontrols = 1
         if priors is None:
             priors = {"q":     pm.LogNormal('q', mu = 0.0, sigma = 1.0),
                      "lin_beta_constant": pm.Normal('lin_beta_constant', mu = 0, sigma = 100),
