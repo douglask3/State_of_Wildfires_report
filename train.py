@@ -64,27 +64,32 @@ def fit_MaxEnt_probs_to_data(Y, X, CA = None, niterations = 100, priors = None, 
                      "comb_p": pm.Normal('comb_p', mu = 0, sigma = 1 , shape = nvars)
                      }
         else:
-            def define_prior(prior):
+            def define_prior(prior, pn):
                 kws = prior.copy()
                 kws.pop('pname')
                 kws.pop('np')
                 kws.pop('dist')
                 shape = prior['np']
                 if shape == 'nvars': shape = nvars 
-
-                pn = 0
-                out = None
-                while out is None and pn < 999:
-                    print(pn)
-                    try:
-                        out = getattr(pm, prior['dist'])(prior['pname'] + str(pn), 
+                
+                #pn = 0
+                #out = None
+                #while out is None and pn < 999:
+                #    print(pn)
+                #    try:
+                #        out = getattr(pm, prior['dist'])(prior['pname'] + str(pn), 
+                #                      shape = shape, **kws)
+                #    except:
+                #        pn = pn + 1
+                return getattr(pm, prior['dist'])(prior['pname'] + str(pn), 
                                       shape = shape, **kws)
-                    except:
-                        pn = pn + 1
-                return out
 
             priors_names =[prior['pname'] for prior in priors]
-            priors = [define_prior(prior) for prior in priors]
+
+            count_priors = [priors_names[:i].count(string) \
+                            for i, string in enumerate(priors_names)]
+            
+            priors = [define_prior(prior, pn) for prior, pn in zip(priors, count_priors)]
             
             # Create a dictionary to store items based on the first list
             grouped_items = {}
@@ -100,7 +105,7 @@ def fit_MaxEnt_probs_to_data(Y, X, CA = None, niterations = 100, priors = None, 
             priors = {priors_names[idx]: item[0] if len(item) == 1 else item \
                       for idx, item in enumerate(result_list)}
             
-            
+        
         ## run model
         model = FLAME(priors, inference = True)
         prediction = model.burnt_area(X)  
@@ -134,7 +139,6 @@ def fit_MaxEnt_probs_to_data(Y, X, CA = None, niterations = 100, priors = None, 
 def train_MaxEnt_model_from_namelist(namelist = None, **kwargs):
 
     variables = read_variable_from_namelist_with_overwite(namelist, **kwargs)
-
     
     variables['filename_out'] = \
               '_'.join([file[:-3] for file in variables['x_filen_list']]) + \
@@ -151,7 +155,7 @@ def train_MaxEnt_model_from_namelist(namelist = None, **kwargs):
 def train_MaxEnt_model(y_filen, x_filen_list, CA_filen = None, priors = None,
                        dir = '', filename_out = '',
                        dir_outputs = '',
-                       frac_random_sample = 1.0,
+                       fraction_data_for_sample = 1.0,
                        subset_function = None, subset_function_args = None,
                        niterations = 100, cores = 4, model_title = 'no_name',
                        subfolder = '', 
@@ -194,7 +198,7 @@ def train_MaxEnt_model(y_filen, x_filen_list, CA_filen = None, priors = None,
     dir_outputs = combine_path_and_make_dir(dir_outputs, model_title)
     dir_outputs = combine_path_and_make_dir(dir_outputs, subfolder)
     out_file =   filename_out + '-nvariables_' + \
-                 '-frac_random_sample' + str(frac_random_sample) + \
+                 '-frac_random_sample' + str(fraction_data_for_sample) + \
                  '-nvars_' +  str(len(x_filen_list)) + \
                  '-niterations_' + str(niterations * cores)
     
@@ -212,14 +216,13 @@ def train_MaxEnt_model(y_filen, x_filen_list, CA_filen = None, priors = None,
         scalers = pd.read_csv(scale_file).values   
     else:
         print("opening data for inference")
-
-  
+        
         common_args = {'y_filename': y_filen,
             'x_filename_list': x_filen_list,
             'add_1s_columne': False,
             'dir': dir,
             'x_normalise01': True,
-            'frac_random_sample': frac_random_sample,
+            'frac_random_sample': fraction_data_for_sample,
             'subset_function': subset_function,
             'subset_function_args': subset_function_args,
             **kws
