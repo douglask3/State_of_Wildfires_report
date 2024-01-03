@@ -147,12 +147,17 @@ def sub_year_range(cube, year_range):
     Returns:
         cube of just years between to years provided.
     """
-    constraint = iris.Constraint(year=lambda cell: (year_range[0]-0.5) <= cell <= (year_range[1]+0.5))
+    
+    try:
+        icc.add_year(cube, 'time')
+    except:
+        pass
+    
+    constraint = iris.Constraint(year=lambda cell: (year_range[0]-0.95) <= cell <= (year_range[1]+0.95))
+    
     return cube.extract(constraint)
     
     
-    return out
-
 def sub_year_months(cube, months_of_year):
     """Selects months of a year from data   
     Arguments:
@@ -198,7 +203,10 @@ def constrain_cube_by_cube_and_numericIDs(cube, regions, region):
     mask.data[mask.data.mask] = 0.0
     mask = mask.data == 0
 
+    if not cube.data.mask.shape == cube.data.shape:
+         cube.data.mask = np.isnan(cube.data)
     for layer in cube.data:
+        
         layer.mask[mask] = False
         layer[mask] = np.nan
     
@@ -337,7 +345,8 @@ def contrain_coords(cube, extent):
 
     
 def constrain_BR_biomes(cube, biome_ID):
-    mask = iris.load_cube('data/BR_Biomes.nc')    
+    if len(biome_ID) == 1 and biome_ID[0] == 0: return cube
+    mask = iris.load_cube('data/BR_Biomes.nc')   
     return constrain_cube_by_cube_and_numericIDs (cube, mask, biome_ID)
 
 

@@ -44,10 +44,14 @@ def fit_MaxEnt_probs_to_data(Y, X, CA = None, niterations = 100, priors = None, 
     except:
         pass        
 
+    try:
+        Y = Y.data
+    except:
+        pass
     with pm.Model() as max_ent_model:
         ## set priors
         nvars = X.shape[1]
-
+        ncontrols = 1
         if priors is None:
             priors = {"q":     pm.LogNormal('q', mu = 0.0, sigma = 1.0),
                      "lin_beta_constant": pm.Normal('lin_beta_constant', mu = 0, sigma = 100),
@@ -74,18 +78,20 @@ def fit_MaxEnt_probs_to_data(Y, X, CA = None, niterations = 100, priors = None, 
             priors = [define_prior(prior) for prior in priors]
             priors = dict(zip(priors_names, priors))
         ## run model
-        
+
         model = FLAME(priors, inference = True)
-        prediction = model.burnt_area_spread(X)  
-        
+        prediction = model.burnt_area(X)  
+    
         ## define error measurement
         if CA is None:
-            error = pm.DensityDist("error", prediction, logp = logistic_probability_tt, 
-                                observed = Y)
+            error = pm.DensityDist("error", prediction, priors['q'], 
+                                   logp = logistic_probability_tt, 
+                                   observed = Y)
         else:
             CA = CA.data
-            error = pm.DensityDist("error", prediction, CA, logp = logistic_probability_tt, 
-                                observed = Y)
+            error = pm.DensityDist("error", prediction, priors['q'], CA, 
+                                   logp = logistic_probability_tt, 
+                                   observed = Y)
                 
         ## sample model
         trace = pm.sample(niterations, return_inferencedata=True, 
@@ -124,7 +130,8 @@ def train_MaxEnt_model(y_filen, x_filen_list, CA_filen = None, priors = None,
                        dir_outputs = '',
                        frac_random_sample = 1.0,
                        subset_function = None, subset_function_args = None,
-                       niterations = 100, cores = 4, model_title = 'no_name', 
+                       niterations = 100, cores = 4, model_title = 'no_name',
+                       subfolder = '', 
                        grab_old_trace = False, **kws):
                        
     ''' Opens up training data and trains and saves Bayesian Inference optimization of model. 
@@ -162,6 +169,7 @@ def train_MaxEnt_model(y_filen, x_filen_list, CA_filen = None, priors = None,
     print("Optimization started")
     print("====================")
     dir_outputs = combine_path_and_make_dir(dir_outputs, model_title)
+    dir_outputs = combine_path_and_make_dir(dir_outputs, subfolder)
     out_file =   filename_out + '-nvariables_' + \
                  '-frac_random_sample' + str(frac_random_sample) + \
                  '-nvars_' +  str(len(x_filen_list)) + \
@@ -207,7 +215,10 @@ def train_MaxEnt_model(y_filen, x_filen_list, CA_filen = None, priors = None,
             print("target variable does not meet expected unit range " + \
                   "(i.e, data poimts should be fractions, but values found less than " + \
                   "0 or greater than 1)")
-            sys.exit() 
+            if np.mean(Y>1.0) > 0.01:
+                sys.exit() 
+            else:
+                Y[Y>1.0] = 0.9999999999999
         if np.min(Y) > 1.0:
             if np.max(Y) < 50:
                 print("WARNING: target variable has values greater than 1 all less than 50." + \
@@ -295,13 +306,19 @@ if __name__=="__main__":
         EXAMPLE 2 - python code 
     """
     ### input data paths and filenames
-    model_title = 'simple_example_model'
+    model_title = 'train_from_bottom-biome-all-lin_pow-PropSpread2'
     dir_training = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
     y_filen = "GFED4.1s_Burned_Fraction.nc"
     CA_filen = None
     
-    x_filen_list=["trees.nc","consec_dry_mean.nc",
-                  "crop.nc", "pas.nc", "humid.nc", "totalVeg.nc"] 
+    x_filen_list=["road_density.nc","trees.nc","consec_dry_mean.nc",
+                  "crop.nc", "pas.nc",  "savanna.nc", "grassland.nc"] 
+
+    x_filen_list= ["ed.nc", "consec_dry_mean.nc", "savanna.nc", "cveg.nc", "rhumid.nc",
+                   "lightn.nc", "popDens.nc", "forest.nc", "precip.nc",
+                   "pasture.nc", "cropland.nc", "grassland.nc", #"np.nc",
+                   "tas_max.nc", "mpa.nc", # "tca.nc",, "te.nc", "tas_mean.nc"
+                   "vpd.nc", "soilM.nc"]
 
     priors =  [{'pname': "q",'np': 1, 'dist': 'LogNormal', 'mu': 0.0, 'sigma': 1.0},
                {'pname': "lin_beta_constant",'np': 1, 'dist': 'Normal', 'mu': 0.0, 'sigma': 100},
@@ -310,13 +327,19 @@ if __name__=="__main__":
                {'pname': "pow_power",'np': 'nvars', 'dist': 'LogNormal', 'mu': 0.0, 'sigma': 1}]
 
     ### optimization info
-    niterations = 100
+    niterations = 400
     cores = 1
-    fraction_data_for_sample = 0.1
+    fraction_data_for_sample = 0.005
+    min_data_points_for_sample = 500
     months_of_year = [7]
+    year_range = [2002, 2009]
+    biome_ID = 0
 
-    subset_function = sub_year_months
-    subset_function_args = {'months_of_year': months_of_year}
+    subset_function = [sub_year_range, 
+                       sub_year_months, constrain_BR_biomes]
+    subset_function_args = [{'year_range': year_range},
+                            {'months_of_year': months_of_year},
+                            {'biome_ID': [biome_ID]}]
 
     grab_old_trace = True # set to True till you get the code running. 
                           # Then set to False when you start adding in new response curves
@@ -324,11 +347,9 @@ if __name__=="__main__":
     ### output info
     dir_outputs = 'outputs/'
 
-    filename = '_'.join([file[:-3] for file in x_filen_list]) + \
-              '-frac_points_' + str(fraction_data_for_sample) + \
+    filename = '-frac_points_' + str(fraction_data_for_sample) + str(len(x_filen_list)) + \
               '-Month_' +  '_'.join([str(mn) for mn in months_of_year])
 
-    
     
     """ 
         RUN optimization 
@@ -339,5 +360,6 @@ if __name__=="__main__":
                                         filename, dir_outputs,
                                         fraction_data_for_sample,
                                         subset_function, subset_function_args,
-                                        niterations, cores, model_title, grab_old_trace)
+                                        niterations, cores, model_title, '',  grab_old_trace,
+                                        min_data_points_for_sample = min_data_points_for_sample)
     

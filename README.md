@@ -1,10 +1,40 @@
-# Coding-python
+# FLAME -  Fogo local Analisado pela Máxima Entropia
+
+## Introduction
+FLAME (Fogo local Analisado pela Máxima Entropia) is a Bayesian inference implementation of a maximum entropy fire model specifically tailored to simulating fires in heterogeneous territories like Brazil. 
+
+## Model overview
+
+### Maximum Entropy concept
+
+### Relationship curves
+
+### Model Optimization
+
+## Evaluation overview
+
+### Posterior analysis
+
+### Jackknife
+
+### Response curves
+
+### NME
+
+## Projections
+
+### Attribution
+
+### Out of sample 
+
+## Data processing
+
+### Basic datasets provided
+
+### Notes on constraining area
 
 
-## Notes on constraining area
-
-
-### Political areas
+#### *Political areas*
 When opening data, setting ''Country'' or ''Continent'' will constrain the extent to that country or continent, and mask areas outside of it. Uses Natural Earth. If you define a country, it one look at the continent. Use None is you don't want any. Continent options are:
 * 'South America'
 * 'Oceania'
@@ -13,7 +43,7 @@ When opening data, setting ''Country'' or ''Continent'' will constrain the exten
 * 'North America'
 * 'Asia'
 
-### Ecoregions
+#### *Ecoregions*
 ''ecoregions'' is a numeric list (i.e [3, 7, 8]) where numbers pick Olson bomes and mask out everywhere else. If you  pick more than one, it returns a map of all of them.
 * **None** Return all areas.
 * **1** Tropical and subtropical moist broadleaf forests
@@ -30,4 +60,23 @@ When opening data, setting ''Country'' or ''Continent'' will constrain the exten
 * **12** Mediterranean Forests, woodlands and scrubs
 * **13** Deserts and xeric shrublands
 * **14** Mangroves
+
+#### *Brazillian legal Biomes*
+
+''Biomes'' is a numeric list where numbers pick Brazilian biomes and mask out everywhere else. If you pick more than one, it returns a map of all of them.
+
+* **1** Amazonia
+* **2** Caatinga
+* **3** Cerrado
+* **4** Atlantic Forest
+* **5** Pampa
+* **6** Pantanal
+
+#### *GFED Regions*
+
+#### *AR6 regions*
+
+#### *To year range*
+
+#### *To months of year*
 

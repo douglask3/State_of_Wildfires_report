@@ -6,11 +6,7 @@ from FLAME import FLAME
 
 from BayesScatter import *
 from response_curves import *
-
-try:
-    from jackknife import *
-except:
-    pass
+from jackknife import *
 
 
 from read_variable_from_netcdf import *
@@ -32,17 +28,18 @@ import matplotlib as mpl
 import arviz as az
 
 from scipy.stats import wilcoxon
+from scipy.optimize import linear_sum_assignment
 
 from pdb import set_trace
 
 
-def plot_BayesModel_signifcance_maps(Obs, Sim, lmask, plot_n = 1, Nrows = 3, Ncols = 2):
+def plot_BayesModel_signifcance_maps(Obs, Sim, lmask, plot_n = 1, Nrows = 3, Ncols = 2,
+                                     figure_filename = None):
     
     def flatten_to_dim0(cube):           
         x = cube.data.flatten()[lmask]        
         x = x.reshape([cube.shape[0], int(len(x)/cube.shape[0])])
         return x
-    
     X = flatten_to_dim0(Obs) 
     pv = flatten_to_dim0(Sim[1])    
         
@@ -63,13 +60,13 @@ def plot_BayesModel_signifcance_maps(Obs, Sim, lmask, plot_n = 1, Nrows = 3, Nco
     plt.xticks(at, 10**at)
     labels = np.array([0, 0.3, 0.5, 0.7, 0.8, 0.9, 0.95, 0.99])
     plt.yticks(10**labels, labels)
-    
+    #set_trace()
     Sim[1].data.mask[Sim[1].data == 0] = True
+    
     plot_BayesModel_maps(Sim[1], [0.0, 0.5, 0.75, 0.9, 0.95, 0.99, 1.0], 'copper', '', None, 
                          Nrows = Nrows, Ncols = Ncols, plot0 = plot_n, collapse_dim = 'time',
-                         scale = 1)
-
-
+                         scale = 1, figure_filename = figure_filename + 'obs_liklihood')
+    
     ax = plt.subplot(Nrows, Ncols, plot_n + 3)
     BayesScatter(Obs, Sim[0], lmask,  0.000001, 0.000001, ax)
     
@@ -88,11 +85,13 @@ def plot_BayesModel_signifcance_maps(Obs, Sim, lmask, plot_n = 1, Nrows = 3, Nco
 
     plot_annual_mean(apos_cube,[0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], 
                      'RdYlBu_r',  plot_name = "mean bias", 
-                     Nrows = Nrows, Ncols = Ncols, plot_n = plot_n + 4)
+                     Nrows = Nrows, Ncols = Ncols, plot_n = plot_n + 4,
+                     figure_filename = figure_filename + 'obs_post-Position.nc')
 
     plot_annual_mean(p_value_cube, np.array([0, 0.01, 0.05, 0.1, 0.5, 1.0]), 'copper',   
                      plot_name = "mean bias p-value", 
-                     Nrows = Nrows, Ncols = Ncols, plot_n = plot_n + 5)
+                     Nrows = Nrows, Ncols = Ncols, plot_n = plot_n + 5,
+                     figure_filename = figure_filename + 'obs_post-Pvalue.nc')
     
 
 
@@ -101,17 +100,18 @@ def compare_to_obs_maps(filename_out, dir_outputs, Obs, Sim, lmask, levels, cmap
                         dlevels = None, dcmap = None,
                         *args, **kw):    
     
-    plot_BayesModel_maps(Sim[0], levels, cmap, '', Obs, Nrows = 3, Ncols = 3)
-    plot_BayesModel_signifcance_maps(Obs, Sim, lmask, plot_n = 4, Nrows = 3, Ncols = 3)
+    fig_dir = combine_path_and_make_dir(dir_outputs, '/figs/')
+    figure_filename = fig_dir + filename_out + '-evaluation'
+    figure_dir =  combine_path_and_make_dir(figure_filename)
     
+    plot_BayesModel_maps(Sim[0], levels, cmap, '', Obs, Nrows = 3, Ncols = 3,
+                         figure_filename = figure_dir)
+    plot_BayesModel_signifcance_maps(Obs, Sim, lmask, plot_n = 4, Nrows = 3, Ncols = 3,
+                                     figure_filename = figure_dir)
     
-   
     plt.gcf().set_size_inches(12, 12)
     plt.gcf().tight_layout()
-    fig_dir = combine_path_and_make_dir(dir_outputs, '/figs/')
-
-    plt.savefig(fig_dir + filename_out + '-evaluation.png')
-
+    plt.savefig(figure_filename + '.png')
 
 
 def evaluate_MaxEnt_model_from_namelist(training_namelist = None, evaluate_namelist = None, 
@@ -122,13 +122,61 @@ def evaluate_MaxEnt_model_from_namelist(training_namelist = None, evaluate_namel
    
     return evaluate_MaxEnt_model(**variables)
 
-    
+def plot_limitation_maps(fig_dir, filename_out, **common_args):
+    limitations = [runSim_MaxEntFire(**common_args, run_name = "control_controls-" + str(i),  
+                                     test_eg_cube = False, out_index = i, 
+                                     method = 'burnt_area', return_limitations = True)  \
+                   for i in range(4)] 
+        
+    for i in range(len(limitations)):
+        coord = iris.coords.DimCoord(i, "model_level_number")
+        limitations[i].add_aux_coord(coord)
+    limitations = iris.cube.CubeList(limitations).merge_cube()
+    mn = np.mean(limitations.data, axis = tuple([2, 3, 4]))
+    std = np.std(limitations.data, axis = tuple([2, 3, 4]))
+    limitations = limitations-mn [:, :, None, None, None]
+    limitations = limitations/std[:, :, None, None, None]
+
+    def select_limitations(slice_B, slice_A):
+        dists = [np.sum(np.abs((slice_A[i] - slice_B).data), axis = tuple([1, 2, 3])) \
+                 for i in range(slice_A.shape[0])]
+        
+        dists = np.array(dists)            
+            
+        row_ind, col_ind = linear_sum_assignment(dists)
+            
+        return col_ind   
+
+    # Iterate through each B slice and apply the function
+    sorted_indices = []
+    for b_index in range(limitations.shape[1]):  # Loop through B dimension
+        print(b_index)
+        sorted_index = select_limitations(limitations[:, b_index, :], limitations[:, 0, :])
+        sorted_indices.append(sorted_index)
+    sorted_indices = np.transpose(np.array(sorted_indices))
+
+    sorted_lim = limitations.copy()
+    sorted_lim.data = np.take_along_axis(limitations.data, 
+                                         sorted_indices[:, :, None,None, None], axis=1)
+        
+    figName = fig_dir + filename_out + '-limitation_maps'
+    for i in range(sorted_lim.shape[0]):
+        plot_BayesModel_maps(sorted_lim[i], 
+                             [-2.5, -2.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 2.0, 2.5], 
+                             'PiYG', '', None, 
+                             Nrows = 5, Ncols = 2, plot0 = i*2,
+                             scale = 1, figure_filename = figName)
+            
+    plt.gcf().set_size_inches(8, 12)
+    plt.gcf().tight_layout()
+    plt.savefig(figName + '.png')
 
 def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_filen = None, 
                          dir = '', 
                          dir_outputs = '', model_title = '', filename_out = '',
                          subset_function = None, subset_function_args = None,
-                         sample_for_plot = 1, grab_old_trace = False,
+                         sample_for_plot = 1, grab_old_trace = False, 
+                         response_grouping = None,
                          *args, **kw):
 
     """ Runs prediction and evalutation of the sampled model based on previously run trace.
@@ -162,13 +210,16 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
         look in dir_outputs + model_title, and you'll see figure and tables from evaluation, 
         projection, reponse curves, jackknifes etc (not all implmenented yet)
     """
+    
+    dir_outputs = combine_path_and_make_dir(dir_outputs, model_title)
+    dir_samples = combine_path_and_make_dir(dir_outputs, '/samples/')     
+    dir_samples = combine_path_and_make_dir(dir_samples, filename_out)
+
     fig_dir = combine_path_and_make_dir(dir_outputs, '/figs/')
     trace = az.from_netcdf(trace_file)
     scalers = pd.read_csv(scale_file).values  
 
-    #plot_basic_parameter_info(trace, fig_dir)
-    #paramter_map(trace, x_filen_list, fig_dir) 
-
+     
     common_args = {
         'y_filename': y_filen,
         'x_filename_list': x_filen_list,
@@ -187,10 +238,10 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
     Obs = read_variable_from_netcdf(y_filen, dir,
                                     subset_function = subset_function, 
                                     subset_function_args = subset_function_args)
+
     
-    dir_outputs = combine_path_and_make_dir(dir_outputs, model_title)
-    dir_samples = combine_path_and_make_dir(dir_outputs, '/samples/')     
-    dir_samples = combine_path_and_make_dir(dir_samples, filename_out)
+    #plot_basic_parameter_info(trace, fig_dir)
+    #paramter_map(trace, x_filen_list, fig_dir) 
     
     common_args = {
         'trace': trace,
@@ -202,65 +253,21 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
         'grab_old_trace': grab_old_trace}
     
     Sim = runSim_MaxEntFire(**common_args, run_name = "control", test_eg_cube = True)
-
-    # Maria add jakknife()
-
-    '''
-    contributions = np.zeros(X.shape[1]-1)
-    #contributions_percentage = []
     
-    for col in range(X.shape[1]-1):
+    #plot_limitation_maps(fig_dir, filename_out, **common_args)
         
-        original_column = X[:, col]
-        
-        X = np.delete(X, col, axis=1)
-    
-        col_contributions = []
-    
-        #X_deleted = np.delete(X, col, axis=1)
-        
-        Sim2 = runSim_MaxEntFire(**common_args, run_name = "deleted", test_eg_cube = True)
-        
-        #variable_name = x_filen_list[col].replace('.nc', '')
-        #ax.set_title(variable_name)
-        
-        #def non_masked_data(cube):
-        #    return cube.data[cube.data.mask == False].data
-        
-        sim_final = (non_masked_data(Sim) - non_masked_data(Sim2))
-        sim_final = np.mean(sim_final)
-        #set_trace()
-        contributions[col] = sim_final
-
-    contributions_percentage = np.abs(contributions) /np.sum(np.abs(contributions)) * 100
-
-
-    # Sort variables by mean contribution in descending order
-    sorted_indices = np.argsort(contributions_percentage)[::-1]
-    actual_names = [filename.replace('.nc', '') for filename in x_filen_list]
-    sorted_contributions = contributions_percentage[sorted_indices]
-    #sorted_variable_names = [f"Variable {i + 1}" for i in sorted_indices]
-    sorted_variable_names = [actual_names[i] for i in sorted_indices]
-    #set_trace()
-    
-    # Create the bar plot
-    plt.figure(figsize=(10, 6))
-    plt.barh(sorted_variable_names, sorted_contributions, color='blue')
-    plt.xlabel('Contribution Percentage')
-    plt.title('Variable Contributions')
-    plt.grid(axis='x', linestyle='--', alpha=0.6)
-    plt.gca().invert_yaxis()  # Invert the y-axis to show the most important variables at the top
-    plt.show()
-    set_trace()
-    '''
-    #plot_jackknife(Sim, X)
+    common_args['Sim'] = Sim[0]
+    #jackknife(x_filen_list, fig_dir = fig_dir, **common_args)
     #set_trace()
     compare_to_obs_maps(filename_out, dir_outputs, Obs, Sim, lmask, *args, **kw)
     Bayes_benchmark(filename_out, fig_dir, Sim, Obs, lmask)
-    for ct in ["standard", "potential", "sensitivity", "initial"]:
-        response_curve(Sim[0], curve_type = ct, x_filen_list = x_filen_list, 
-                       fig_dir = fig_dir, *args, **kw, **common_args)
-
+    for ct in ["initial", "standard", "potential", "sensitivity"]:
+        response_curve(curve_type = ct, x_filen_list = x_filen_list,
+                       fig_dir = fig_dir, scalers =  scalers, 
+                       *args, **kw, **common_args)
+                       
+    #response_grouping = response_grouping
+    
     
 
 if __name__=="__main__":
