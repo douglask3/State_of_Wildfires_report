@@ -71,16 +71,40 @@ def fit_MaxEnt_probs_to_data(Y, X, CA = None, niterations = 100, priors = None, 
                 kws.pop('dist')
                 shape = prior['np']
                 if shape == 'nvars': shape = nvars 
-                return getattr(pm, prior['dist'])(prior['pname'], shape = shape, **kws)
+
+                pn = 0
+                out = None
+                while out is None and pn < 999:
+                    print(pn)
+                    try:
+                        out = getattr(pm, prior['dist'])(prior['pname'] + str(pn), 
+                                      shape = shape, **kws)
+                    except:
+                        pn = pn + 1
+                return out
 
             priors_names =[prior['pname'] for prior in priors]
             priors = [define_prior(prior) for prior in priors]
-            priors = dict(zip(priors_names, priors))
-        ## run model
+            
+            # Create a dictionary to store items based on the first list
+            grouped_items = {}
+            for idx, string in enumerate(priors_names):
+                if string not in grouped_items:
+                    grouped_items[string] = []
+                grouped_items[string].append(priors[idx])
 
+            # Convert the dictionary values to a list
+            result_list = list(grouped_items.values())
+            
+            priors_names = list(dict.fromkeys(priors_names))
+            priors = {priors_names[idx]: item[0] if len(item) == 1 else item \
+                      for idx, item in enumerate(result_list)}
+            
+            
+        ## run model
         model = FLAME(priors, inference = True)
         prediction = model.burnt_area(X)  
-    
+        
         ## define error measurement
         if CA is None:
             error = pm.DensityDist("error", prediction, priors['q'], 
@@ -301,6 +325,7 @@ if __name__=="__main__":
     namelist = "namelists//simple_example_namelist.txt"
 
     train_MaxEnt_model_from_namelist('namelists/simple_example.txt')
+    set_trace()
     """ 
         EXAMPLE 2 - python code 
     """

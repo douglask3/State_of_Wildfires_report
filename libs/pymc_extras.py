@@ -44,6 +44,7 @@ def logistic_probability_tt(Y, fx, qSpread = None, CA = None):
         1-d tensor array of liklihoods.
         
     """
+    
     fx = tt.switch(
         tt.lt(fx, 0.0000000000000000001),
         0.0000000000000000001, fx)
