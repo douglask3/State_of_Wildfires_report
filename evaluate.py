@@ -299,7 +299,7 @@ if __name__=="__main__":
     """
     ### input data paths and filenames
 
-    training_namelist = "outputs//simple_example_model/variables_info-trees_consec_dry_mean_crop_pas_humid_totalVeg-frac_points_0.1-Month_7-nvariables_-frac_random_sample0.1-nvars_6-niterations_100.txt"
+    training_namelist = "outputs//simple_example_model-speedtest///variables_info-Forest_consec_dry_mean_crop_pas_cveg-frac_points_0.005-nvariables_-frac_random_sample0.005-nvars_5-niterations_100.txt"
 
     config_namelist = "namelists/simple_example.txt"
 
