@@ -72,15 +72,6 @@ def fit_MaxEnt_probs_to_data(Y, X, CA = None, niterations = 100, priors = None, 
                 shape = prior['np']
                 if shape == 'nvars': shape = nvars 
                 
-                #pn = 0
-                #out = None
-                #while out is None and pn < 999:
-                #    print(pn)
-                #    try:
-                #        out = getattr(pm, prior['dist'])(prior['pname'] + str(pn), 
-                #                      shape = shape, **kws)
-                #    except:
-                #        pn = pn + 1
                 return getattr(pm, prior['dist'])(prior['pname'] + str(pn), 
                                       shape = shape, **kws)
 
