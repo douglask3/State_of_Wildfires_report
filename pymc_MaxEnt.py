@@ -62,6 +62,7 @@ if __name__=="__main__":
     quick = True
 
     if person == 'Maria':
+        #dir_training = "D:/Doutorado/Sanduiche/research/maxent-variables/2002-2011/"
         dir_training = "D:/Doutorado/Sanduiche/research/maxent-variables/variables_masked_na/fixed_gfed_reference/2002-2021/" 
     else:
         dir_training = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
@@ -73,8 +74,10 @@ if __name__=="__main__":
     #x_filen_list= ["ed.nc", "consec_dry_mean.nc", "savanna.nc", "cveg.nc", "rhumid.nc",
     #               "lightn.nc", "popDen.nc", "forest.nc", "precip.nc",
     #               "pasture.nc", "cropland.nc", "grassland.nc", "np.nc",
-    #               "tas_max.nc", "mpa.nc", "tca.nc", "tas_mean.nc", "csoil.nc",
+    #               "tas_max.nc", "mpa.nc", "tca.nc", "csoil.nc",
     #               "vpd.nc", "soilM.nc", "road_density.nc"]
+    
+    #"tas_mean.nc"
                    
     #x_filen_list= ["tas_max.nc", "precip.nc", "ed.nc", "csoil.nc", 
     #                "road_density.nc", "forest.nc", "pasture.nc",
@@ -88,7 +91,7 @@ if __name__=="__main__":
 
     if quick:
 
-        model_title = 'model-test-7-'
+        model_title = 'model-test-7varlin-'
         biome_IDs = range(0,1)
 
         fraction_data_for_sample = 0.001
@@ -97,7 +100,7 @@ if __name__=="__main__":
         months_of_year = [8, 9, 10]
         niterations = 100
     else:
-        model_title = 'model-full-pca-'
+        model_title = 'model-full-19-'
         biome_IDs = range(1,7)
         fraction_data_for_sample = 0.2
         min_data_points_for_sample = 5000 #minimum grid cells to use
@@ -124,7 +127,7 @@ if __name__=="__main__":
     dir_outputs = 'outputs/'
 
     dir_projecting = dir_training
-    #dir_projecting = "D:/Doutorado/Sanduiche/research/maxent-variables/2012-2021/"
+    
     sample_for_plot = 200
     
     levels = [0, 0.1, 1, 2, 5, 10, 20, 50, 100] 
@@ -173,7 +176,10 @@ if __name__=="__main__":
             RUN projection 
        
         """
-        evaluate_MaxEnt_model_from_namelist(variable_info_file, dir = dir_projecting,
+        evaluate_MaxEnt_model_from_namelist(variable_info_file, #subset_function_args = [{'year_range': [2010,2019]},
+                                            #{'months_of_year': months_of_year},
+                                            #{'biome_ID': [biome_ID]}], 
+                                            dir = dir_projecting,
                                             grab_old_trace = grab_old_trace,
                                             sample_for_plot = sample_for_plot,
                                             levels = levels, cmap = cmap,
