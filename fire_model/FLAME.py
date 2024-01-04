@@ -67,6 +67,7 @@ class FLAME(object):
                 self.ncontrols = self.control_betas.shape[1]        
     
     def select_key_or_defualt(self, dirc, key, default):
+        dirc = dict(sorted(dirc.items()))
         out = [dirc[name] for name in dirc if key in name]
         
         if len(out) == 0: 
