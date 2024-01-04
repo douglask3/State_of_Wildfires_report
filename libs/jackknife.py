@@ -3,10 +3,14 @@ import matplotlib.pyplot as plt
 
 from response_curves import *
 from pymc_extras import *
-
+from BayesScatter import *
 
 import numpy as np
 import matplotlib.pyplot as plt
+
+#trying stuff out
+from sklearn.metrics import roc_auc_score
+from sklearn.utils import shuffle
 
 
 def jackknife(x_filen_list, X, Sim, fig_dir, **common_args):
@@ -14,26 +18,51 @@ def jackknife(x_filen_list, X, Sim, fig_dir, **common_args):
     contributions = {}
 
     for col in range(X.shape[1] - 1):
+    
         Xi = X.copy()
         Xi[:, col] = 0.0
         varname = x_filen_list[col] 
         if varname.endswith(".nc"):
             varname = varname[:-3]
         makeDir(varname)
+        
         Sim2 = runSim_MaxEntFire(X = Xi, **common_args, run_name = varname + "/deleted", 
-                                 test_eg_cube=True)
-                                 
-        # Calculating the variance of Sim and Sim2
-        var_Sim = np.var(non_masked_data(Sim))
-        var_Sim2 = np.var(non_masked_data(Sim2))
-
-        # Calculating the difference in variance and transforming into percentage
-        contribution = (var_Sim - var_Sim2)/var_Sim * 100
-        contributions[varname] = abs(contribution)
+                                 test_eg_cube=True)                              
 
         #contributions[varname] = \
         #    np.mean(np.abs(non_masked_data(Sim) - non_masked_data(Sim2))) * 100
+        
+        contributions[varname] = \
+            np.abs((non_masked_data(Sim) - non_masked_data(Sim2))) * 100
+            
+    # Extract values for plotting
+    data = list(contributions.values())
 
+    # Calculate percentiles and medians for each variable
+    percentiles_10 = np.percentile(data, 10, axis=1)
+    percentiles_90 = np.percentile(data, 90, axis=1)
+    medians = np.median(data, axis=1)
+
+    # Create violin plot
+    plt.figure(figsize=(10, 6))
+    plt.violinplot(data, vert=False)
+
+    # Plotting markers and error bars for percentiles
+    for i, var in enumerate(contributions.keys()):
+        plt.scatter(medians[i], i + 1, color='red')
+        plt.errorbar(medians[i], i + 1, xerr=[[medians[i] - percentiles_10[i]], [percentiles_90[i] - medians[i]]],
+                     fmt='none', ecolor='black')
+
+    plt.xlabel('Contributions')
+    plt.ylabel('Variables')
+    plt.title('Contributions of Variables')
+    plt.yticks(np.arange(1, len(contributions) + 1), list(contributions.keys()))
+    plt.tight_layout()
+    plt.show()
+    set_trace()
+    
+    
+    '''
     sorted_contributions = {k: v for k, v in sorted(contributions.items(), key=lambda item: item[1], reverse=True)}
     sorted_variable_names = list(sorted_contributions.keys())
     sorted_values = list(sorted_contributions.values())
@@ -83,8 +112,7 @@ def jackknife(x_filen_list, X, Sim, fig_dir, **common_args):
     # Save the figure as a PNG file
     fig_jackknife.savefig(figure_filename + '.png')
     plt.clf()
-
-
+    '''
 def jackknife_plotting(Sim, jackknife_type, X, x_filen_list, fig_dir, **common_args):
 
     figure_filename = fig_dir + jackknife_type
