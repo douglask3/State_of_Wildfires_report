@@ -67,14 +67,19 @@ class FLAME(object):
                 self.ncontrols = self.control_betas.shape[1]        
     
     def select_key_or_defualt(self, dirc, key, default):
-        if key in dirc:
-            out = dirc[key]
-            if type(out) is list: 
-                out =  self.numPCK.stack(out)[:,0]
-        else:
+        out = [dirc[name] for name in dirc if key in name]
+        
+        if len(out) == 0: 
             out = default 
-
-        return out
+        elif len(out) == 1: 
+            out = out[0]
+        else: 
+            out = self.numPCK.stack([i[0] for i in out])
+        
+        if type(out) is list: 
+            out =  self.numPCK.stack(out)[:,0]
+       
+        return(out)
 
 
     def controls(self, Xi):
