@@ -45,9 +45,8 @@ def logistic_probability_tt(Y, fx, qSpread = None, CA = None):
         
     """
     
-    fx = tt.switch(
-        tt.lt(fx, 0.0000000000000000001),
-        0.0000000000000000001, fx)
+    fx = tt.switch( tt.lt(fx, 0.0000000001), 0.0000000001, fx)
+    fx = tt.switch( tt.gt(fx, 0.9999999999), 0.9999999999, fx)
     
     if qSpread is not None:
         Y = Y *(1 + qSpread) / (Y * qSpread + 1)
@@ -59,7 +58,6 @@ def logistic_probability_tt(Y, fx, qSpread = None, CA = None):
     return prob
 
 def logistic_how_likely(Y, X):
-    import matplotlib.pyplot as plt
     
     X1 = 1 - X
     def prob_fun(y):
@@ -72,7 +70,7 @@ def runSim_MaxEntFire(trace, sample_for_plot, X, eg_cube, lmask, run_name,
                       dir_samples, grab_old_trace, 
                       class_object = FLAME, method = 'burnt_area',
                       test_eg_cube = False, out_index = None, *args, **kw):  
-     
+    
     def sample_model(i, run_name = 'control'):   
         dir_sample =  combine_path_and_make_dir(dir_samples, run_name)
         file_sample = dir_sample + '/sample-pred' + str(i) + '.nc'
