@@ -1,18 +1,19 @@
 ## input data paths and filenames
-model_title::  'simple_example_model-speedtest'
+model_title::  'simple_example_model-customPriors'
 dir_training:: "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
 y_filen:: "GFED4.1s_Burned_Fraction.nc"
 CA_filen:: None
-x_filen_list:: ["Forest.nc","consec_dry_mean.nc", "crop.nc", "pas.nc", "cveg.nc"] 
+x_filen_list:: ["Forest.nc", "consec_dry_mean.nc", "tas_max.nc", "crop.nc", "pas.nc", "cveg.nc"]
 
 ## Model info
 priors:: {'pname': "q",'np': 1, 'dist': 'LogNormal', 'mu': 0.0, 'sigma': 1.0}
 priors:: {'pname': "lin_beta_constant",'np': 1, 'dist': 'Normal', 'mu': 0.0, 'sigma': 100}
 priors:: {'pname': "lin_betas",'np': 1, 'dist': 'Normal', 'mu': 0.0, 'sigma': 100}
+priors:: {'pname': "lin_betas",'np': 1, 'dist': 'LogNormal', 'mu': 0.0, 'sigma': 20}
+priors:: {'pname': "lin_betas",'np': 1, 'dist': 'LogNormal', 'mu': 0.0, 'sigma': 20}
 priors:: {'pname': "lin_betas",'np': 1, 'dist': 'Normal', 'mu': 0.0, 'sigma': 100}
 priors:: {'pname': "lin_betas",'np': 1, 'dist': 'Normal', 'mu': 0.0, 'sigma': 100}
-priors:: {'pname': "lin_betas",'np': 1, 'dist': 'Normal', 'mu': 0.0, 'sigma': 100}
-priors:: {'pname': "lin_betas",'np': 1, 'dist': 'Normal', 'mu': 0.0, 'sigma': 100}
+priors:: {'pname': "lin_betas",'np': 1, 'dist': 'LogNormal', 'mu': 0.0, 'sigma': 20}
 priors:: {'pname': "pow_betas",'np': 'nvars', 'dist': 'Normal', 'mu': 0.0, 'sigma': 100}
 priors:: {'pname': "pow_power",'np': 'nvars', 'dist': 'LogNormal', 'mu': 0.0, 'sigma': 1}
 
