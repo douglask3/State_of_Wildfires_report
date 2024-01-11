@@ -65,7 +65,7 @@ if __name__=="__main__":
         #dir_training = "D:/Doutorado/Sanduiche/research/maxent-variables/2002-2011/"
         dir_training = "D:/Doutorado/Sanduiche/research/maxent-variables/variables_masked_na/fixed_gfed_reference/2002-2021/" 
     else:
-        dir_training = "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
+        dir_training = "/data/users/dkelley/MaxEnt/driving_Data/2002-2021/"
 
 
 
@@ -192,9 +192,9 @@ if __name__=="__main__":
             RUN projection 
        
         """
-        evaluate_MaxEnt_model_from_namelist(variable_info_file, #subset_function_args = [{'year_range': [2010,2019]},
-                                            #{'months_of_year': months_of_year},
-                                            #{'biome_ID': [biome_ID]}], 
+        evaluate_MaxEnt_model_from_namelist(variable_info_file, subset_function_args = [{'year_range': [2010,2019]},
+                                            {'months_of_year': months_of_year},
+                                            {'biome_ID': [biome_ID]}], 
                                             dir = dir_projecting,
                                             grab_old_trace = grab_old_trace,
                                             sample_for_plot = sample_for_plot,

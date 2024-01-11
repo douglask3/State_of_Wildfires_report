@@ -116,7 +116,10 @@ def plot_cube(cube, N, M, n, cmap, levels = None, extend = 'neither',
     
     plt.gca().coastlines()
     if figure_filename is not None:
-        iris.save(cube, figure_filename)
+        try:
+            iris.save(cube, figure_filename)
+        except:
+            set_trace()
     return cf, levels, extend
 
 
