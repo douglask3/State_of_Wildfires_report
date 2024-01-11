@@ -256,11 +256,13 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
     #plot_limitation_maps(fig_dir, filename_out, **common_args)
         
     common_args['Sim'] = Sim[0]
+    #set_trace()
     jackknife(x_filen_list, fig_dir = fig_dir, **common_args)   
     set_trace()
-    compare_to_obs_maps(filename_out, dir_outputs, Obs, Sim, lmask, *args, **kw)
-    Bayes_benchmark(filename_out, fig_dir, Sim, Obs, lmask)
+    #compare_to_obs_maps(filename_out, dir_outputs, Obs, Sim, lmask, *args, **kw)
+    #Bayes_benchmark(filename_out, fig_dir, Sim, Obs, lmask)
     for ct in ["initial", "standard", "potential", "sensitivity"]:
+    #for ct in ["potential", "sensitivity"]:
         response_curve(curve_type = ct, x_filen_list = x_filen_list,
                        fig_dir = fig_dir, scalers =  scalers, 
                        *args, **kw, **common_args)

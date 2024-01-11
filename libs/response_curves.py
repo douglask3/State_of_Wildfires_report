@@ -44,6 +44,7 @@ def potential_curve_experiment(Sim, Xi, col_to_go, name, trace, sample_for_plot,
                               eg_cube, lmask, *args, **kw):
     X = Xi.copy()
     X[:, col_to_go] = 0.0
+    #X[:, col_to_go] = np.mean(X[:, col_to_go])
         
     Sim2 = runSim_MaxEntFire(trace, sample_for_plot, X, eg_cube, lmask, 
                              name + "/to_0", *args, **kw)
@@ -53,6 +54,7 @@ def potential_curve_experiment(Sim, Xi, col_to_go, name, trace, sample_for_plot,
 def sensitivity_curve_experiment(Sim, Xi, col, name, trace, sample_for_plot, 
                               eg_cube, lmask, *args, **kw):
     dx = 0.001
+    #dx = 1
     X = Xi.copy()
     X[:, col] -= dx/2.0  # Subtract 0.1 of all values for the current column
     
