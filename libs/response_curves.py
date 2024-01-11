@@ -98,11 +98,11 @@ def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask,
     fcol = math.floor(math.sqrt(X.shape[1]))
     frw = math.ceil(X.shape[1] / fcol)
     
-    Ncol = 6
-    if map_type == 0:
-        Ncol = 3
+    Ncol = 7
+    #if map_type == 0:
+    #     Ncol = 5
     if map_type == 2:
-        Ncol = 7
+        Ncol = 8
     
     def plotFun(cube, ylab='', plot0=0, lvls=levels, cm=cmap, **kw2): 
         if map_type > -1:
@@ -120,16 +120,27 @@ def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask,
                               eg_cube, lmask, dir_samples, grab_old_trace)
     
         plotN = Ncol * (group_index + 1)
-        if map_type > 0:
+        if map_type >= 0:
             plotFun(Sim2, varname, plotN)
+            plotNi = 0
         if map_type == 2:
             plotFun(Sim1, '', plotN + 2, figure_filename=figure_dir + varname + '-absolute')
-
+            plotNi = 2
         diff = Sim2.copy() - Sim1.data if Sim1 is not None else Sim2
         diffP = diff.collapsed('time', iris.analysis.MEAN) 
+        
+        plotFun(diffP, '', plotN + 2 + plotNi, dlevels, dcmap, 
+                figure_filename=figure_dir + varname + '-difference')  
 
-        plotFun(diffP, '', plotN + 2 * map_type, dlevels, dcmap, 
-                figure_filename=figure_dir + varname + '-difference')    
+        
+        if map_type >= 0:
+            agree = diffP.copy()
+            agree.data = agree.data < 0
+            agree = agree.collapsed('realization', iris.analysis.MEAN)
+            plot_annual_mean(agree, [1, 2, 5, 10, 25, 50, 75, 90, 95, 98, 99], 'PuOr', scale = 100, 
+                             Nrows=len(x_filen_list) + 1, Ncols=Ncol, 
+                             plot_n = plotN + 4+ plotNi + 1,
+                             figure_filename=figure_dir + varname + '-agree.nc')
 
         ax = fig_curve.add_subplot(frw,fcol, group_index + 1)
         variable_name = varname
