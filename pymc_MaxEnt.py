@@ -115,7 +115,7 @@ if __name__=="__main__":
         cores = 5
        
         months_of_year = [8,9,10]
-        niterations = 200
+        niterations = 1000
 
     CA_filen = "brazil_NAT.nc"
     y_filen = "Area_burned_NAT"
@@ -136,7 +136,7 @@ if __name__=="__main__":
 
     dir_projecting = dir_training
     
-    sample_for_plot = 200
+    sample_for_plot = 1000
     
     levels = [0, 0.1, 1, 2, 5, 10, 20, 50, 100] 
     dlevels = [-20, -10, -5, -2, -1, -0.1, 0.1, 1, 2, 5, 10, 20]

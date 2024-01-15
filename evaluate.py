@@ -287,8 +287,8 @@ if __name__=="__main__":
             we've implmented it) attempt some evaluation.
         sample_for_plot -- how many iterations (samples) from optimixation should be used 
             for plotting and evaluation.
-        levels -- levels on the colourbar on observtation and prodiction maps
-        cmap -- levels on the colourbar on observtation and prodiction maps
+        levels -- levels on the colourbar on observtation and prediction maps
+        cmap -- levels on the colourbar on observtation and prediction maps
     Returns:
          (to be added too)
     """
@@ -298,7 +298,7 @@ if __name__=="__main__":
     """
     ### input data paths and filenames
 
-    sample_for_plot = 20
+    sample_for_plot = 200
     levels = [0, 0.1, 1, 2, 5, 10, 20, 50, 100] 
     dlevels = [-20, -10, -5, -2, -1, -0.1, 0.1, 1, 2, 5, 10, 20]
     cmap = 'OrRd'
