@@ -18,7 +18,7 @@ from pdb import set_trace
 
 def plot_BayesModel_maps(Sim, levels, cmap, ylab = '', Obs = None, 
                          Nrows = 1, Ncols = 2, plot0 = 0, collapse_dim = 'realization',
-                         scale = 100*12, figure_filename = None, set_traceT = False,
+                         scale = 100, figure_filename = None, set_traceT = False,
                          *args, **kw):
     try:
         if collapse_dim != 'time': Sim = Sim.collapsed('time', iris.analysis.MEAN) 

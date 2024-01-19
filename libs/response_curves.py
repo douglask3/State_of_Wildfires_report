@@ -108,6 +108,7 @@ def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask,
         if map_type > -1:
             plot_BayesModel_maps(cube, lvls, cm, ylab=ylab,
                                  Nrows=len(x_filen_list) + 1, Ncols=Ncol, plot0=plot0, 
+                                 scale = 100,
                                  colourbar=True, fig=fig_map, **kw2)
     
     plotFun(Sim, 'Control')
@@ -127,7 +128,7 @@ def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask,
             plotFun(Sim1, '', plotN + 2, figure_filename=figure_dir + varname + '-absolute')
             plotNi = 2
         diff = Sim2.copy() - Sim1.data if Sim1 is not None else Sim2
-        diffP = diff.collapsed('time', iris.analysis.MEAN) 
+        diffP = diff.collapsed('time', iris.analysis.MEAN)
         
         plotFun(diffP, '', plotN + 2 + plotNi, dlevels, dcmap, 
                 figure_filename=figure_dir + varname + '-difference')  
