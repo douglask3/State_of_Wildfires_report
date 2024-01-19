@@ -72,8 +72,8 @@ def sensitivity_curve_experiment(Sim, Xi, col, name, trace, sample_for_plot,
 
 def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask, 
                    dir_samples, fig_dir, grab_old_trace, x_filen_list, 
-                   levels, cmap, dlevels, dcmap, scalers=None, 
-                   response_grouping=None, *args, **kw):  
+                   levels, cmap, dlevels, dcmap, scalers = None, 
+                   response_grouping = None, *args, **kw):  
 
     figure_filename = fig_dir + curve_type + '-response'
     figure_dir = combine_path_and_make_dir(figure_filename + '-maps/') 
