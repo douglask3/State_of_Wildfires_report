@@ -58,8 +58,8 @@ if __name__=="__main__":
     """
     """ optimization """
 
-    person = 'Doug'
-    quick = True
+    person = 'Maria'
+    quick = False
 
     if person == 'Maria':
         #dir_training = "D:/Doutorado/Sanduiche/research/maxent-variables/2002-2011/"
@@ -70,22 +70,30 @@ if __name__=="__main__":
 
 
     year_range = [2002, 2009]
-
+    
+    #x_filen_list= ["ed.nc", "consec_dry_mean.nc", "savanna.nc", "rhumid.nc",
+    #               "lightn.nc", "popDen.nc", "forest.nc", "precip.nc",
+    #               "pasture.nc", "cropland.nc", "grassland.nc", "np.nc",
+    #               "tas_max.nc", "csoil.nc", "wetland.nc",
+    #               "vpd.nc", "soilM.nc", "road_density.nc"]
+    
+    
+    
     #x_filen_list= ["ed.nc", "consec_dry_mean.nc", "savanna.nc", "cveg.nc", "rhumid.nc",
     #               "lightn.nc", "popDen.nc", "forest.nc", "precip.nc",
     #               "pasture.nc", "cropland.nc", "grassland.nc", "np.nc",
-    #               "tas_max.nc", "mpa.nc", "tca.nc", "csoil.nc",
+    #               "tas_max.nc", "csoil.nc",
     #               "vpd.nc", "soilM.nc", "road_density.nc"]
     
-    #"tas_mean.nc"
+    #"tas_mean.nc", "tca.nc", "mpa.nc"
                    
-    #x_filen_list= ["tas_max.nc", "precip.nc", "ed.nc", "csoil.nc", 
-    #                "road_density.nc", "forest.nc", "pasture.nc",
-    #                "lightn.nc", "grassland.nc", "consec_dry_mean.nc", 
-    #                "cropland.nc", "soilM.nc", "savanna.nc", "rhumid.nc"] 
-
     x_filen_list= ["tas_max.nc", "precip.nc", "ed.nc", "csoil.nc", 
-                    "road_density.nc", "forest.nc", "pasture.nc"]                    
+                    "road_density.nc", "forest.nc", "pasture.nc",
+                    "lightn.nc", "grassland.nc", "consec_dry_mean.nc", 
+                    "cropland.nc", "soilM.nc", "savanna.nc", "rhumid.nc"] 
+
+    #x_filen_list= ["tas_max.nc", "precip.nc", "ed.nc", "csoil.nc", 
+    #                "road_density.nc", "forest.nc", "pasture.nc"]                    
                   
     
 
@@ -100,23 +108,23 @@ if __name__=="__main__":
         months_of_year = [8, 9, 10]
         niterations = 100
     else:
-        model_title = 'model-full-19-'
-        biome_IDs = range(1,7)
+        model_title = 'model-full-lin-pow-14-'
+        biome_IDs = range(1,2)
         fraction_data_for_sample = 0.2
-        min_data_points_for_sample = 5000 #minimum grid cells to use
+        min_data_points_for_sample = 6000 #minimum grid cells to use
         cores = 5
        
         months_of_year = [8,9,10]
-        niterations = 200
+        niterations = 1000
 
-    #CA_filen = "brazil_NAT.nc"
-    #y_filen = "Area_burned_NAT"
+    CA_filen = "brazil_NAT.nc"
+    y_filen = "Area_burned_NAT"
 
     #CA_filen = "brazil_NON.nc"
     #y_filen = "Area_burned_NON"
 
-    CA_filen = None
-    y_filen = "GFED4.1s_Burned_Fraction"
+    #CA_filen = None
+    #y_filen = "GFED4.1s_Burned_Fraction"
 
     model_title = model_title + y_filen
     y_filen = y_filen + '.nc'
@@ -128,14 +136,22 @@ if __name__=="__main__":
 
     dir_projecting = dir_training
     
-    sample_for_plot = 200
+    sample_for_plot = 1000
     
     levels = [0, 0.1, 1, 2, 5, 10, 20, 50, 100] 
     dlevels = [-20, -10, -5, -2, -1, -0.1, 0.1, 1, 2, 5, 10, 20]
     cmap = 'OrRd'
     dcmap = 'RdBu_r'
 
-    response_grouping = None
+    #response_grouping = None
+    
+    response_grouping = [["tas_max.nc", "consec_dry_mean.nc"], ["savanna.nc", "grassland.nc", "pasture.nc"], ["csoil.nc", "forest.nc"],
+                        [ "precip.nc", "rhumid.nc", "soilM.nc", "lightn.nc"],
+                        ["ed.nc", "road_density.nc", "cropland.nc"]]
+    
+    #response_grouping = [["tas_max.nc", "precip.nc", "consec_dry_mean.nc", "rhumid.nc", "soilM.nc"], 
+    #                    ["road_density.nc", "lightn.nc"], ["forest.nc", "pasture.nc",
+    #                    "grassland.nc","cropland.nc", "savanna.nc", "ed.nc", "csoil.nc"]]
     
     #response_grouping= [["ed.nc", "tca.nc", "np.nc", "mpa.nc"], ["consec_dry_mean.nc", 
     #                    "precip.nc", "tas_max.nc", "tas_mean.nc", "vpd.nc", "rhumid.nc",

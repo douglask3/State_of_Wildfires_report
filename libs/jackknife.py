@@ -13,56 +13,51 @@ from sklearn.metrics import roc_auc_score
 from sklearn.utils import shuffle
 
 
-def jackknife(x_filen_list, X, Sim, fig_dir, **common_args):
-
+def jackknife(x_filen_list, X, Sim, fig_dir, response_grouping = None, **common_args):
+    
+    diff = {}
     contributions = {}
-
-    for col in range(X.shape[1] - 1):
     
-        Xi = X.copy()
-        Xi[:, col] = 0.0
-        varname = x_filen_list[col] 
-        if varname.endswith(".nc"):
-            varname = varname[:-3]
-        makeDir(varname)
-        
-        Sim2 = runSim_MaxEntFire(X = Xi, **common_args, run_name = varname + "/deleted", 
-                                 test_eg_cube=True)                              
+    if response_grouping is not None:
+        group_contributions = {}
+        for group_index, group in enumerate(response_grouping):
+            for col in group:
+                Xi = X.copy()
+                Xi[:, col] = 0.0
+            varname = f"group_{group_index}"
+            makeDir(varname)
 
-        #contributions[varname] = \
-        #    np.mean(np.abs(non_masked_data(Sim) - non_masked_data(Sim2))) * 100
-        
-        contributions[varname] = \
-            np.abs((non_masked_data(Sim) - non_masked_data(Sim2))) * 100
+            print("Plotting", varname)
+
+            Sim2 = runSim_MaxEntFire(X=Xi, **common_args, run_name=varname + "/deleted", test_eg_cube=True)
+
+            diff[varname] = np.abs(non_masked_data(Sim) - non_masked_data(Sim2))
+            contributions[varname] = np.mean(diff[varname] / non_masked_data(Sim))
+
+            group_contributions[varname] = contributions[varname]
+
+    else:
+        for col in range(X.shape[1]):
+            Xi = X.copy()
+            Xi[:, col] = 0.0
+            varname = x_filen_list[col]
+            if varname.endswith(".nc"):
+                varname = varname[:-3]
+            makeDir(varname)
+
+            print("Plotting", varname)
+
+            Sim2 = runSim_MaxEntFire(X=Xi, **common_args, run_name=varname + "/deleted", test_eg_cube=True)
             
-    # Extract values for plotting
-    data = list(contributions.values())
+            diff[varname] = np.abs(np.mean(non_masked_data(Sim)) - np.mean(non_masked_data(Sim2)))
+            contributions[varname] = (diff[varname] / np.mean(non_masked_data(Sim)))
+            
+            #diff[varname] = np.mean(np.abs(non_masked_data(Sim[1]) - non_masked_data(Sim2[1])))
+            #contributions[varname] = (diff[varname] / np.mean(non_masked_data(Sim[1])))
 
-    # Calculate percentiles and medians for each variable
-    percentiles_10 = np.percentile(data, 10, axis=1)
-    percentiles_90 = np.percentile(data, 90, axis=1)
-    medians = np.median(data, axis=1)
-
-    # Create violin plot
-    plt.figure(figsize=(10, 6))
-    plt.violinplot(data, vert=False)
-
-    # Plotting markers and error bars for percentiles
-    for i, var in enumerate(contributions.keys()):
-        plt.scatter(medians[i], i + 1, color='red')
-        plt.errorbar(medians[i], i + 1, xerr=[[medians[i] - percentiles_10[i]], [percentiles_90[i] - medians[i]]],
-                     fmt='none', ecolor='black')
-
-    plt.xlabel('Contributions')
-    plt.ylabel('Variables')
-    plt.title('Contributions of Variables')
-    plt.yticks(np.arange(1, len(contributions) + 1), list(contributions.keys()))
-    plt.tight_layout()
-    plt.show()
-    set_trace()
-    
-    
-    '''
+    #set_trace()  
+            #np.mean(np.abs(non_masked_data(Sim) - non_masked_data(Sim2)))
+    #set_trace()
     sorted_contributions = {k: v for k, v in sorted(contributions.items(), key=lambda item: item[1], reverse=True)}
     sorted_variable_names = list(sorted_contributions.keys())
     sorted_values = list(sorted_contributions.values())
@@ -101,10 +96,10 @@ def jackknife(x_filen_list, X, Sim, fig_dir, **common_args):
 
     # Customizing tick labels and formatting contributions
     ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f'{x:.1f}'))
-    ax.set_xticks(np.arange(0, max(sorted_values) + 1, 5))
+    #ax.set_xticks(np.arange(0, max(sorted_values) + 1, 5))
     
-    #plt.show()
-    #set_trace()
+    plt.show()
+    set_trace()
     
     figure_filename = fig_dir +'jackknife'
     figure_dir =  combine_path_and_make_dir(figure_filename)
@@ -112,7 +107,7 @@ def jackknife(x_filen_list, X, Sim, fig_dir, **common_args):
     # Save the figure as a PNG file
     fig_jackknife.savefig(figure_filename + '.png')
     plt.clf()
-    '''
+    
 def jackknife_plotting(Sim, jackknife_type, X, x_filen_list, fig_dir, **common_args):
 
     figure_filename = fig_dir + jackknife_type
@@ -192,4 +187,54 @@ def jackknife_plotting(Sim, jackknife_type, X, x_filen_list, fig_dir, **common_a
     # Save the figure as a PNG file
     fig_jackknife.savefig(figure_filename + '.png')
     plt.clf()
+    '''
+    
+            #contributions[varname] = \
+        #    np.abs((non_masked_data(Sim) - non_masked_data(Sim2)))*100
+    
+    #total_contribution = sum(np.abs(value) for value in contributions.values())
+    
+    # Calculate contributions as a percentage of the total
+    #contributions_percentage = {key: (np.abs(value) / total_contribution) * 100 for key, value in contributions.items()}
+    
+    
+    # Calculate the total sum of absolute contributions
+    #total_sum = sum(np.abs(value) for value in contributions.values())
+
+    # Compute the percentage contributions
+    #contributions_percentage = {
+    #    varname: np.abs(value) / total_sum * 100 
+    #    for varname, value in contributions.items()
+    #}
+    
+    '''    
+    # Extract values for plotting
+    #data = list(contributions.values())
+    data = list(contributions_percentage.values())
+
+    # Calculate percentiles and medians for each variable
+    percentiles_10 = np.percentile(data, 10, axis=1)
+    percentiles_90 = np.percentile(data, 90, axis=1)
+    medians = np.median(data, axis=1)
+    
+    #set_trace()
+    # Create violin plot
+    plt.figure(figsize=(10, 6))
+    plt.violinplot(data, vert=False)
+
+    # Plotting markers and error bars for percentiles
+    for i, var in enumerate(contributions.keys()):
+        plt.scatter(medians[i], i + 1, color='red')
+        plt.errorbar(medians[i], i + 1, xerr=[[medians[i] - percentiles_10[i]], [percentiles_90[i] - medians[i]]],
+                     fmt='none', ecolor='black')
+
+    plt.xlabel('Contributions')
+    plt.ylabel('Variables')
+    plt.title('Contributions of Variables')
+    plt.yticks(np.arange(1, len(contributions) + 1), list(contributions.keys()))
+    plt.tight_layout()
+    plt.show()
+    set_trace()
+    
+    
     '''
