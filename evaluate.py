@@ -238,7 +238,7 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
                                     subset_function = subset_function, 
                                     subset_function_args = subset_function_args)
 
-    #set_trace()
+    
     #plot_basic_parameter_info(trace, fig_dir)
     #paramter_map(trace, x_filen_list, fig_dir) 
     
