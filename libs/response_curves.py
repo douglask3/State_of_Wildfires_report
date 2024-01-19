@@ -101,8 +101,6 @@ def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask,
     frw = math.ceil(X.shape[1] / fcol)
     
     Ncol = 7
-    #if map_type == 0:
-    #     Ncol = 5
     if map_type == 2:
         Ncol = 8
     
