@@ -45,7 +45,7 @@ def potential_curve_experiment(Sim, Xi, col_to_go, name, trace, sample_for_plot,
     X = Xi.copy()
     X[:, col_to_go] = 0.0
     #X[:, col_to_go] = np.mean(X[:, col_to_go])
-    set_trace()
+    
     Sim2 = runSim_MaxEntFire(trace, sample_for_plot, X, eg_cube, lmask, 
                              name + "/to_0", *args, **kw)
     return Sim, Sim2
@@ -148,14 +148,14 @@ def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask,
         ax.set_title(variable_name)
 
         num_bins = 10
-        hist, bin_edges = np.histogram(X[:, g_index], bins=num_bins)
+        hist, bin_edges = np.histogram(X[:, group_index], bins=num_bins)
         bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
         median_values = []
         percentile_10 = []
         percentile_90 = []
 
         for i in range(num_bins):
-            mask = (X[:, g_index] >= bin_edges[i]) & (X[:, g_index] < bin_edges[i + 1])
+            mask = (X[:, group_index] >= bin_edges[i]) & (X[:, group_index] < bin_edges[i + 1])
             if np.any(mask):
                 values_in_bin = []
 
