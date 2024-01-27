@@ -173,7 +173,7 @@ def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask,
                 percentile_90.append(np.nan)
 
         if scalers is not None:
-            bin_centers = bin_centers*(scalers[1, g_index] - scalers[0, g_index]) + scalers[0, g_index]
+            bin_centers = bin_centers*(scalers[1, group_index] - scalers[0, group_index]) + scalers[0, group_index]
         ax.plot(bin_centers, median_values, marker='.', label='Median')
         ax.fill_between(bin_centers, percentile_10, percentile_90, alpha=0.3, label='10th-90th Percentiles')
 
