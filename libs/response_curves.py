@@ -45,7 +45,7 @@ def potential_curve_experiment(Sim, Xi, col_to_go, name, trace, sample_for_plot,
     X = Xi.copy()
     X[:, col_to_go] = 0.0
     #X[:, col_to_go] = np.mean(X[:, col_to_go])
-    
+    set_trace()
     Sim2 = runSim_MaxEntFire(trace, sample_for_plot, X, eg_cube, lmask, 
                              name + "/to_0", *args, **kw)
     return Sim, Sim2
@@ -113,11 +113,11 @@ def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask,
     
     plotFun(Sim, 'Control')
 
-    def process_variables(Sim, X, response_FUN, group_index, varname, trace, sample_for_plot, 
+    def process_variables(Sim, X, response_FUN, group_index, g_index,  varname, trace, sample_for_plot, 
                      eg_cube, lmask, dir_samples, grab_old_trace, map_type, plotFun, 
                      figure_dir, x_filen_list, scalers=None):
         
-        Sim1, Sim2 = response_FUN(Sim, X, group_index, varname, trace, sample_for_plot, 
+        Sim1, Sim2 = response_FUN(Sim, X, g_index, varname, trace, sample_for_plot, 
                               eg_cube, lmask, dir_samples, grab_old_trace)
     
         plotN = Ncol * (group_index + 1)
@@ -148,14 +148,14 @@ def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask,
         ax.set_title(variable_name)
 
         num_bins = 10
-        hist, bin_edges = np.histogram(X[:, group_index], bins=num_bins)
+        hist, bin_edges = np.histogram(X[:, g_index], bins=num_bins)
         bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
         median_values = []
         percentile_10 = []
         percentile_90 = []
 
         for i in range(num_bins):
-            mask = (X[:, group_index] >= bin_edges[i]) & (X[:, group_index] < bin_edges[i + 1])
+            mask = (X[:, g_index] >= bin_edges[i]) & (X[:, g_index] < bin_edges[i + 1])
             if np.any(mask):
                 values_in_bin = []
 
@@ -172,7 +172,7 @@ def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask,
                 percentile_90.append(np.nan)
 
         if scalers is not None:
-            bin_centers = bin_centers*(scalers[1, group_index] - scalers[0, group_index]) + scalers[0, group_index]
+            bin_centers = bin_centers*(scalers[1, g_index] - scalers[0, g_index]) + scalers[0, g_index]
         ax.plot(bin_centers, median_values, marker='.', label='Median')
         ax.fill_between(bin_centers, percentile_10, percentile_90, alpha=0.3, label='10th-90th Percentiles')
 
@@ -184,9 +184,10 @@ def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask,
             
             g_index = [any([j == i for j in group]) for i in x_filen_list]
             g_index = np.where(g_index)
-            process_variables(Sim, X, response_FUN, g_index, varname, trace, sample_for_plot, 
-                            eg_cube, lmask, dir_samples, grab_old_trace, map_type, plotFun, 
-                            figure_dir, x_filen_list, scalers=scalers)
+            process_variables(Sim, X, response_FUN, group_index,
+                              g_index, varname, trace, sample_for_plot, 
+                              eg_cube, lmask, dir_samples, grab_old_trace, map_type, plotFun, 
+                              figure_dir, x_filen_list, scalers=scalers)
         # Map saving code
         if map_type > -1:
             fig_map.set_size_inches(12, 4*X.shape[1])
