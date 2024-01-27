@@ -87,13 +87,13 @@ if __name__=="__main__":
     
     #"tas_mean.nc", "tca.nc", "mpa.nc"
                    
-    x_filen_list= ["tas_max.nc", "precip.nc", "ed.nc", "csoil.nc", 
-                    "road_density.nc", "forest.nc", "pasture.nc",
-                    "lightn.nc", "grassland.nc", "consec_dry_mean.nc", 
-                    "cropland.nc", "soilM.nc", "savanna.nc", "rhumid.nc"] 
-
     #x_filen_list= ["tas_max.nc", "precip.nc", "ed.nc", "csoil.nc", 
-    #                "road_density.nc", "forest.nc", "pasture.nc"]                    
+    #                "road_density.nc", "forest.nc", "pasture.nc",
+    #                "lightn.nc", "grassland.nc", "consec_dry_mean.nc", 
+    #                "cropland.nc", "soilM.nc", "savanna.nc", "rhumid.nc"] 
+
+    x_filen_list= ["ed.nc", "csoil.nc", "tas_max.nc", "precip.nc",
+                    "road_density.nc", "forest.nc", "pasture.nc"]                    
                   
     
 
@@ -108,8 +108,8 @@ if __name__=="__main__":
         months_of_year = [8, 9, 10]
         niterations = 100
     else:
-        model_title = 'model-full-lin-pow-14-'
-        biome_IDs = range(1,2)
+        model_title = 'final-full-lin-pow-7-1000-'
+        biome_IDs = range(1,7)
         fraction_data_for_sample = 0.2
         min_data_points_for_sample = 6000 #minimum grid cells to use
         cores = 5
@@ -145,9 +145,9 @@ if __name__=="__main__":
 
     #response_grouping = None
     
-    response_grouping = [["tas_max.nc", "consec_dry_mean.nc"], ["savanna.nc", "grassland.nc", "pasture.nc"], ["csoil.nc", "forest.nc"],
-                        [ "precip.nc", "rhumid.nc", "soilM.nc", "lightn.nc"],
-                        ["ed.nc", "road_density.nc", "cropland.nc"]]
+    #response_grouping = [["tas_max.nc", "consec_dry_mean.nc"], ["savanna.nc", "grassland.nc", "pasture.nc"], ["csoil.nc", "forest.nc"],
+    #                    [ "precip.nc", "rhumid.nc", "soilM.nc", "lightn.nc"],
+    #                    ["ed.nc", "road_density.nc", "cropland.nc"]]
     
     #response_grouping = [["tas_max.nc", "precip.nc", "consec_dry_mean.nc", "rhumid.nc", "soilM.nc"], 
     #                    ["road_density.nc", "lightn.nc"], ["forest.nc", "pasture.nc",
@@ -159,6 +159,8 @@ if __name__=="__main__":
     #                    "cropland.nc"], ["cveg.nc", "csoil.nc"], ["lightn.nc", "popDens.nc", 
     #                    "road_density.nc"]] 
     
+    response_grouping = [["tas_max.nc", "precip.nc"], ["ed.nc", 
+                    "road_density.nc"], ["forest.nc", "pasture.nc", "csoil.nc"]] 
      
     """ 
         RUN optimization 

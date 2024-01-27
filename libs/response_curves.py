@@ -33,7 +33,7 @@ def standard_curve_experiment(Sim, Xi, col_to_keep, name, trace, sample_for_plot
     
     
     X[:, other_cols] = 0.0 
-    
+    #set_trace()
     Sim2 = runSim_MaxEntFire(trace, sample_for_plot, X, eg_cube, lmask, 
                              name + "/all_but_to_0", *args, **kw)
 
@@ -45,7 +45,9 @@ def potential_curve_experiment(Sim, Xi, col_to_go, name, trace, sample_for_plot,
     X = Xi.copy()
     X[:, col_to_go] = 0.0
     #X[:, col_to_go] = np.mean(X[:, col_to_go])
-        
+    
+    if col_to_go = 
+    #set_trace()     
     Sim2 = runSim_MaxEntFire(trace, sample_for_plot, X, eg_cube, lmask, 
                              name + "/to_0", *args, **kw)
     return Sim, Sim2
@@ -53,8 +55,8 @@ def potential_curve_experiment(Sim, Xi, col_to_go, name, trace, sample_for_plot,
 
 def sensitivity_curve_experiment(Sim, Xi, col, name, trace, sample_for_plot, 
                               eg_cube, lmask, *args, **kw):
-    dx = 0.001
-    #dx = 1
+    #dx = 0.001
+    dx = 50
     X = Xi.copy()
     X[:, col] -= dx/2.0  # Subtract 0.1 of all values for the current column
     
@@ -119,6 +121,7 @@ def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask,
         
         Sim1, Sim2 = response_FUN(Sim, X, group_index, varname, trace, sample_for_plot, 
                               eg_cube, lmask, dir_samples, grab_old_trace)
+                             
     
         plotN = Ncol * (group_index + 1)
         if map_type >= 0:
@@ -195,7 +198,12 @@ def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask,
         fig_curve.savefig(figure_filename + '-curves.png')   
         plt.close(fig_curve)
         plt.clf()
+        set_trace()
 
+        for varname in group_index:
+            print(varname)
+        set_trace()
+    
     else:
         for col in range(X.shape[1]-1):
             varname = x_filen_list[col]
