@@ -21,7 +21,7 @@ def initial_curve_experiment(Sim, Xi, col_to_keep, name, trace, sample_for_plot,
     X[:,:] = 0.0
     Sim1 = runSim_MaxEntFire(trace, sample_for_plot, X, eg_cube, lmask, 
                              "/all_to_0", *args, **kw)
-    #set_trace()
+    
     return Sim1, Sim2
 
 
@@ -29,8 +29,7 @@ def standard_curve_experiment(Sim, Xi, col_to_keep, name, trace, sample_for_plot
                               eg_cube, lmask, *args, **kw):
     X = Xi.copy()
     other_cols = np.arange(X.shape[1])  # Create an array of all columns
-    other_cols = other_cols[other_cols != col_to_keep]  # Exclude col_to_keep
-    
+    other_cols = np.setdiff1d(other_cols, col_to_keep)  # Exclude col_to_keep
     
     X[:, other_cols] = 0.0 
     #set_trace()
@@ -148,43 +147,66 @@ def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask,
         variable_name = varname
         ax.set_title(variable_name)
 
-        num_bins = 10
-        hist, bin_edges = np.histogram(X[:, group_index], bins=num_bins)
-        bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
-        median_values = []
-        percentile_10 = []
-        percentile_90 = []
-
-        for i in range(num_bins):
-            mask = (X[:, group_index] >= bin_edges[i]) & (X[:, group_index] < bin_edges[i + 1])
-            if np.any(mask):
-                values_in_bin = []
-
-                for rw in range(Sim2.shape[0]):
-                    values_in_bin.append(non_masked_data(diff[rw])[mask])
-                values_in_bin = np.array(values_in_bin).flatten()    
-
-                median_values.append(np.median(values_in_bin))
-                percentile_10.append(np.percentile(values_in_bin, 10))
-                percentile_90.append(np.percentile(values_in_bin, 90))
-            else:
-                median_values.append(np.nan)
-                percentile_10.append(np.nan)
-                percentile_90.append(np.nan)
-
-        if scalers is not None:
-            bin_centers = bin_centers*(scalers[1, group_index] - scalers[0, group_index]) + scalers[0, group_index]
-        ax.plot(bin_centers, median_values, marker='.', label='Median')
-        ax.fill_between(bin_centers, percentile_10, percentile_90, alpha=0.3, label='10th-90th Percentiles')
-
+        if isinstance(g_index, int) or len(g_index) == 1:
+            num_bins = 10
+            hist, bin_edges = np.histogram(X[:, group_index], bins=num_bins)
+            bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
+            median_values = []
+            percentile_10 = []
+            percentile_90 = []
     
+            for i in range(num_bins):
+                mask = (X[:, group_index] >= bin_edges[i]) & (X[:, group_index] < bin_edges[i + 1])
+                if np.any(mask):
+                    values_in_bin = []
+    
+                    for rw in range(Sim2.shape[0]):
+                        values_in_bin.append(non_masked_data(diff[rw])[mask])
+                    values_in_bin = np.array(values_in_bin).flatten()    
+    
+                    median_values.append(np.median(values_in_bin))
+                    percentile_10.append(np.percentile(values_in_bin, 10))
+                    percentile_90.append(np.percentile(values_in_bin, 90))
+                else:
+                    median_values.append(np.nan)
+                    percentile_10.append(np.nan)
+                    percentile_90.append(np.nan)
+    
+            if scalers is not None:
+                bin_centers = bin_centers*(scalers[1, group_index] - scalers[0, group_index]) + scalers[0, group_index]
+            ax.plot(bin_centers, median_values, marker='.', label='Median')
+            ax.fill_between(bin_centers, percentile_10, percentile_90, alpha=0.3, label='10th-90th Percentiles')
+    
+        else:
+            y = X[:, g_index[1]]
+            x = X[:, g_index[0]]
+            z = non_masked_data(diff[0])
+            z = z[:,None]
+        
+            for rw in range(1, Sim2.shape[0]):
+                z = np.concatenate((z, non_masked_data(diff[rw])[:, None]), axis = 1)
+            z = np.transpose(np.percentile(z, [10, 50, 90], axis=1))
+
+            output_array = np.column_stack((x, y, z))
+            
+            np.savetxt(figure_dir + varname + '-response_surface.csv', 
+                             output_array, delimiter=',', 
+                             header = "x,y,p10%,p50%,p90%")
+
+            sample_indices = np.random.choice(len(x), size=1000, replace=False)
+            x = x[sample_indices]
+            y = y[sample_indices]
+            z = z[sample_indices, :]
+            ax.scatter(x, y, c=z[:,1], cmap='viridis', marker='o', s=20)
+            
     if response_grouping is not None:
         for group_index, group in enumerate(response_grouping):
             varname = f"group_{group_index}"
             makeDir(varname)
             
             g_index = [any([j == i for j in group]) for i in x_filen_list]
-            g_index = np.where(g_index)
+            g_index = np.where(g_index)[0]
+            
             process_variables(Sim, X, response_FUN, group_index,
                               g_index, varname, trace, sample_for_plot, 
                               eg_cube, lmask, dir_samples, grab_old_trace, map_type, plotFun, 
