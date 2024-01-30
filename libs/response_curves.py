@@ -29,8 +29,7 @@ def standard_curve_experiment(Sim, Xi, col_to_keep, name, trace, sample_for_plot
                               eg_cube, lmask, *args, **kw):
     X = Xi.copy()
     other_cols = np.arange(X.shape[1])  # Create an array of all columns
-    other_cols = other_cols[other_cols != col_to_keep]  # Exclude col_to_keep
-    
+    other_cols = np.setdiff1d(other_cols, col_to_keep)  # Exclude col_to_keep
     
     X[:, other_cols] = 0.0 
     
@@ -147,6 +146,7 @@ def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask,
         variable_name = varname
         ax.set_title(variable_name)
 
+        set_trace()
         num_bins = 10
         hist, bin_edges = np.histogram(X[:, group_index], bins=num_bins)
         bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
