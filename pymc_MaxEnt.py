@@ -109,7 +109,7 @@ if __name__=="__main__":
         niterations = 100
     else:
         model_title = 'final-full-lin-pow-7-1000-'
-        biome_IDs = range(1,7)
+        biome_IDs = range(1,2)
         fraction_data_for_sample = 0.2
         min_data_points_for_sample = 6000 #minimum grid cells to use
         cores = 5

@@ -200,11 +200,6 @@ def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask,
         fig_curve.savefig(figure_filename + '-curves.png')   
         plt.close(fig_curve)
         plt.clf()
-        set_trace()
-
-        for varname in group_index:
-            print(varname)
-        set_trace()
     
     else:
         for col in range(X.shape[1]-1):
