@@ -1,8 +1,0 @@
-#Step 1) Make GFED and TERRA the same size
-
-TERRA = months since 2001 (to 2019)
-GFED = months since 2001 (to 2016)
-
-ncks -d time,0,191 -o TERRA_MT_2001-2016_CB.nc firecount_TERRA_M__T.nc
-
-

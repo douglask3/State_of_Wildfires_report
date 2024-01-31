@@ -1,5 +1,0 @@
-install.packages("raster")
-install.packages('bcp', dependencies = TRUE)
-install.packages('Kendall', dependencies = TRUE)
-install.packages('forecast', dependencies = TRUE)
-install.packages("greenbrown", repos="http://R-Forge.R-project.org")
