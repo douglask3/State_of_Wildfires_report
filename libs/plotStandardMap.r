@@ -31,7 +31,7 @@ plotStandardMap <- function(r, cols, limits, e = NULL, add_legend = FALSE,
                             ePatternRes = 67, ePatternThick = 0.5,
                             ...,  speedy = T) {
     
-
+   
     if (nlayers(r) == 2) {
         e = r[[2]]
         r = r[[1]]
@@ -50,12 +50,14 @@ plotStandardMap <- function(r, cols, limits, e = NULL, add_legend = FALSE,
             e = sd.raster(r)
             r = mean(r)
         }
-    } 
+    }
+    
     if (!speedy) {
         r[r>9E9] = NaN
         if (!is.null(e)) e[is.na(r)] = NaN
         mask = raster('data/seamask.nc')
-    
+        mask = round(raster::resample(mask, r))
+        
         r[mask != 2] = NaN
         if(!is.null(e)) e[mask != 2] = NaN
     }
