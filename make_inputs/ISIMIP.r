@@ -12,15 +12,15 @@ countriesMap = raster('../ConFIRE_ISIMIP/data/countries.nc')
 ckey = read.csv("../ConFIRE_ISIMIP/data/countries_key.csv")[,2]
 genVarID = "genVar-C-cover2-FfsoilM-soilC-VDP-time"
 #
-overwrite_outputs = TRUE
+overwrite_outputs = FALSE
 
-histDir = "/hpc//data/d00/hadea/jules_output/u-cc669_isimip3a_es/GSWP3-W5E5/"
+histDir = "/hpc//data/d00/hadea/jules_output/u-cc669_isimip3a_es/20CRv3-ERA5/"
 soilFile = '/hpc//data/d00/hadea/isimip3a/jules_ancils/qrparm.soil.latlon_fixed.nc'
 popDir = "/hpc//data/d00/hadea/isimip3a/InputData/socioeconomic/pop/histsoc/"
 lightFile = "/hpc/data/d00/hadea/isimip2b/ancils/lightning/lightning_cloud2ground.nc"
 runYrLen = 20
 
-Syears = seq(2000, 2010, by = runYrLen)
+Syears = seq(1981, 2001, by = runYrLen)
 #Syears = seq(1880, 2000, by = runYrLen)
 names = paste('historic_TS', Syears, Syears+runYrLen-1, sep = '_')
 years = lapply(Syears, function(i) i:(i+runYrLen-1))
@@ -32,7 +32,7 @@ names(dirs) = names
 sm_sat = raster(soilFile, varname = "sm_sat")
 
 
-countries = c(Global = NA, Brazil = 'Brazil')
+countries = c(Brazil = 'Brazil') #Global = NA, 
 
 fileIDs = c(cover = "ilamb", soilM = "ilamb", cveg = "ilamb", cs_gb = "ilamb", spres = "ilamb",
             precip = "ilamb", humid = "ilamb", tas = "ilamb")
@@ -42,9 +42,9 @@ varnames =  c(cover = "frac", soilM = "smc_tot", cveg = "cv", cs_gb = "cs_gb", s
 
 models = c("counterclim", "obsclim")
 
-temp_dir = '/data/users/dkelley/ConFIRE_ISIMIP_temp/-makeISIMIP3ins'
+temp_dir = '/data/users/dkelley/ConFIRE_ISIMIP_temp/-makeISIMIP3ins-era5'
 temp_dir_mem = '/data/users/dkelley/ConFIRE_ISIMIP_temp/memSafe/'
-out_dir  = 'isimip3a/driving_data/GSWP3-W5E5-20yrs/'
+out_dir  = 'isimip3a/driving_data/ERA5/'
 
 coverTypes = list(trees = c(1:7), totalVeg = c(1:13), crop = c(10, 12), pas = c(11, 13))
 
@@ -133,7 +133,7 @@ makeDat <- function(id, dir, years, out_dir, mask,  extent, country) {
                 
                 for (i in cv[-1]) 
                     out = out + i               
-                out = writeRaster.Standard(out, ctfile, overwrite = TRUE)
+                out = writeRaster.Standard(out, ctfile)
                 return(out)
             }
             coverTy = layer.apply(cover, group)
