@@ -4,6 +4,7 @@ sys.path.append('libs/')
 sys.path.append('fire_model/')
 from constrain_cubes_standard import *
 from FLAME import FLAME
+from ConFire import ConFire
 
 from pdb import set_trace
 

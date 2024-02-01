@@ -1,33 +1,29 @@
 import numpy as np
 import iris
-from scipy.stats import norm
 
 import iris.plot as iplt
 import iris.quickplot as qplt
 import matplotlib.pyplot as plt
+from pdb import set_trace
+
 
 class ConFire(object):
-    def __init__(self, data, params, inference = False,
-                 run_potential = False, run_sensitivity = False,
-                 run_pdf = False, nBootstrap = 0):
+    def __init__(self, params, inference = False):
         """
         Initalise parameters and calculates the key variables needed to calculate burnt area.
         """
-        
-        from pdb import set_trace as browser
-        self.browser = browser
         self.inference = inference
         if self.inference:
-            self.numPCK =  __import__('aesara').tensor
-            self.pow = self.numPCK.pow
+            self.numPCK =  __import__('pytensor').tensor
         else:
             self.numPCK =  __import__('numpy')
-            self.pow = self.numPCK.power
         
         self.params = params
         
-
+    def burnt_area(self, X, return_controls = False, return_limitations = False):
         ## finds controls        
+
+        set_trace()
         self.fuel = self.control_fuel(data['totalVeg'], data['cveg'], data['csoil'], 
                                       self.params['c_cveg'], self.params['c_csoil'])
         
@@ -73,95 +69,6 @@ class ConFire(object):
                                         self.standard_ignitions *  self.standard_suppression
                                         #self.params['Detect_efficanceyP'])
         
-
-        if not inference: self.burnt_area_mode = self.burnt_area_mode_preCorrect.copy()
-        self.burnt_area_mode = self.burnt_area_mode_preCorrect * \
-                              (self.params['Detect_efficancey0'] + \
-                               self.pow(self.burnt_area_mode_preCorrect, 
-                               self.params['Detect_efficanceyP']) * \
-                              (1.0 - self.params['Detect_efficancey0']))
-        #self.browser()
-        if not inference:
-            self.error = self.params['sigma']
-            ## find the mean burnt area
-            if run_pdf:
-                self.burnt_area_calPDF(data, self.params['p0'], self.params['p1'])
-                
-            if nBootstrap > 0:
-                self.burnt_area_boots(data, self.params['p0'], self.params['p1'], nBootstrap)
-
-        
-            self.standard_moisture = self.standard_moisture / \
-                                     self.sigmoid(0.0, self.params['moisture_x0'],
-                                                  -self.params['moisture_k'])
-            self.standard_suppression = self.standard_suppression / \
-                                        self.sigmoid(0.0, self.params['suppression_x0'],
-                                                     -self.params['suppression_k'])
-            if run_potential:
-                self.potential_fuel = self.potential(self.standard_fuel, "potential_fuel")
-                self.potential_moisture = self.potential(self.standard_moisture, 
-                                                         "potential_moisture")
-                self.potential_ignitions = self.potential(self.standard_ignitions, 
-                                                          "potential_ignitions")
-                self.potential_suppression = self.potential(self.standard_suppression, 
-                                                            "potential_suppression")
-            if run_sensitivity:
-                self.sensitivity_fuel = self.sensitivity(self.fuel, self.params['fuel_x0'], 
-                                                         self.params['fuel_k'],
-                                                         self.standard_fuel, "sensitivity_fuel")
-
-                self.sensitivity_moisture = self.sensitivity(self.moisture, 
-                                                             self.params['moisture_x0'], 
-                                                            -self.params['moisture_k'],
-                                                             self.standard_moisture, 
-                                                             "sensitivity_moisture")
-
-                self.sensitivity_ignitions = self.sensitivity(self.ignitions, 
-                                                              self.params['ignition_x0'], 
-                                                              self.params['ignition_k'],
-                                                              self.standard_ignitions, 
-                                                              "sensitivity_ignitions")
-
-
-                self.sensitivity_suppression = self.sensitivity(self.suppression, 
-                                                                self.params['suppression_x0'], 
-                                                               -self.params['suppression_k'] ,
-                                                                self.standard_suppression, 
-                                                                "sensitivity_suppression")
-
-
-            ## if the inputs are iris cubes, we can add some useful metadata
-        
-            try:
-                self.burnt_area.long_name = "burnt_area"
-                self.burnt_area_mode.long_name = "burnt_area_mode"
-                #self.burnt_area_median.long_name = "burnt_area_median"
-                self.burnt_area_mean.long_name = "burnt_area_mean"
-
-                self.fuel.long_name = "fuel continuity"
-                self.fuel.units = '1'
-
-                self.moisture.long_name = "moisture content"
-                self.moisture.units = '1'
-
-                self.ignitions.long_name = "ignitions"
-                self.ignitions.units = 'km-2'
-
-                self.suppression.long_name = "suppression"
-                self.suppression.units = '1'
-
-                self.standard_fuel.long_name = "standard_fuel"
-                self.standard_moisture.long_name = "standard_moisture"
-                self.standard_ignitions.long_name = "standard_ignitions"
-                self.standard_suppression.long_name = "standard_suppression"
-
-                self.standard_fuel.units = '1'
-                self.standard_moisture.units = '1'
-                self.standard_ignitions.units = '1'
-                self.standard_suppression.units = '1'
-            except:
-                pass        
-    
         
     def control_fuel(self, totalCover, cveg, csoil, c_cveg, c_csoil):
         """

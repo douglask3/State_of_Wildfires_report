@@ -3,6 +3,7 @@ sys.path.append('fire_model/')
 sys.path.append('libs/')
 
 from FLAME import FLAME
+from ConFire import ConFire
 
 from read_variable_from_netcdf import *
 from combine_path_and_make_dir import * 
@@ -183,7 +184,7 @@ def train_MaxEnt_model(y_filen, x_filen_list, CA_filen = None, model_class = FLA
         pymc traces, returned and saved to [out_dir]/[filneame]-[metadata].nc and the scalers
         used on independant data to normalise it, useful for predicting model
     '''
-    set_trace()
+    
     print("====================")
     print("Optimization started")
     print("====================")

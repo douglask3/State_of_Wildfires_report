@@ -7,7 +7,7 @@ x_filen_list:: ["Forest.nc", "consec_dry_mean.nc", "tas_max.nc", "crop.nc", "pas
 
 
 ## Model info
-model_class:: FLAME
+model_class:: ConFire
 priors:: {'pname': "q",'np': 1, 'dist': 'LogNormal', 'mu': 0.0, 'sigma': 1.0}
 priors:: {'pname': "lin_beta_constant",'np': 1, 'dist': 'Normal', 'mu': 0.0, 'sigma': 100}
 priors:: {'pname': "lin_betas",'np': 1, 'dist': 'Normal', 'mu': 0.0, 'sigma': 100}
