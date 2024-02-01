@@ -42,11 +42,11 @@ def standard_curve_experiment(Sim, Xi, col_to_keep, name, trace, sample_for_plot
 def potential_curve_experiment(Sim, Xi, col_to_go, name, trace, sample_for_plot, 
                               eg_cube, lmask, *args, **kw):
     X = Xi.copy()
-    X[:, col_to_go] = 0.0
-    #X[:, col_to_go] = np.mean(X[:, col_to_go])
+    #X[:, col_to_go] = 0.0
+    X[:, col_to_go] = np.mean(X[:, col_to_go])
     
     Sim2 = runSim_MaxEntFire(trace, sample_for_plot, X, eg_cube, lmask, 
-                             name + "/to_0", *args, **kw)
+                             name + "/to_mean", *args, **kw)
     return Sim, Sim2
 
 
@@ -73,7 +73,7 @@ def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask,
                    dir_samples, fig_dir, grab_old_trace, x_filen_list, 
                    levels, cmap, dlevels, dcmap, scalers = None, 
                    response_grouping = None, *args, **kw):  
-
+    
     figure_filename = fig_dir + curve_type + '-response'
     figure_dir = combine_path_and_make_dir(figure_filename + '-maps/') 
     
@@ -231,7 +231,8 @@ def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask,
             Sim1, Sim2 = response_FUN(Sim, X, col, varname, trace, sample_for_plot, 
                                     eg_cube, lmask, dir_samples, grab_old_trace)
             # Process remaining individual variables
-            process_variables(Sim, X, response_FUN, col, varname, trace, sample_for_plot, 
+            
+            process_variables(Sim, X, response_FUN, col, col, varname, trace, sample_for_plot, 
                             eg_cube, lmask, dir_samples, grab_old_trace, map_type, plotFun, 
                             figure_dir, x_filen_list, scalers=scalers)
         # Map saving code
