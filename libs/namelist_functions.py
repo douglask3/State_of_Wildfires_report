@@ -1,7 +1,9 @@
 import json
 import sys
 sys.path.append('libs/')
+sys.path.append('fire_model/')
 from constrain_cubes_standard import *
+from FLAME import FLAME
 
 from pdb import set_trace
 

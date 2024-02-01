@@ -19,7 +19,7 @@ import pymc  as pm
 import arviz as az
 
 
-def fit_MaxEnt_probs_to_data(Y, X, CA = None, niterations = 100, priors = None, *arg, **kw):
+def fit_MaxEnt_probs_to_data(Y, X, CA = None, model_class = FLAME, niterations = 100, priors = None, *arg, **kw):
     """ Bayesian inerence routine that fits independant variables, X, to dependant, Y.
         Based on the MaxEnt solution of probabilities. 
     Arguments:
@@ -98,7 +98,7 @@ def fit_MaxEnt_probs_to_data(Y, X, CA = None, niterations = 100, priors = None, 
             
         
         ## run model
-        model = FLAME(priors, inference = True)
+        model = model_class(priors, inference = True)
         prediction = model.burnt_area(X)  
         
         ## define error measurement
@@ -143,7 +143,8 @@ def train_MaxEnt_model_from_namelist(namelist = None, **kwargs):
 
 
 
-def train_MaxEnt_model(y_filen, x_filen_list, CA_filen = None, priors = None,
+def train_MaxEnt_model(y_filen, x_filen_list, CA_filen = None, model_class = FLAME,
+                       priors = None,
                        dir = '', filename_out = '',
                        dir_outputs = '',
                        fraction_data_for_sample = 1.0,
@@ -182,7 +183,7 @@ def train_MaxEnt_model(y_filen, x_filen_list, CA_filen = None, priors = None,
         pymc traces, returned and saved to [out_dir]/[filneame]-[metadata].nc and the scalers
         used on independant data to normalise it, useful for predicting model
     '''
-    
+    set_trace()
     print("====================")
     print("Optimization started")
     print("====================")
@@ -245,7 +246,8 @@ def train_MaxEnt_model(y_filen, x_filen_list, CA_filen = None, priors = None,
         print("======================")
         print("Running trace")
         print("======================")
-        trace = fit_MaxEnt_probs_to_data(Y, X, CA = CA,  niterations = niterations, 
+        trace = fit_MaxEnt_probs_to_data(Y, X, CA = CA, model_class = model_class,
+                                         niterations = niterations, 
                                          cores = cores, priors = priors)
     
         ## save trace file
@@ -318,7 +320,7 @@ if __name__=="__main__":
 
     namelist = "namelists//simple_example_namelist.txt"
 
-    train_MaxEnt_model_from_namelist('namelists/simple_example.txt')
+    train_MaxEnt_model_from_namelist('namelists/ConFire_example.txt')
     set_trace()
     """ 
         EXAMPLE 2 - python code 
