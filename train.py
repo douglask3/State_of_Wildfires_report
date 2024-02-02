@@ -66,16 +66,19 @@ def fit_MaxEnt_probs_to_data(Y, X, CA = None, model_class = FLAME, niterations =
                      }
         else:
             def define_prior(prior, pn):
-                kws = prior.copy()
-                kws.pop('pname')
-                kws.pop('np')
-                kws.pop('dist')
-                shape = prior['np']
-                if shape == 'nvars': shape = nvars 
-                
-                return getattr(pm, prior['dist'])(prior['pname'] + str(pn), 
+                try:
+                    kws = prior.copy()
+                    kws.pop('pname')
+                    kws.pop('np')
+                    kws.pop('dist')
+                    shape = prior['np']
+                    if shape == 'nvars': shape = nvars 
+                    
+                    return getattr(pm, prior['dist'])(prior['pname'] + str(pn), 
                                       shape = shape, **kws)
-
+                except:
+                    return prior['value']
+            
             priors_names =[prior['pname'] for prior in priors]
 
             count_priors = [priors_names[:i].count(string) \
