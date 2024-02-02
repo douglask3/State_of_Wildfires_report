@@ -22,8 +22,21 @@ class ConFire(object):
         
     def burnt_area(self, X, return_controls = False, return_limitations = False):
         ## finds controls        
-
+        #def cal_control(cid = 0):
+        cid = 0
+        ids = self.params['controlID'][cid]
+        cdir = self.params['control_Direction'][cid]
+        ddir = self.params['driver_Direction'][cid]
+        betas = self.params['betas'][cid]
+        
+        
+        Xi = X[:,ids].copy()
         set_trace()
+        betas
+
+             
+        controls = [cal_control(i) for i in range(len(self.params['controlID']))]
+        
         self.fuel = self.control_fuel(data['totalVeg'], data['cveg'], data['csoil'], 
                                       self.params['c_cveg'], self.params['c_csoil'])
         
