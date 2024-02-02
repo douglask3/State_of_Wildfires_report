@@ -94,8 +94,6 @@ def plot_BayesModel_signifcance_maps(Obs, Sim, lmask, plot_n = 1, Nrows = 3, Nco
                      figure_filename = figure_filename + 'obs_post-Pvalue.nc')
     
 
-
-
 def compare_to_obs_maps(filename_out, dir_outputs, Obs, Sim, lmask, levels, cmap,
                         dlevels = None, dcmap = None,
                         *args, **kw):    
