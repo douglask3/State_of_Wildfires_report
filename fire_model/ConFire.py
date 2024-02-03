@@ -41,7 +41,8 @@ class ConFire(object):
         limitations = [sigmoid(y, k) for y, k in zip(controls, cdir)]
         if return_limitations: return limitations
     
-        return self.numPCK.prod(limitations, axis = 0)
+        BA = self.numPCK.prod(limitations, axis = 0)
+        return BA
     
     
     def emc_weighted(self, emc, precip, wd_pg):
