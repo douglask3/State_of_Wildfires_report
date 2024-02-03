@@ -15,6 +15,7 @@ from   io     import StringIO
 import numpy  as np
 import pandas as pd
 import math
+import numbers
 
 import pymc  as pm
 import arviz as az
@@ -128,7 +129,17 @@ def fit_MaxEnt_probs_to_data(Y, X, CA = None, model_class = FLAME, niterations =
             except:
                 print("sampling attempt " + str(attempts) + " failed. Trying a max of 10 times")
                 attempts += 1
-    return trace
+
+    def filter_dict_elements_by_type(my_dict, included_types):
+        def is_numeric(value):
+            return isinstance(value, included_types) or (isinstance(value, list) and all(is_numeric(i) for i in value))
+
+        return {key: value for key, value in my_dict.items() if is_numeric(value)}
+        
+    
+    none_trace = filter_dict_elements_by_type(priors, (int, float))
+    
+    return trace, none_trace
 
 
 def train_MaxEnt_model_from_namelist(namelist = None, **kwargs):
@@ -200,6 +211,7 @@ def train_MaxEnt_model(y_filen, x_filen_list, CA_filen = None, model_class = FLA
     
     data_file = dir_outputs + '/data-'   + out_file + '.nc'
     trace_file = dir_outputs + '/trace-'   + out_file + '.nc'
+    other_params_file = dir_outputs + '/none_trace-params-'   + out_file + '.txt'
     scale_file = dir_outputs + '/scalers-' + out_file + '.csv'
     
     
@@ -209,6 +221,7 @@ def train_MaxEnt_model(y_filen, x_filen_list, CA_filen = None, model_class = FLA
         print("Old optimization found")
         print("======================")
         trace = az.from_netcdf(trace_file)
+        none_trace = read_variables_from_namelist(other_params_file)
         scalers = pd.read_csv(scale_file).values   
     else:
         print("opening data for inference")
@@ -250,11 +263,14 @@ def train_MaxEnt_model(y_filen, x_filen_list, CA_filen = None, model_class = FLA
         print("======================")
         print("Running trace")
         print("======================")
-        trace = fit_MaxEnt_probs_to_data(Y, X, CA = CA, model_class = model_class,
+        trace, none_trace_params = fit_MaxEnt_probs_to_data(Y, X, CA = CA, 
+                                         model_class = model_class,
                                          niterations = niterations, 
                                          cores = cores, priors = priors)
-    
+        
         ## save trace file
+        write_variables_to_namelist(none_trace_params, other_params_file)
+
         trace.to_netcdf(trace_file)
         pd.DataFrame(scalers).to_csv(scale_file, index = False)
 
@@ -270,7 +286,7 @@ def train_MaxEnt_model(y_filen, x_filen_list, CA_filen = None, model_class = FLA
                               "trace_file", "scale_file", 
                               "dir", "y_filen", "x_filen_list", "CA_filen",
                               "subset_function", "subset_function_args", 
-                              "trace_file", "scale_file"]
+                              "trace_file", "scale_file", "other_params_file"]
 
     # Create a dictionary of desired variables and their values
     variables_to_save = {name: value for name, value in locals().items() \
