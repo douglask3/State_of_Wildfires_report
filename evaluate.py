@@ -3,6 +3,7 @@ sys.path.append('fire_model/')
 sys.path.append('libs/')
 
 from FLAME import FLAME
+from ConFire import ConFire
 
 from BayesScatter import *
 from response_curves import *
@@ -172,6 +173,7 @@ def plot_limitation_maps(fig_dir, filename_out, **common_args):
     plt.savefig(figName + '.png')
 
 def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_filen = None, 
+                         model_class = FLAME,
                          dir = '', 
                          dir_outputs = '', model_title = '', filename_out = '',
                          subset_function = None, subset_function_args = None,
@@ -244,6 +246,7 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
     #paramter_map(trace, x_filen_list, fig_dir) 
     
     common_args = {
+        'class_object': model_class,
         'trace': trace,
         'sample_for_plot': sample_for_plot,
         'X': X,
@@ -299,9 +302,9 @@ if __name__=="__main__":
     """
     ### input data paths and filenames
 
-    training_namelist = "outputs//simple_example_model-customPriors///variables_info-Forest_consec_dry_mean_tas_max_crop_pas_cveg-frac_points_0.005-nvariables_-frac_random_sample0.005-nvars_6-niterations_100.txt"
+    training_namelist = "outputs//ConFire_example///variables_info-Forest_consec_dry_mean_tas_max_crop_pas_cveg-frac_points_0.02-nvariables_-frac_random_sample0.02-nvars_6-niterations_100.txt"
 
-    config_namelist = "namelists/simple_example.txt"
+    config_namelist = "namelists/ConFire_example.txt"
 
     """ 
         RUN evaluation 
