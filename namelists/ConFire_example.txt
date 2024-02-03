@@ -8,6 +8,7 @@ x_filen_list:: ["Forest.nc", "consec_dry_mean.nc", "tas_max.nc", "crop.nc", "pas
 
 ## Model info
 model_class:: ConFire
+priors:: {'pname': "q",'np': 1, 'dist': 'LogNormal', 'mu': 0.0, 'sigma': 1.0}
 priors:: {'pname': "controlID", 'value': [[0, 5], [0, 1, 2], [3, 4], [4]]}
 priors:: {'pname': "control_Direction", 'value': [1, -1, 1, -1]}
 priors:: {'pname': "driver_Direction", 'value': [[1, 1], [1, -1, -1], [1, 1], [1]]}
@@ -20,7 +21,7 @@ priors:: {'pname': "betas",'np': 2, 'dist': 'LogNormal', 'mu': 0.0, 'sigma': 1.0
 ### optimization info
 niterations:: 100
 cores:: 1
-fraction_data_for_sample:: 0.005
+fraction_data_for_sample:: 0.02
 subset_function:: sub_year_months
 subset_function_args:: {'months_of_year': [7]}
 grab_old_trace:: False # set to True till you get the code running. 
