@@ -9,8 +9,8 @@ sys.path.append('libs/')
 
 from combine_path_and_make_dir import * 
 
-
 from FLAME import FLAME
+from ConFire import ConFire
 
 from iris_plus import insert_data_into_cube
 
@@ -67,7 +67,7 @@ def logistic_how_likely(Y, X):
     
 
 def runSim_MaxEntFire(trace, sample_for_plot, X, eg_cube, lmask, run_name, 
-                      dir_samples, grab_old_trace, 
+                      dir_samples, grab_old_trace, extra_params = None,
                       class_object = FLAME, method = 'burnt_area',
                       test_eg_cube = False, out_index = None, *args, **kw):  
     
@@ -100,6 +100,8 @@ def runSim_MaxEntFire(trace, sample_for_plot, X, eg_cube, lmask, run_name,
         print("Generating Sample:" + file_sample)
         param_in = [param[i] if param.ndim == 1 else param[i,:] for param in params]
         param_in = dict(zip(params_names, param_in))
+        param_in.update(extra_params)
+        set_trace()
         obj = class_object(param_in)
         out = getattr(obj, method)(X, *args, **kw)
         

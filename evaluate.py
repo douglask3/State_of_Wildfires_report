@@ -172,14 +172,15 @@ def plot_limitation_maps(fig_dir, filename_out, **common_args):
     plt.gcf().tight_layout()
     plt.savefig(figName + '.png')
 
-def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_filen = None, 
-                         model_class = FLAME,
-                         dir = '', 
-                         dir_outputs = '', model_title = '', filename_out = '',
-                         subset_function = None, subset_function_args = None,
-                         sample_for_plot = 1, grab_old_trace = False, 
-                         response_grouping = None,
-                         *args, **kw):
+def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, 
+                          other_params_file =None, CA_filen = None, 
+                          model_class = FLAME,
+                          dir = '', 
+                          dir_outputs = '', model_title = '', filename_out = '',
+                          subset_function = None, subset_function_args = None,
+                          sample_for_plot = 1, grab_old_trace = False, 
+                          response_grouping = None,
+                          *args, **kw):
 
     """ Runs prediction and evalutation of the sampled model based on previously run trace.
     Arguments:
@@ -219,9 +220,14 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
 
     fig_dir = combine_path_and_make_dir(dir_outputs, '/figs/')
     trace = az.from_netcdf(trace_file)
+    
     scalers = pd.read_csv(scale_file).values  
-
-     
+    if other_params_file is None:
+        extra_params = None
+    else:
+        extra_params =  read_variables_from_namelist(other_params_file)
+    
+    
     common_args = {
         'y_filename': y_filen,
         'x_filename_list': x_filen_list,
@@ -248,6 +254,7 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
     common_args = {
         'class_object': model_class,
         'trace': trace,
+        'extra_params': extra_params,
         'sample_for_plot': sample_for_plot,
         'X': X,
         'eg_cube': Obs,
