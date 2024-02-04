@@ -37,7 +37,6 @@ class ConFire(object):
     def burnt_area(self, X, return_controls = False, return_limitations = False):
         ## finds controls        
         def cal_control(cid = 0):
-            cid = 0
             ids = self.controlID[cid]
             betas =  self.betas[cid] * self.driver_Direction[cid]
             return self.numPCK.dot(X[:,ids], betas)

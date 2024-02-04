@@ -16,7 +16,7 @@ priors:: {'pname': "x0",'np': 4, 'dist': 'Normal', 'mu': 0.0, 'sigma': 1.0}
 priors:: {'pname': "betas",'np': 2, 'dist': 'LogNormal', 'mu': 0.0, 'sigma': 1.0}
 priors:: {'pname': "betas",'np': 3, 'dist': 'LogNormal', 'mu': 0.0, 'sigma': 1.0}
 priors:: {'pname': "betas",'np': 2, 'dist': 'LogNormal', 'mu': 0.0, 'sigma': 1.0}
-priors:: {'pname': "betas",'np': 2, 'dist': 'LogNormal', 'mu': 0.0, 'sigma': 1.0}
+priors:: {'pname': "betas",'np': 1, 'dist': 'LogNormal', 'mu': 0.0, 'sigma': 1.0}
 
 ### optimization info
 niterations:: 100
