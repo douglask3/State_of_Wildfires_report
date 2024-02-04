@@ -30,7 +30,7 @@ class ConFire(object):
         self.controlID = self.params['controlID']
         self.control_Direction = self.params['control_Direction']
         self.x0 = select_param_or_default('x0', [0])
-        self.betas = select_param_or_default('betas', [[0]])
+        self.betas = select_param_or_default('betas', [[0]], stack = False)
         self.driver_Direction = self.params['driver_Direction']
         
 

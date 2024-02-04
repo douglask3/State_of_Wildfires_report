@@ -101,7 +101,7 @@ def runSim_MaxEntFire(trace, sample_for_plot, X, eg_cube, lmask, run_name,
         param_in = [param[i] if param.ndim == 1 else param[i,:] for param in params]
         param_in = dict(zip(params_names, param_in))
         param_in.update(extra_params)
-        set_trace()
+        
         obj = class_object(param_in)
         out = getattr(obj, method)(X, *args, **kw)
         

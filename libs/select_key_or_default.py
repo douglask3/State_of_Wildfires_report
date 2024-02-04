@@ -3,7 +3,8 @@ import pytensor
 import pytensor.tensor
 from pdb import set_trace
 
-def select_key_or_default(dirc, key, default = None, numPCK = __import__('numpy')):
+def select_key_or_default(dirc, key, default = None, stack = True, 
+                          numPCK = __import__('numpy')):
     dirc = dict(sorted(dirc.items()))
     out = [dirc[name] for name in dirc if key in name]
     
@@ -12,11 +13,11 @@ def select_key_or_default(dirc, key, default = None, numPCK = __import__('numpy'
     elif len(out) == 1: 
         out = out[0]
     else: 
-        out = numPCK.stack([i[0] for i in out])
+        if stack: out = numPCK.stack([i[0] for i in out])
         
     if type(out) is list:         
         try:    
-            out =  numPCK.stack(out)[:,0]
+            if stack: out =  numPCK.stack(out)[:,0]
         except:
             pass
        
