@@ -95,8 +95,6 @@ def plot_BayesModel_signifcance_maps(Obs, Sim, lmask, plot_n = 1, Nrows = 3, Nco
                      figure_filename = figure_filename + 'obs_post-Pvalue.nc')
     
 
-
-
 def compare_to_obs_maps(filename_out, dir_outputs, Obs, Sim, lmask, levels, cmap,
                         dlevels = None, dcmap = None,
                         *args, **kw):    
@@ -267,8 +265,9 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file,
     #plot_limitation_maps(fig_dir, filename_out, **common_args)
         
     common_args['Sim'] = Sim[0]
-
+    #set_trace()
     #jackknife(x_filen_list, fig_dir = fig_dir, **common_args)       
+    
     compare_to_obs_maps(filename_out, dir_outputs, Obs, Sim, lmask, *args, **kw)
     Bayes_benchmark(filename_out, fig_dir, Sim, Obs, lmask)
 
@@ -277,6 +276,7 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file,
     #                   fig_dir = fig_dir, scalers =  scalers, 
     #                   *args, **kw, **common_args)
          
+
     
     
 if __name__=="__main__":
