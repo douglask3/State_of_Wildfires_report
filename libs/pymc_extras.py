@@ -17,6 +17,12 @@ import pytensor.tensor as tt
 from pdb import set_trace
 
 def select_post_param(trace):
+     """Selects paramaeters from a pymc nc trace file.   
+    Arguments:
+        trace -- pymc netcdf trace file
+    Returns:
+        dict of paramater values with each item names after the parameter        
+    """
     def select_post_param_name(name): 
         out = trace.posterior[name].values
         A = out.shape[0]
@@ -36,6 +42,7 @@ def logistic_probability_tt(Y, fx, qSpread = None, CA = None):
     Arguments:
         Y  -- Y  in P(Y|fx). numpy 1-d array
 	fx -- fx in P(Y|fx). tensor 1-d array, length of Y
+        qSpread -- parameter that inflates target Y, to account for potential multi-fire overlap
         CA -- Area for the cover type (cover area). numpy 1-d array, length of Y. Default of None means everything is considered equal area.
     Returns:
         1-d tensor array of liklihoods.
