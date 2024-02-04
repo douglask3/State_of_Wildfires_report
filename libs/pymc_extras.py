@@ -17,12 +17,13 @@ import pytensor.tensor as tt
 from pdb import set_trace
 
 def select_post_param(trace):
-     """Selects paramaeters from a pymc nc trace file.   
+    """Selects paramaeters from a pymc nc trace file.   
     Arguments:
         trace -- pymc netcdf trace file
     Returns:
         dict of paramater values with each item names after the parameter        
     """
+
     def select_post_param_name(name): 
         out = trace.posterior[name].values
         A = out.shape[0]
