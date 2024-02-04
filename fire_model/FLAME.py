@@ -39,19 +39,22 @@ class FLAME(object):
             self.numPCK =  __import__('pytensor').tensor
         else:
             self.numPCK =  __import__('numpy')
+
+        def select_param_or_default(*args, **kw):
+            return  select_key_or_default(params, numPCK = self.numPCK, *args, **kw) 
        
         
-        self.lin_betas = self.select_key_or_defualt(params, 'lin_betas', 0.0)
-        self.control_betas = self.select_key_or_defualt(params, 'control_betas', None)#params['control_betas']
-        self.lin_beta_constant = self.select_key_or_defualt(params, 'lin_beta_constant', 0.0)
-        self.pow_betas = self.select_key_or_defualt(params, 'pow_betas', None)
-        self.pow_power = self.select_key_or_defualt(params, 'pow_power', None)
-        self.x2s_betas = self.select_key_or_defualt(params, 'x2s_betas', None)
-        self.x2s_X0    = self.select_key_or_defualt(params, 'x2s_X0'   , 0.0 )
-        self.q = self.select_key_or_defualt(params, 'q', 0.0)
-        self.comb_betas = self.select_key_or_defualt(params, 'comb_betas', None)   
-        self.comb_X0 = self.select_key_or_defualt(params, 'comb_X0', None) 
-        self.comb_p = self.select_key_or_defualt(params, 'comb_p', None)
+        self.lin_betas = select_param_or_default('lin_betas', 0.0)
+        self.control_betas = select_param_or_default('control_betas', None)
+        self.lin_beta_constant = select_param_or_default('lin_beta_constant', 0.0)
+        self.pow_betas = select_param_or_default('pow_betas', None)
+        self.pow_power = select_param_or_default('pow_power', None)
+        self.x2s_betas = select_param_or_default('x2s_betas', None)
+        self.x2s_X0    = select_param_or_default('x2s_X0'   , 0.0 )
+        self.q = select_param_or_default('q', 0.0)
+        self.comb_betas = select_param_or_default('comb_betas', None)   
+        self.comb_X0 = select_param_or_default('comb_X0', None) 
+        self.comb_p = select_param_or_default('comb_p', None)
         
         #Maria: add your response curve parameter selection thing
         
@@ -64,23 +67,10 @@ class FLAME(object):
             try:
                 self.ncontrols = self.control_betas.shape.eval()[1]
             except:
-                self.ncontrols = self.control_betas.shape[1]        
+                self.ncontrols = self.control_betas.shape[1]   
+
+         
     
-    def select_key_or_defualt(self, dirc, key, default):
-        dirc = dict(sorted(dirc.items()))
-        out = [dirc[name] for name in dirc if key in name]
-        
-        if len(out) == 0: 
-            out = default 
-        elif len(out) == 1: 
-            out = out[0]
-        else: 
-            out = self.numPCK.stack([i[0] for i in out])
-        
-        if type(out) is list: 
-            out =  self.numPCK.stack(out)[:,0]
-       
-        return(out)
 
 
     def controls(self, Xi):
@@ -174,7 +164,7 @@ class FLAME(object):
             BA = 1.0/(1.0 + self.numPCK.exp(-y))
             
             return BA
-    
+
 
     def burnt_area_no_spread(self, X):
         BA = self.burnt_area(X)

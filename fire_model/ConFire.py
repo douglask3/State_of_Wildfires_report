@@ -6,6 +6,10 @@ import iris.quickplot as qplt
 import matplotlib.pyplot as plt
 from pdb import set_trace
 
+import sys
+sys.path.append('libs/')
+from select_key_or_default import *
+
 
 class ConFire(object):
     def __init__(self, params, inference = False):
@@ -19,26 +23,33 @@ class ConFire(object):
             self.numPCK =  __import__('numpy')
         
         self.params = params
+
+        def select_param_or_default(*args, **kw):
+            return select_key_or_default(self.params, numPCK = self.numPCK, *args, **kw) 
+
+        self.controlID = self.params['controlID']
+        self.control_Direction = self.params['control_Direction']
+        self.x0 = select_param_or_default('x0', [0])
+        self.betas = select_param_or_default('betas', [[0]])
+        self.driver_Direction = self.params['driver_Direction']
         
+
     def burnt_area(self, X, return_controls = False, return_limitations = False):
         ## finds controls        
         def cal_control(cid = 0):
             cid = 0
-            ids = self.params['controlID'][cid]
-            betas = self.params['betas'][cid] * self.params['driver_Direction'][cid]
-
+            ids = self.controlID[cid]
+            betas =  self.betas[cid] * self.driver_Direction[cid]
             return self.numPCK.dot(X[:,ids], betas)
             
 
-        controls = [cal_control(i) for i in range(len(self.params['controlID']))]
+        controls = [cal_control(i) for i in range(len(self.controlID))]
         if return_controls: return controls
-
-        cdir = self.params['control_Direction']
 
         def sigmoid(y, k):
             return 1.0/(1.0 + self.numPCK.exp(-y * k))
 
-        limitations = [sigmoid(y, k) for y, k in zip(controls, cdir)]
+        limitations = [sigmoid(y, k) for y, k in zip(controls, self.control_Direction)]
         if return_limitations: return limitations
     
         BA = self.numPCK.prod(limitations, axis = 0)
