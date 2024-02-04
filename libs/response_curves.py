@@ -74,8 +74,11 @@ def sensitivity_curve_experiment(Sim, Xi, col, name, trace, sample_for_plot,
     if isinstance(col, int):
         out = sensitivity_experiment(col)
     else:
-        out = {sensitivity_experiment(i) for i in col}
-    
+        out = [sensitivity_experiment(i) for i in col]
+        if len(out) == 2:
+            out = set(out)
+        else:
+            out = tuple([out[0], out[1:]])
     
     return out
    
@@ -143,9 +146,9 @@ def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask,
                           eg_cube, lmask, dir_samples, grab_old_trace, map_type, plotFun, 
                           figure_dir, x_filen_list, scalers=None):
         
-        Sim1, Sim2 = response_FUN(Sim, X, g_index, varname, trace, sample_for_plot, 
+        Sim1, Sim2i = response_FUN(Sim, X, g_index, varname, trace, sample_for_plot, 
                               eg_cube, lmask, dir_samples, grab_old_trace)
-        
+        Sim2 = Sim2i[0] if isinstance(Sim2i, list) else Sim2i
         plotN = Ncol * (group_index + 1)
         if map_type >= 0:
             plotFun(Sim2, varname, plotN)
@@ -154,14 +157,15 @@ def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask,
         if map_type == 2:
             
             plotFun(Sim1, '', plotN + 2, figure_filename=figure_dir + varname + '-absolute')
+            
             plotNi = 2
             diff = Sim2.copy()
             if len(g_index) == 1:
                 diff = diff.data - Sim1.data if Sim1 is not None else Sim2
             else:
-                diff.data = np.sqrt(Sim1.data**2 + Sim2.data**2)
+                diff.data = np.sqrt(Sim1.data**2 + np.sum([i.data**2 for i in Sim2i], axis = 0))
         diffP = diff.collapsed('time', iris.analysis.MEAN)
-        set_trace()
+        
         plotFun(diffP, '', plotN + 2 + plotNi, dlevels, dcmap, 
                 figure_filename=figure_dir + varname + '-difference')  
 
