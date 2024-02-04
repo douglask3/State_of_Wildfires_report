@@ -18,7 +18,7 @@ from pdb import set_trace
 
 def plot_BayesModel_maps(Sim, levels, cmap, ylab = '', Obs = None, 
                          Nrows = 1, Ncols = 2, plot0 = 0, collapse_dim = 'realization',
-                         scale = 100*12, figure_filename = None, set_traceT = False,
+                         scale = 100, figure_filename = None, set_traceT = False,
                          *args, **kw):
     try:
         if collapse_dim != 'time': Sim = Sim.collapsed('time', iris.analysis.MEAN) 
@@ -116,7 +116,10 @@ def plot_cube(cube, N, M, n, cmap, levels = None, extend = 'neither',
     
     plt.gca().coastlines()
     if figure_filename is not None:
-        iris.save(cube, figure_filename)
+        try:
+            iris.save(cube, figure_filename)
+        except:
+            set_trace()
     return cf, levels, extend
 
 

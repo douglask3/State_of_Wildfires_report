@@ -267,19 +267,18 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file,
     #plot_limitation_maps(fig_dir, filename_out, **common_args)
         
     common_args['Sim'] = Sim[0]
-    #jackknife(x_filen_list, fig_dir = fig_dir, **common_args)
-    #set_trace()
+
+    #jackknife(x_filen_list, fig_dir = fig_dir, **common_args)       
     compare_to_obs_maps(filename_out, dir_outputs, Obs, Sim, lmask, *args, **kw)
     Bayes_benchmark(filename_out, fig_dir, Sim, Obs, lmask)
+
     #for ct in ["initial", "standard", "potential", "sensitivity"]:
     #    response_curve(curve_type = ct, x_filen_list = x_filen_list,
     #                   fig_dir = fig_dir, scalers =  scalers, 
     #                   *args, **kw, **common_args)
-                       
-    #response_grouping = response_grouping
+         
     
     
-
 if __name__=="__main__":
     """ Running optimization and basic analysis. 
     Variables that need setting:
@@ -298,8 +297,8 @@ if __name__=="__main__":
             we've implmented it) attempt some evaluation.
         sample_for_plot -- how many iterations (samples) from optimixation should be used 
             for plotting and evaluation.
-        levels -- levels on the colourbar on observtation and prodiction maps
-        cmap -- levels on the colourbar on observtation and prodiction maps
+        levels -- levels on the colourbar on observtation and prediction maps
+        cmap -- levels on the colourbar on observtation and prediction maps
     Returns:
          (to be added too)
     """
@@ -309,9 +308,11 @@ if __name__=="__main__":
     """
     ### input data paths and filenames
 
+
     training_namelist = "outputs//ConFire_example///variables_info-Forest_consec_dry_mean_tas_max_crop_pas_cveg_humid_lightn_popDens_precip_soilM_totalVeg_vpd-frac_points_0.02-nvariables_-frac_random_sample0.02-nvars_13-niterations_100.txt"
 
     config_namelist = "namelists/ConFire_example.txt"
+
 
     """ 
         RUN evaluation 
