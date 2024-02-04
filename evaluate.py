@@ -309,7 +309,7 @@ if __name__=="__main__":
     """
     ### input data paths and filenames
 
-    training_namelist = "outputs//ConFire_example///variables_info-Forest_consec_dry_mean_tas_max_crop_pas_cveg-frac_points_0.02-nvariables_-frac_random_sample0.02-nvars_6-niterations_100.txt"
+    training_namelist = "outputs//ConFire_example///variables_info-Forest_consec_dry_mean_tas_max_crop_pas_cveg_humid_lightn_popDens_precip_soilM_totalVeg_vpd-frac_points_0.02-nvariables_-frac_random_sample0.02-nvars_13-niterations_100.txt"
 
     config_namelist = "namelists/ConFire_example.txt"
 
