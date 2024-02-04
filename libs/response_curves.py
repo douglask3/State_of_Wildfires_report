@@ -52,9 +52,36 @@ def potential_curve_experiment(Sim, Xi, col_to_go, name, trace, sample_for_plot,
 
 def sensitivity_curve_experiment(Sim, Xi, col, name, trace, sample_for_plot, 
                               eg_cube, lmask, *args, **kw):
-    #dx = 0.001
-    dx = 50
-    X = Xi.copy()
+    dx = 0.001
+
+    def sensitivity_experiment(i):
+        X = Xi.copy()
+        X[:, i] -= dx/2.0  # Subtract 0.1 of all values for the current column
+    
+        Sim1 = runSim_MaxEntFire(trace, sample_for_plot, X, eg_cube, lmask, 
+                                 name + "/subtract_" + str(dx/2.0), *args, **kw)
+        
+        X = Xi.copy() #restore values
+        X[:, i] += dx/2.0 #add 0.1 to all values for the current column
+     
+        Sim2 = runSim_MaxEntFire(trace, sample_for_plot, X, eg_cube, lmask, 
+                                 name + "/add_" + str(dx/2.0), *args, **kw)
+        if isinstance(col, int): 
+            return Sim2, Sim1
+        else: 
+            return Sim2 - Sim1
+    
+    if isinstance(col, int):
+        out = sensitivity_experiment(col)
+    else:
+        out = [sensitivity_experiment(i) for i in col]
+        if len(out) == 2:
+            out = set(out)
+        else:
+            out = tuple([out[0], out[1:]])
+    
+    return out
+   
     X[:, col] -= dx/2.0  # Subtract 0.1 of all values for the current column
     
     Sim1 = runSim_MaxEntFire(trace, sample_for_plot, X, eg_cube, lmask, 
@@ -62,9 +89,11 @@ def sensitivity_curve_experiment(Sim, Xi, col, name, trace, sample_for_plot,
         
     X = Xi.copy() #restore values
     X[:, col] += dx/2.0 #add 0.1 to all values for the current column
-        
+     
     Sim2 = runSim_MaxEntFire(trace, sample_for_plot, X, eg_cube, lmask, 
                              name + "/add_" + str(dx/2.0), *args, **kw)
+
+    
     return Sim1, Sim2
 
                                  
@@ -112,22 +141,29 @@ def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask,
     
     plotFun(Sim, 'Control')
 
-    def process_variables(Sim, X, response_FUN, group_index, g_index,  varname, trace, sample_for_plot, 
-                     eg_cube, lmask, dir_samples, grab_old_trace, map_type, plotFun, 
-                     figure_dir, x_filen_list, scalers=None):
+    def process_variables(Sim, X, response_FUN, group_index, g_index,  varname, trace, 
+                          sample_for_plot, 
+                          eg_cube, lmask, dir_samples, grab_old_trace, map_type, plotFun, 
+                          figure_dir, x_filen_list, scalers=None):
         
-        Sim1, Sim2 = response_FUN(Sim, X, g_index, varname, trace, sample_for_plot, 
+        Sim1, Sim2i = response_FUN(Sim, X, g_index, varname, trace, sample_for_plot, 
                               eg_cube, lmask, dir_samples, grab_old_trace)
-                             
-    
+        Sim2 = Sim2i[0] if isinstance(Sim2i, list) else Sim2i
         plotN = Ncol * (group_index + 1)
         if map_type >= 0:
             plotFun(Sim2, varname, plotN)
             plotNi = 0
+            diff = Sim2.copy() - Sim1.data if Sim1 is not None else Sim2
         if map_type == 2:
+            
             plotFun(Sim1, '', plotN + 2, figure_filename=figure_dir + varname + '-absolute')
+            
             plotNi = 2
-        diff = Sim2.copy() - Sim1.data if Sim1 is not None else Sim2
+            diff = Sim2.copy()
+            if len(g_index) == 1:
+                diff = diff.data - Sim1.data if Sim1 is not None else Sim2
+            else:
+                diff.data = np.sqrt(Sim1.data**2 + np.sum([i.data**2 for i in Sim2i], axis = 0))
         diffP = diff.collapsed('time', iris.analysis.MEAN)
         
         plotFun(diffP, '', plotN + 2 + plotNi, dlevels, dcmap, 
@@ -175,7 +211,8 @@ def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask,
             if scalers is not None:
                 bin_centers = bin_centers*(scalers[1, group_index] - scalers[0, group_index]) + scalers[0, group_index]
             ax.plot(bin_centers, median_values, marker='.', label='Median')
-            ax.fill_between(bin_centers, percentile_10, percentile_90, alpha=0.3, label='10th-90th Percentiles')
+            ax.fill_between(bin_centers, percentile_10, percentile_90, alpha=0.3, 
+                            label='10th-90th Percentiles')
     
         else:
             y = X[:, g_index[1]]
