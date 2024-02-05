@@ -163,6 +163,7 @@ def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask,
             if len(g_index) == 1:
                 diff = diff.data - Sim1.data if Sim1 is not None else Sim2
             else:
+                if not isinstance(Sim2i, list): Sim2i = [Sim2i]
                 diff.data = np.sqrt(Sim1.data**2 + np.sum([i.data**2 for i in Sim2i], axis = 0))
         diffP = diff.collapsed('time', iris.analysis.MEAN)
         
