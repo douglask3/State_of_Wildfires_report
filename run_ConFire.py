@@ -52,6 +52,16 @@ if __name__=="__main__":
     control_TS = make_time_series(Control[0]).data
     standard_TS = [make_time_series(cubes[0]).data for cubes in Standard]
 
-   
+    colors = ['green', 'blue', 'red', 'black']  
+    fig, ax = plt.subplots()
+
+    for i in range(standard_TS.shape[0]):
+        ax.fill_between(range(standard_TS.shape[2]), 
+                        standard_TS[i, 0, :], standard_TS[i, 1, :], color=colors[i])
+
+    # Set labels and title
+    ax.set_xlabel('X-axis')
+    ax.set_ylabel('Y-axis')
+    ax.set_title('Polygons with Color Vision Impaired Color Combination')
     set_trace()
     
