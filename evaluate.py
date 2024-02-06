@@ -171,13 +171,15 @@ def plot_limitation_maps(fig_dir, filename_out, **common_args):
     plt.savefig(figName + '.png')
 
 def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, 
-                          other_params_file =None, CA_filen = None, 
+                          extra_params = None,
+                          other_params_file = None, CA_filen = None, 
                           model_class = FLAME,
                           dir = '', 
                           dir_outputs = '', model_title = '', filename_out = '',
+                          control_run_name = "control",
                           subset_function = None, subset_function_args = None,
                           sample_for_plot = 1, grab_old_trace = False, 
-                          response_grouping = None,
+                          response_grouping = None, run_only = False,
                           *args, **kw):
 
     """ Runs prediction and evalutation of the sampled model based on previously run trace.
@@ -220,12 +222,14 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file,
     trace = az.from_netcdf(trace_file)
     
     scalers = pd.read_csv(scale_file).values  
-    if other_params_file is None:
-        extra_params = None
-    else:
-        extra_params =  read_variables_from_namelist(other_params_file)
-    
-    
+    if other_params_file is not None:
+        readin_params = read_variables_from_namelist(other_params_file)
+        if extra_params is not None:
+            
+            readin_params.update(extra_params)
+        extra_params = readin_params
+            
+        
     common_args = {
         'y_filename': y_filen,
         'x_filename_list': x_filen_list,
@@ -260,8 +264,8 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file,
         'dir_samples': dir_samples,
         'grab_old_trace': grab_old_trace}
     
-    Sim = runSim_MaxEntFire(**common_args, run_name = "control", test_eg_cube = True)
-    
+    Sim = runSim_MaxEntFire(**common_args, run_name = control_run_name, test_eg_cube = True)
+    if run_only: return Sim
     #plot_limitation_maps(fig_dir, filename_out, **common_args)
         
     common_args['Sim'] = Sim[0]
@@ -276,7 +280,7 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file,
     #                   fig_dir = fig_dir, scalers =  scalers, 
     #                   *args, **kw, **common_args)
          
-
+    return Sim
     
     
 if __name__=="__main__":
@@ -317,6 +321,7 @@ if __name__=="__main__":
     """ 
         RUN evaluation 
     """
-    evaluate_MaxEnt_model_from_namelist(training_namelist, config_namelist)
+    Sim = evaluate_MaxEnt_model_from_namelist(training_namelist, config_namelist)
+    
     
     

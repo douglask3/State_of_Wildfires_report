@@ -46,11 +46,12 @@ class ConFire(object):
         if return_controls: return controls
 
         def sigmoid(y, k):
+            if k == 0: return None
             return 1.0/(1.0 + self.numPCK.exp(-y * k))
-
+        
         limitations = [sigmoid(y, k) for y, k in zip(controls, self.control_Direction)]
         if return_limitations: return limitations
-    
+        limitations = [lim for lim in limitations if lim is not None]
         BA = self.numPCK.prod(limitations, axis = 0)
         return BA
     
