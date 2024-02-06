@@ -224,11 +224,11 @@ def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask,
             for rw in range(1, Sim2.shape[0]):
                 z = np.concatenate((z, non_masked_data(diff[rw])[:, None]), axis = 1)
             z = np.transpose(np.percentile(z, [10, 50, 90], axis=1))
-
-            output_array = np.column_stack((x, y, z))
             
             x = x*(scalers[1, 0] - scalers[0, 0]) + scalers[0, 0]
             y = y*(scalers[1, 1] - scalers[0, 1]) + scalers[0, 1]
+
+            output_array = np.column_stack((x, y, z))
             np.savetxt(figure_dir + varname + '-response_surface.csv', 
                              output_array, delimiter=',', 
                              header = "x,y,p10%,p50%,p90%")
