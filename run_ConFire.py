@@ -25,11 +25,33 @@ if __name__=="__main__":
         control_Directioni = control_Direction
         control_Directioni[-controlID] = 0.0
         extra_params = {"control_Direction": control_Directioni}
-        set_trace()
-        call_eval('Standard_'+ str(controlID), extra_params)
+        
+        return call_eval('Standard_'+ str(controlID), extra_params)
 
     Control = call_eval('control', run_only = False)
     Standard = [Standard_limitation(i) for i in range(len(control_Direction))]
+
+    def make_time_series(cube):
+        try: 
+            cube.coord('latitude').guess_bounds()
+        except:
+            pass
+
+        try:
+            cube.coord('longitude').guess_bounds()
+        except:
+            pass
+        grid_areas = iris.analysis.cartography.area_weights(cube)
+        area_weighted_mean = cube.collapsed(['latitude', 'longitude'], 
+                                            iris.analysis.MEAN, weights=grid_areas)
+
+        return area_weighted_mean.collapsed('realization', 
+                                            iris.analysis.PERCENTILE, percent=[10, 90])
     
+    
+    control_TS = make_time_series(Control[0]).data
+    standard_TS = [make_time_series(cubes[0]).data for cubes in Standard]
+
+   
     set_trace()
     
