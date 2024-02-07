@@ -40,9 +40,7 @@ def standard_curve_experiment(Sim, Xi, col_to_keep, name, trace, sample_for_plot
 def potential_curve_experiment(Sim, Xi, col_to_go, name, trace, sample_for_plot, 
                               eg_cube, lmask, *args, **kw):
     X = Xi.copy()
-    #X[:, col_to_go] = 0.0
-    
-    X[:, col_to_go] = np.mean(X[:, col_to_go], axis = 0)
+    X[:, col_to_go] = np.median(X[:, col_to_go], axis = 0)
     
     Sim2 = runSim_MaxEntFire(trace, sample_for_plot, X, eg_cube, lmask, 
                              name + "/to_mean", *args, **kw)
