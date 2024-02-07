@@ -81,20 +81,6 @@ def sensitivity_curve_experiment(Sim, Xi, col, name, trace, sample_for_plot,
             out = tuple([out[0], out[1:]])
     
     return out
-   
-    X[:, col] -= dx/2.0  # Subtract 0.1 of all values for the current column
-    
-    Sim1 = runSim_MaxEntFire(trace, sample_for_plot, X, eg_cube, lmask, 
-                             name + "/subtract_" + str(dx/2.0), *args, **kw)
-        
-    X = Xi.copy() #restore values
-    X[:, col] += dx/2.0 #add 0.1 to all values for the current column
-     
-    Sim2 = runSim_MaxEntFire(trace, sample_for_plot, X, eg_cube, lmask, 
-                             name + "/add_" + str(dx/2.0), *args, **kw)
-
-    
-    return Sim1, Sim2
 
                                  
 
