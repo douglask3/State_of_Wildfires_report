@@ -52,7 +52,9 @@ if __name__=="__main__":
         grid_areas = iris.analysis.cartography.area_weights(cube)
         area_weighted_mean = cube.collapsed(['latitude', 'longitude'], 
                                             iris.analysis.MEAN, weights=grid_areas)
-
+        out_file = figName + '/points-' + name + '.csv'
+        np.savetxt(out_file, area_weighted_mean.data, delimiter=',')
+        
         TS = area_weighted_mean.collapsed('realization', 
                                           iris.analysis.PERCENTILE, percent=[10, 90])
         time_coord = TS.coord('time')
@@ -60,7 +62,7 @@ if __name__=="__main__":
         time_datetime = cftime.date2num(time_datetime, 'days since 0001-01-01 00:00:00')/365.24
         TS = np.append(time_datetime[:,None], np.transpose(TS.data), axis = 1)
 
-        out_file = figName + '/' + name + '.csv'
+        out_file = figName + '/time_series' + name + '.csv'
         np.savetxt(out_file, TS, delimiter=',', header = "year,p10%,p90%")
         return TS
     
