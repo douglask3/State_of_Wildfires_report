@@ -24,13 +24,14 @@ cores:: 1
 fraction_data_for_sample:: 0.02
 subset_function:: sub_year_months
 subset_function_args:: {'months_of_year': [7]}
-grab_old_trace:: False # set to True till you get the code running. 
+grab_old_trace:: True # set to True till you get the code running. 
                           # Then set to False when you start adding in new response curves
 ### output info
 dir_outputs:: 'outputs/'
 
 ## evaluation info
 sample_for_plot:: 50
+control_names:: ['Fuel', 'Moisture', 'Ignition', 'Suppression']
 levels:: [0, 0.1, 1, 2, 5, 10, 20, 50, 100] 
 dlevels:: [-20, -10, -5, -2, -1, -0.1, 0.1, 1, 2, 5, 10, 20]
 cmap:: 'OrRd'
