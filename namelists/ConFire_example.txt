@@ -38,3 +38,8 @@ cmap:: 'OrRd'
 dcmap:: 'RdBu_r'
 dir_projecting:: "../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/"
 
+## experiment info
+experiment_dir:: ["../ConFIRE_attribute/isimip3a/driving_data/ERA5/Brazil/historic_TS_2001_2020/obsclim/", "../ConFIRE_attribute/isimip3a/driving_data/ERA5/Brazil/historic_TS_2001_2020/counterclim/", "/scratch/dkelley/ConFire/inputs/isimip3b/Brazil/ssp126/GFDL-ESM4/", "/scratch/dkelley/ConFire/inputs/isimip3b/Brazil/ssp126/IPSL-CM6A-LR/"]
+
+experiment_names:: ["factual", "counterfactual", "ss126_GFDL", "ss126_IPSL"]
+
