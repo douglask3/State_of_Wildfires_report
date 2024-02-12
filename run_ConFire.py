@@ -35,24 +35,17 @@ if __name__=="__main__":
                                                     run_only = run_only, 
                                                     control_run_name = control_run_name,
                                                     extra_params = extra_params, *args, **kw)
-
-    Control = call_eval('control', run_only = False)
-    experiment = [call_eval(name, dir = dir, y_filen = y_filen) \
-                  for name, dir in zip(experiment_names, experiment_dirs)]
     
     
-    def Standard_limitation(controlID):
+    def Standard_limitation(controlID, name, *args, **kws):
         
         control_Directioni = control_Direction
         control_Directioni[-controlID] = 0.0
         extra_params = {"control_Direction": control_Directioni}
         
-        return call_eval('Standard_'+ str(controlID), extra_params)
-
-
-    Standard = [Standard_limitation(i) for i in range(len(control_Direction))]
-
-    def make_time_series(cube, name):
+        return call_eval(name + 'Standard_'+ str(controlID), extra_params, *args, **kws)
+    
+    def make_time_series(cube, name, figName):
         try: 
             cube.coord('latitude').guess_bounds()
         except:
@@ -74,18 +67,39 @@ if __name__=="__main__":
         time_coord = TS.coord('time')
         time_datetime = time_coord.units.num2date(time_coord.points)
         time_datetime = cftime.date2num(time_datetime, 'days since 0001-01-01 00:00:00')/365.24
-        TS = np.append(time_datetime[:,None], np.transpose(TS.data), axis = 1)
+        TS = np.append(time_datetime[:, None], np.transpose(TS.data), axis = 1)
 
         out_file = figName + '/time_series' + name + '.csv'
         np.savetxt(out_file, TS, delimiter=',', header = "year,p25%,p75%")
         return TS
     
-    figName = output_dir + 'figs/' + output_file + '-control_TS'
-    makeDir(figName + '/')
-    control_TS = make_time_series(Control[0], 'Control')
-    standard_TS = np.array([make_time_series(cube[0], name) \
+    
+    def run_experiment(name = '', *args, **kws):
+        if name != "": 
+            name = name + '-'
+            run_only = True
+        else:
+            run_only = False
+        Control = call_eval(name + 'control', run_only = run_only, *args, **kws)
+        Standard = [Standard_limitation(i, name, *args, **kws) \
+                    for i in range(len(control_Direction))]
+
+        figName = output_dir + 'figs/' + output_file + '-' + name + 'control_TS'
+        makeDir(figName + '/')
+        control_TS = make_time_series(Control[0], 'Control', figName)
+        standard_TS = np.array([make_time_series(cube[0], name, figName) \
                             for cube, name in zip(Standard, control_names)])
-    experiment_TS = np.array([make_time_series(cube[0], name)  for cube, name in zip(experiment, experiment_names)])
+    
+        
+        return Control, Standard, control_TS, standard_TS
+    
+    origonal = run_experiment()
+    experiment = [call_eval(name, dir = dir, y_filen = y_filen) \
+                  for name, dir in zip(experiment_names, experiment_dirs)]
+    
+    #experiment_TS = np.array([make_time_series(cube[0], name)  for cube, name in zip(experiment, experiment_names)])
+    
+    
 
     
     set_trace()
