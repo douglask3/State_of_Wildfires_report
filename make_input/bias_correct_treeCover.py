@@ -16,7 +16,7 @@ def list_directories(root_dir):
     return directories
 
 def logit_0(x):
-    scale = 1/np.prod(x.shape)
+    scale = 1/np.prod(x.shape)    
     x = x * (1 - scale*2) + scale
     return np.log(x/(1-x))
 
@@ -35,7 +35,7 @@ def bias_correct_field(dir, file_original, cubet, start_target):
         try:
             out = cube[which].collapsed('time', iris.analysis.MEAN)
         except:
-            out = cube[which].collapsed('z', iris.analysis.MEAN)/90.0
+            out = cube[which].collapsed('z', iris.analysis.MEAN)/100.0
         return out
     #which0 = np.where((times0 > timest[0]) & (times0 < timest[-1]))
     #whicht = np.where((timest > times0[0]) & (timest < times0[-1]))
@@ -64,19 +64,29 @@ def bias_correct(dir, file_original, bias_cube, file_out):
     except:
         return None
 
+def bias_correct_veg(dir, dir_original, file_original, file_out, tcube, start_target):
+    dirs = list_directories(dir)
+    
+
+    bias_cube = bias_correct_field(dir_original, file_original, cubet, start_target)
+    outs = [bias_correct(dir, file_original, bias_cube, file_out) for dir in dirs]
+
+
 dir = '/data/dynamic/dkelley/ConFIRE_ISIMIP/isimip3a/driving_data/ERA5/Canada/'
 dir_original = '/data/dynamic/dkelley/ConFIRE_ISIMIP/isimip3a/driving_data/ERA5/Canada/historic_TS_2001_2020/obsclim/'
 file_original = 'trees.nc'
 file_out = 'tree_biascorrected.nc'
 target_file = '/home/h02/dkelley/fireMIPbenchmarking/data/benchmarkData/treecover2000-2014.nc'
 start_target = 2000.5
-dirs = list_directories(dir)
 
 cubet = iris.load_cube(target_file)
+bias_correct_veg(dir, dir_original, file_original, file_out, cubet, start_target)
 
-bias_cube = bias_correct_field(dir_original, file_original, cubet, start_target)
-outs = [bias_correct(dir, file_original, bias_cube, file_out) for dir in dirs]
-set_trace()
+file_original = 'totalVeg.nc'
+file_out = 'totalVeg_biascorrected.nc'
+target_file = '/home/h02/dkelley/fireMIPbenchmarking/data/benchmarkData/bareground2000-2014.nc'
 
-
+cubet = iris.load_cube(target_file)
+cubet.data = 100.0 - cubet.data
+bias_correct_veg(dir, dir_original, file_original, file_out, cubet, start_target)
 
