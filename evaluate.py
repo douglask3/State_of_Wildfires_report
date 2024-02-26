@@ -113,8 +113,9 @@ def compare_to_obs_maps(filename_out, dir_outputs, Obs, Sim, lmask, levels, cmap
         cmap -- string of name of colourmap for maps.
     
     Returns:
-        look in dir_outputs + model_title, and you'll see figure and tables from evaluation, 
-        projection, reponse curves, jackknifes etc (not all implmenented yet)
+        evaluation file wiyj map of Obs, 10-90%ile of Sim, scatter of liklihood of Obs
+        giving Sim and maps of Obs given Sim likihood ranges, and ''Bayesian Scatter' of
+        Obs vs Sim with positio of Obs in Sim as maps.
     """
     fig_dir = combine_path_and_make_dir(dir_outputs, '/figs/')
     figure_filename = fig_dir + filename_out + '-evaluation'
@@ -132,6 +133,18 @@ def compare_to_obs_maps(filename_out, dir_outputs, Obs, Sim, lmask, levels, cmap
 
 def evaluate_MaxEnt_model_from_namelist(training_namelist = None, evaluate_namelist = None, 
                                         **kwargs):
+    """ Runs evaluation from namelists. Reads namelists and passes to evaluate_MaxEnt_model.
+    Arguments:
+        training_namelist -- a namelist see 'namelists/simple_example.txt' for an example,
+            with all the information that is output from the training step of the workflow 
+            (see train.py)
+        evaluate_namelist -- a namelist see 'namelists/simple_example.txt' for an example,
+            with all the information required for evaluation. Any repeats in evaluate_namelist              overwrite training_namelist   
+        **kwargs -- additional args for us in evaluate_MaxEnt_model. Overwrites any mathcing
+            arguments in namelist  
+    Returns:
+        see evaluate_MaxEnt_model
+    """
 
     variables = read_variable_from_namelist_with_overwite(training_namelist, **kwargs)
     
