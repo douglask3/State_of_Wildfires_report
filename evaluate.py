@@ -8,6 +8,7 @@ from BayesScatter import *
 from response_curves import *
 from jackknife import *
 #from train import *
+from extend_np_range import *
 
 from read_variable_from_netcdf import *
 from combine_path_and_make_dir import * 
@@ -32,6 +33,9 @@ from scipy.optimize import linear_sum_assignment
 
 from pdb import set_trace
 
+
+def flatten(xss):
+    return [x for xs in xss for x in xs]
 
 def plot_BayesModel_signifcance_maps(Obs, Sim, lmask, plot_n = 1, Nrows = 3, Ncols = 2,
                                      figure_filename = None):
@@ -237,12 +241,38 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
     common_args['Sim'] = Sim[0]
     #set_trace()
     #jackknife(x_filen_list, fig_dir = fig_dir, **common_args)       
-    compare_to_obs_maps(filename_out, dir_outputs, Obs, Sim, lmask, *args, **kw)
-    Bayes_benchmark(filename_out, fig_dir, Sim, Obs, lmask)
+    #compare_to_obs_maps(filename_out, dir_outputs, Obs, Sim, lmask, *args, **kw)
+    #Bayes_benchmark(filename_out, fig_dir, Sim, Obs, lmask)
     #for ct in ["initial", "standard", "potential", "sensitivity"]:
-    for ct in ["potential", "sensitivity", "initial", "standard"]:
-        response_curve(curve_type = ct, x_filen_list = x_filen_list, response_grouping = response_grouping,
-                       fig_dir = fig_dir, scalers =  scalers, 
+
+    
+    #for ct in ["potential", "sensitivity", "initial", "standard"]:
+    #    response_curve(curve_type = ct, x_filen_list = x_filen_list, 
+    #                   response_grouping = response_grouping,
+    #                   fig_dir = fig_dir, scalers =  scalers, 
+    #                   *args, **kw, **common_args)
+
+    if response_grouping is None: return Sim
+   
+    common_args['lmask'] = None
+    for response_g in response_grouping:
+        #extend_which = np.where([i in flatten(response_grouping) for i in x_filen_list])[0]
+        extend_which =  np.where([i in response_g for i in x_filen_list])[0]
+    
+
+        
+        common_args.pop("Sim")
+        common_args['X'] = extend_np_range(X, indicies = extend_which)
+        
+        Sim_extend = runSim_MaxEntFire(**common_args, run_name = "control", test_eg_cube = True)
+
+
+        common_args['Sim'] = Sim_extend
+        
+        response_curve(curve_type = "standard-extended" + '_'.join(response_g), 
+                       x_filen_list = x_filen_list, 
+                       response_grouping = [response_g],
+                       fig_dir = fig_dir, scalers =  scalers, plot_map = False
                        *args, **kw, **common_args)
                        
     

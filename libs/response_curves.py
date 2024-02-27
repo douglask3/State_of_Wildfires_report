@@ -85,27 +85,33 @@ def sensitivity_curve_experiment(Sim, Xi, col, name, trace, sample_for_plot,
 def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask, 
                    dir_samples, fig_dir, grab_old_trace, x_filen_list, 
                    levels, cmap, dlevels, dcmap, scalers = None, 
-                   response_grouping = None, *args, **kw):  
+                   response_grouping = None, plot_map = True, *args, **kw):  
     
     figure_filename = fig_dir + curve_type + '-response'
     figure_dir = combine_path_and_make_dir(figure_filename + '-maps/') 
     
     print("Plotting response curve: " + curve_type)
+
+
+    if lmask is None:
+        def extract_data(x): return x
+    else:
+        extract_data = non_masked_data
     
     map_type = 1
-    if curve_type == "initial":
+    if "initial" in curve_type:
         response_FUN = initial_curve_experiment
         map_type = 0
-    elif curve_type == "standard":
+    elif "standard" in curve_type:
         response_FUN = standard_curve_experiment
-    elif curve_type == "potential":
+    elif "potential" in curve_type:
         response_FUN = potential_curve_experiment
-    elif curve_type == "sensitivity":
+    elif "sensitivity" in curve_type:
         response_FUN = sensitivity_curve_experiment
         map_type = 2
     else:
         set_trace()
-
+    if not plot_map: map_type = -9
     fig_curve = plt.figure()
     fig_map = plt.figure()
 
@@ -133,11 +139,14 @@ def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask,
         Sim1, Sim2i = response_FUN(Sim, X, g_index, varname, trace, sample_for_plot, 
                               eg_cube, lmask, dir_samples, grab_old_trace)
         Sim2 = Sim2i[0] if isinstance(Sim2i, list) else Sim2i
+        diff = Sim2.copy() - Sim1.data if Sim1 is not None else Sim2
+
         plotN = Ncol * (group_index + 1)
+
         if map_type >= 0:
             plotFun(Sim2, varname, plotN)
             plotNi = 0
-            diff = Sim2.copy() - Sim1.data if Sim1 is not None else Sim2
+
         if map_type == 2:
             
             plotFun(Sim1, '', plotN + 2, figure_filename=figure_dir + varname + '-absolute')
@@ -149,13 +158,14 @@ def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask,
             else:
                 if not isinstance(Sim2i, list): Sim2i = [Sim2i]
                 diff.data = np.sqrt(Sim1.data**2 + np.sum([i.data**2 for i in Sim2i], axis = 0))
-        diffP = diff.collapsed('time', iris.analysis.MEAN)
+        if map_type >= 0:
+            diffP = diff.collapsed('time', iris.analysis.MEAN)
         
-        plotFun(diffP, '', plotN + 2 + plotNi, dlevels, dcmap, 
-                figure_filename=figure_dir + varname + '-difference')  
+            plotFun(diffP, '', plotN + 2 + plotNi, dlevels, dcmap, 
+                    figure_filename=figure_dir + varname + '-difference')  
 
         
-        if map_type >= 0:
+        
             agree = diffP.copy()
             agree.data = agree.data < 0
             agree = agree.collapsed('realization', iris.analysis.MEAN)
@@ -182,7 +192,7 @@ def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask,
                     values_in_bin = []
     
                     for rw in range(Sim2.shape[0]):
-                        values_in_bin.append(non_masked_data(diff[rw])[mask])
+                        values_in_bin.append(extract_data(diff[rw])[mask])
                     values_in_bin = np.array(values_in_bin).flatten()    
     
                     median_values.append(np.median(values_in_bin))
@@ -202,11 +212,11 @@ def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask,
         else:
             y = X[:, g_index[1]]
             x = X[:, g_index[0]]
-            z = non_masked_data(diff[0])
+            z = extract_data(diff[0])
             z = z[:,None]
         
             for rw in range(1, Sim2.shape[0]):
-                z = np.concatenate((z, non_masked_data(diff[rw])[:, None]), axis = 1)
+                z = np.concatenate((z, extract_data(diff[rw])[:, None]), axis = 1)
             z = np.transpose(np.percentile(z, [10, 50, 90], axis=1))
             if scalers is not None:
                 x = x*(scalers[1, g_index[0]] - scalers[0, g_index[0]]) + scalers[0, g_index[0]]
