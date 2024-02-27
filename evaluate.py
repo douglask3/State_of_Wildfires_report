@@ -239,18 +239,16 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file, CA_file
     Sim = runSim_MaxEntFire(**common_args, run_name = "control", test_eg_cube = True)
         
     common_args['Sim'] = Sim[0]
-    #set_trace()
+
     #jackknife(x_filen_list, fig_dir = fig_dir, **common_args)       
     #compare_to_obs_maps(filename_out, dir_outputs, Obs, Sim, lmask, *args, **kw)
     #Bayes_benchmark(filename_out, fig_dir, Sim, Obs, lmask)
-    #for ct in ["initial", "standard", "potential", "sensitivity"]:
 
-    
-    #for ct in ["potential", "sensitivity", "initial", "standard"]:
-    #    response_curve(curve_type = ct, x_filen_list = x_filen_list, 
-    #                   response_grouping = response_grouping,
-    #                   fig_dir = fig_dir, scalers =  scalers, 
-    #                   *args, **kw, **common_args)
+    for ct in ["potential", "sensitivity", "initial", "standard"]:
+        response_curve(curve_type = ct, x_filen_list = x_filen_list, 
+                       response_grouping = response_grouping,
+                       fig_dir = fig_dir, scalers =  scalers, 
+                       *args, **kw, **common_args)
 
     if response_grouping is None: return Sim
    

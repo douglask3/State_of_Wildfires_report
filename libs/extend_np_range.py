@@ -1,37 +1,11 @@
 import numpy as np
-from pdb import set_trace
-from itertools import combinations
-import itertools
-from itertools import repeat
 
-#def rep(elem, each, length_out):
-#    return list(itertools.chain.from_iterable(repeat(elem, each) for _ in range(length_out)))
-#
 def rep_list(input_list, each, length_out):
     repeated_list = [elem for elem in input_list for _ in range(each)]
     num_repeats = length_out // len(repeated_list)
     remainder = length_out % len(repeated_list)
     result = repeated_list * num_repeats + repeated_list[:remainder]
     return result
-
-def generate_combinations(M):
-    """Generate all combinations of columns."""
-    all_combinations = []
-    for r in range(1, M + 1):  # Generate combinations of all lengths from 1 to M
-        all_combinations.extend(combinations(range(M), r))
-    return all_combinations
-
-def create_Xi(Xo, selected_columns):
-    """Create Xi from Xo with selected columns."""    
-    N, M = Xo.shape
-    num_combinations = len(selected_columns)
-    Xi = np.zeros((N, num_combinations))
-
-    for i, cols in enumerate(selected_columns):
-        set_trace()
-        Xi[:, i] = Xo[:, cols]
-
-    return Xi
 
 def extend_np_range(X, axis = 0, indicies = None, N = 100000, range_extent_scale = 2.0):
     """ Takes 2D np array, changes range of number along an axis and converts to regular gaps.
@@ -68,16 +42,6 @@ def extend_np_range(X, axis = 0, indicies = None, N = 100000, range_extent_scale
         # Assign values to Xi
         Xi[:, i] = np.sort(xi_values)
 
-    
-    #all_combinations = generate_combinations(len(indicies))
-    #Xi_list = [create_Xi(Xi, cols) for cols in all_combinations]
-    #out = np.stack(Xi_list, axis=2)
-    #Xi = X[i:, indicies]
-    #out = np.concatenate([Xi[:, i].reshape(-1, 1) for i in range(M)], axis=1)
-
-    
-    
-
     N, M = Xi.shape
     out = np.zeros((N**len(indicies), M))
     index = range(0, N)
@@ -87,9 +51,7 @@ def extend_np_range(X, axis = 0, indicies = None, N = 100000, range_extent_scale
         if i == 0:
             for j in np.setdiff1d(np.arange(M), indicies):
                 out[:, j] = Xi[id, i]
-    
 
-    
     Xi = out
     if axis == 1: Xi = np.transpose(Xi)
     return Xi
