@@ -7,6 +7,7 @@ from osgeo import gdal, gdalconst, osr
 from modis_tools.auth import ModisSession
 from modis_tools.resources import CollectionApi, GranuleApi
 from modis_tools.granule_handler import GranuleHandler
+from earthdata_login_details import username, password
 
 import sys
 sys.path.append('../libs/')
@@ -21,9 +22,6 @@ lat_min, lat_max = 50.0, 60.0
 lon_min, lon_max = -11.0, 3.0
 
 temp_dir = '../temp'
-
-username = ""  # Update this line
-password = ''  # Update this line
 
 # Authenticate a session
 session = ModisSession(username=username, password=password)
