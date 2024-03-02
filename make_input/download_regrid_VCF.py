@@ -22,6 +22,7 @@ lat_min, lat_max = 50.0, 60.0
 lon_min, lon_max = -11.0, 3.0
 
 temp_dir = '../temp'
+new_download = True
 
 # Authenticate a session
 session = ModisSession(username=username, password=password)
@@ -34,12 +35,13 @@ collections = collection_client.query(short_name="MOD44B", version="061")
 granule_client = GranuleApi.from_collection(collections[0], session=session)
 
 # Filter the selected granules via spatial and temporal parameters
-nigeria_bbox = [lon_min, lon_max, lat_min, lat_max]
-nigeria_granules = granule_client.query(start_date="2016-01-01", end_date="2018-12-31", bounding_box=nigeria_bbox)
+bbox = [lon_min, lon_max, lat_min, lat_max]
+granules = granule_client.query(start_date="2016-01-01", end_date="2017-12-31", bounding_box=bbox)
 
-# Download the granules
-path = combine_path_and_make_dir(temp_dir, 'MODIS')
-GranuleHandler.download_from_granules(nigeria_granules, session, path = "../temp/MODIS")
+if new_download:
+    # Download the granules
+    path = combine_path_and_make_dir(temp_dir, 'MODIS')
+    GranuleHandler.download_from_granules(granules, session, path = "../temp/MODIS")
 
 '''
 # Define MODIS product URL and download the data
