@@ -4,15 +4,15 @@ library(gdalUtils)
 source("libs/add_date_time.r")
 
 path = '../temp/glob-MODIS/'
-path = '../temp/MODIS/'
+#path = '../temp/MODIS/'
 temp_path = '../temp/regrid_vcf/'
 output_path = '../data/data/driving_data/isimp3a/'
 newproj = "+proj=longlat +datum=WGS84"
 example_file = rast('../data/wwf_terr_ecos_0p5.nc')
 extent = c(-180.0, 190.0, -90.0, 90.0)
-extent = c(-170.0, -30.0, 30, 85)
+#extent = c(-170.0, -30.0, 30, 85)
 area_name = 'Global'
-area_name = 'Canada'
+#area_name = 'Canada'
 variables = c("tree" = 1, "nontree" = 2, "nonveg" = 3)
 
 eg_raster = rast(example_file)
@@ -27,7 +27,7 @@ test_if_overlap <- function(r1, r2) {
 
 temp_path = paste0(temp_path, '/', area_name, '/') 
 dir.create(temp_path, recursive = TRUE) 
-files = rev(list.files(path, full.name = TRUE))
+files = list.files(path, full.name = TRUE)
 
 
 regrid_file <- function(file, band = 1, name = 'tree') {
