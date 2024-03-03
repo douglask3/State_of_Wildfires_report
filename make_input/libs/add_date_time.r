@@ -1,6 +1,6 @@
 library(ncdf4)
 library(terra)
-add_date_to_file <- function(file, years, mnn, day, name = NULL, longname = NULL, ...) {
+add_date_to_file <- function(file, file_out = file, years, mnn, day, name = NULL, longname = NULL, ...) {
     print(file)
     if (!grepl('.nc', file)) return()
     
@@ -26,5 +26,6 @@ add_date_to_file <- function(file, years, mnn, day, name = NULL, longname = NULL
     #dat = setZ(dat, as.Date(date), 'Date')
     if (!is.null(name)) varnames(dat) = name
     if (!is.null(longname)) longnames(dat) = longname
-    writeCDF(dat, file, overwrite = TRUE, ...)
+    
+    writeCDF(dat, file_out, overwrite = TRUE, ...)
 }

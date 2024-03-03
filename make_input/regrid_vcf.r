@@ -3,14 +3,17 @@ library(gdalUtils)
 
 source("libs/add_date_time.r")
 
+path = '../temp/glob-MODIS/'
 path = '../temp/MODIS/'
 temp_path = '../temp/regrid_vcf/'
 output_path = '../data/data/driving_data/isimp3a/'
 newproj = "+proj=longlat +datum=WGS84"
 example_file = rast('../data/wwf_terr_ecos_0p5.nc')
+extent = c(-180.0, 190.0, -90.0, 90.0)
 extent = c(-170.0, -30.0, 30, 85)
+area_name = 'Global'
 area_name = 'Canada'
-variables = rev(c("tree" = 1, "nontree" = 2, "nonveg" = 3))
+variables = c("tree" = 1, "nontree" = 2, "nonveg" = 3)
 
 eg_raster = rast(example_file)
 eg_raster = crop(eg_raster, extent)
@@ -82,8 +85,11 @@ day = 6
 forVegType <- function(band, name) {
     output_path = paste0(output_path, area_name, '_extended/')
     dir.create(output_path, recursive = TRUE) 
-    output_fname = paste0(output_path, '/', name, '-raw.nc')
-    #if (file.exists(output_fname)) return(rast(output_fname))
+    output_fname = paste0(output_path, '/', name, '_raw.nc')
+    temp_fname = paste0(temp_path, '/', name, '/')
+    dir.create(temp_fname, recursive = TRUE) 
+    temp_fname = paste0(temp_fname, '_collated.nc')
+    if (file.exists(output_fname)) return(rast(output_fname))
     
     dats = lapply(files, regrid_file, band, name)
     years = as.numeric(years)
@@ -108,11 +114,59 @@ forVegType <- function(band, name) {
     }
     
     cover = output/areaR
-    writeCDF(cover, output_fname, overwrite=TRUE)
+    writeCDF(cover, temp_fname, overwrite=TRUE)
     mn = rep(mn, length(yearI))
     day = rep(day, length(yearI))
     day = day-(4*as.integer(yearI/4) == yearI)
-    add_date_to_file(output_fname, yearI, mn, day, name, paste0(name, '-raw'), unit = '%')    
+    add_date_to_file(temp_fname, output_fname, yearI, mn, day, name, 
+                     paste0(name, '-raw'), unit = '%')  
+    
 }
 
 outs = mapply(forVegType, variables, names(variables))
+
+load_correct <- function(file) {
+    out = rast(file)
+    out = out[[nlyr(out)]]
+    return(resample(out, eg_raster))
+}
+
+correct_files = paste0("../../fireMIPbenchmarking/data/benchmarkData/", 
+                       c("treecover2000-2014.nc", "nontree2000-2014.nc", 
+                         "bareground2000-2014.nc"))
+target = lapply(correct_files, load_correct)
+
+find_2014 = which(substr(time(outs[[1]]), 1, 4) == "2014")
+
+logit <- function(r, scale = 0.000000001) {
+    mv = 1 - 2 *  scale
+    r = r*mv + scale
+    log(r/(-r + 1))
+}
+
+logistic <- function(r) 
+    1/(1+exp(-r))
+
+correct_out <- function(r1, r2) {
+    r1[r1>100] = 100
+    r1 = r1 / 100
+    r2 = r2 / 100
+    r1t = logit(r1); r2t = logit(r2)
+    out = r1t - r1t[[find_2014]] + r2t
+    out = logistic(out)
+    return(out)
+}
+
+corrected = mapply(correct_out, outs, target)
+corrected = lapply(corrected, '/', corrected[[1]] + corrected[[2]] + corrected[[3]])
+
+write_corrected <- function(rc, r0) {
+    filename = sources(r0)[1]
+    filename = gsub('_raw.nc', '_cover.nc', filename)
+    
+    varnames(rc) = gsub('_raw', '_cover', varnames(r0))
+    units(rc) = units(r0)
+    writeCDF(rc, filename)
+}
+
+mapply(write_corrected, corrected, outs)
