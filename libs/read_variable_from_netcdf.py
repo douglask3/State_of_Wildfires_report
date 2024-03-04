@@ -53,6 +53,7 @@ def read_variable_from_netcdf(filename, dir = '', subset_function = None,
               "'') or file format")
             print("==============")
             set_trace()
+            
     coord_names = [coord.name() for coord in dataset.coords()]
     if dataset is None: return None
     if time_points is not None:     

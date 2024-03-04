@@ -37,7 +37,7 @@ def make_variables_for_year_range(year, output_year):
 
     def open_variable(varname, plusMinusYr = False):
         filename = filenames[varname]
-
+        
         yeari = year.copy()
         if plusMinusYr:
             yeari[0] = yeari[0] - 1
@@ -55,11 +55,11 @@ def make_variables_for_year_range(year, output_year):
         
         sbs_funs = [sub_year_range] + subset_functions 
         sbs_args = [{'year_range': yeari}] + subset_function_argss
-        
+         
+        out = None
         out =  read_variable_from_netcdf_stack(filename, example_cube, dir,
                                                subset_function = sbs_funs, 
                                                subset_function_args = sbs_args)
-        
         return out
 
     def monthly_mean(cube, fun = iris.analysis.MEAN):
@@ -79,9 +79,38 @@ def make_variables_for_year_range(year, output_year):
             mdat = monthly_mean(dat, fun)
             save_ncdf(mdat, var + '_mean')    
 
+    def cal_cover(cover_vars, name):
+        print(name)
+        dat = open_variable(cover_vars[0])
+        
+        for i in cover_vars[1:]:
+            dat.data = dat.data + open_variable(i).data
+        dat.rename(name)
+        save_ncdf(dat, name)
+        return dat
+
     for var, fun in zip(process_standard, process_function):
         standard_Monthly_mean(var, fun) 
    
+    if test_if_process('cover'):
+        tree_vars = ["bdldcd", "bdlevgtemp", "bdlevgtrop", "ndldcd", "ndlevg", \
+                     "shrubdcd", "shrubevg"]
+        herb_vars = ["c3crop", "c3grass", "c3pasture", "c4crop", "c4grass", "c4pasture"]
+        soil_vars = ["soil", "urban", "ice"]
+    
+        cal_cover(tree_vars, 'tree_cover')
+        cal_cover(herb_vars, 'nonetree_cover')
+        cal_cover(herb_vars, 'noneveg_cover')
+
+    if test_if_process('crop'): 
+        cal_cover(["c3crop", "c4crop"], 'crop')
+
+    if test_if_process('pature'): 
+        cal_cover(["c3pasture", "c4pasture"], 'pasture')
+
+    if test_if_process('urban'): 
+        cal_cover(["urban"], 'urban')
+        
     if test_if_process('tas') or test_if_process('vpd'):
         tas = open_variable('tas')
         tas_range = open_variable('tas_range')
@@ -156,7 +185,25 @@ filenames = {"tas": "tas_global_daily_",
              "hurs": "hurs_global_daily_",
              "huss": "hurs_global_daily_",
              "sfcwind": "sfcwind_global_daily_",
-             "ps": "ps_global_daily_"}
+             "ps": "ps_global_daily_",
+             "bdldcd": "bdldcd_global_annual_",
+             "bdlevgtemp": "bdlevgtemp_global_annual_",
+             "bdlevgtrop": "bdlevgtrop_global_annual_",
+             "c3crop": "c3crop_global_annual_",
+             "c3grass": "c3grass_global_annual_",
+             "c3pasture": "c4pasture_global_annual_",
+             "c4crop": "c4crop_global_annual_",
+             "c4grass": "c4grass_global_annual_",
+             "c4pasture": "c4pasture_global_annual_",
+             "ice": "ice_global_annual_",
+             "lake": "lake_global_annual_",
+             "urban": "urban_global_annual_",
+             "ndldcd": "ndldcd_global_annual_",
+             "ndlevg": "ndlevg_global_annual_",
+             "shrubdcd": "shrubdcd_global_annual_",
+             "shrubevg": "shrubevg_global_annual_",
+             "soil": "soil_global_annual_",
+             "total":  "total_global_annual_"}
 
 process = ['vpd', 'tas', 'tas_range', 'pr']
 process_standard = ['prsn', "hurs", "hurs", "huss", "huss", "sfcwind"]
@@ -164,6 +211,8 @@ process_function = [iris.analysis.MEAN,
                     iris.analysis.MEAN, iris.analysis.MAX,
                     iris.analysis.MEAN, iris.analysis.MAX,
                     iris.analysis.MAX]
+
+
 
 example_cube = None#'../../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/GFED4.1s_Burned_Fraction.nc'
 
@@ -180,6 +229,13 @@ if __name__=="__main__":
     dataset_name = 'isimp3a/GSWP3-W5E5'
     
     output_years = ['2010_2012', '1901_1920', '2000_2019', '2002_2019']
+
+    #[make_variables_for_year_range(year, output_year) for year, output_year in \
+    #        zip(years, output_years)]
+    dir = "/scratch/hadea/isimip3a/u-cc669_isimip3a_es/GSWP3-W5E5_obsclim/jules-es-vn6p3_gswp3-w5e5_obsclim_histsoc_default_pft-"
+
+    process =['cover', 'crop', 'pasture', "urban"]
+    file_years = ["1901_2019"]
 
     [make_variables_for_year_range(year, output_year) for year, output_year in \
             zip(years, output_years)]
