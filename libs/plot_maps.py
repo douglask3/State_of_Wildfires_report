@@ -2,18 +2,22 @@ import iris
 import numpy as np
 import cartopy.crs as ccrs
 
+import sys
+sys.path.append('../libs/')
+sys.path.append('libs/')
+
 import iris.plot as iplt
 import iris.quickplot as qplt
 import matplotlib.pyplot as plt
 from matplotlib.colors import BoundaryNorm
 from matplotlib.ticker import MaxNLocator
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-from libs.to_precision import *
+from to_precision import *
 from pdb import set_trace as browser
 from numpy import inf
 import math
 
-from libs import git_info
+import git_info
 from pdb import set_trace
 
 def plot_BayesModel_maps(Sim, levels, cmap, ylab = '', Obs = None, 

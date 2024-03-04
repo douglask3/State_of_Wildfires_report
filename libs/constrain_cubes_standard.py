@@ -14,12 +14,20 @@ except:
 import numpy as np
 import cartopy.crs as ccrs
 import geopandas as gp
-#import regionmask
+import regionmask
 from pdb import set_trace
 import iris.quickplot as qplt
 import matplotlib.pyplot as plt
 import datetime
 import geopandas as gpd
+
+def constrain_cube_to_lonlat_range(cube, lon_min, lon_max, lat_min, lat_max):
+    
+    constraint = iris.Constraint(latitude=lambda cell: (lat_min) <= cell <= (lat_max), 
+                                 longitude=lambda cell: (lon_min) <= cell <= (lon_max))
+    constrained_cube = cube.extract(constraint)
+
+    return(constrained_cube)
 
 def constrain_to_data(cube):
     """constrain cube to the lats and lons that contain data that isn't 'nan'   
@@ -43,7 +51,7 @@ def constrain_to_data(cube):
                                  longitude=lambda cell: (lon_min) <= cell <= (lon_max))
     constrained_cube = cube.extract(constraint)
 
-    return(constrained_cube)
+    return constrain_cube_to_lonlat_range(cube, lon_min, lon_max, lat_min, lat_max)
     
 def ar6_region(cube, region_code):
     """constrain cube an ar6 region
@@ -59,14 +67,25 @@ def ar6_region(cube, region_code):
     """
     lats = cube.coord('latitude').points
     lons = cube.coord('longitude').points
+    
     if not isinstance(region_code, list): region_code = [region_code]
     region_code = [regionmask.defined_regions.ar6.all.region_ids[rc] for rc in region_code] 
     
     mask = regionmask.defined_regions.ar6.all.mask(lons, lats)
     region_mask = mask.isin(region_code)
 
+    true_indices = region_mask.where(region_mask, drop=True).stack(index=('lat', 'lon')).index
     
-    masked_data = np.where(region_mask, cube.data, np.nan)
+    min_lat = true_indices['lat'].min().values
+    max_lat = true_indices['lat'].max().values
+    min_lon = true_indices['lon'].min().values
+    max_lon = true_indices['lon'].max().values
+
+    
+    cube = constrain_cube_to_lonlat_range(cube, min_lon, max_lon, min_lat, max_lat)
+    constrained_mask = region_mask.sel(lat=slice(max_lat, min_lat), lon=slice(min_lon, max_lon))
+    
+    masked_data = np.where(constrained_mask, cube.data, np.nan)
     masked_cube = cube.copy()   
     masked_cube.data = masked_data
     masked_cube.data[ masked_cube.data>1e15] = np.nan

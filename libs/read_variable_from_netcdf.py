@@ -1,10 +1,13 @@
 import numpy as np
 from pdb import set_trace
+import sys
+sys.path.append('../libs/')
+sys.path.append('libs/')
 
 import iris
-from libs.iris_plus import *
-from libs.constrain_cubes_standard import *
-from libs.read_variable_from_netcdf import *
+from iris_plus import *
+from constrain_cubes_standard import *
+from read_variable_from_netcdf import *
 
 def read_variable_from_netcdf(filename, dir = '', subset_function = None, 
                               make_flat = False, units = None, 
@@ -76,7 +79,8 @@ def read_variable_from_netcdf(filename, dir = '', subset_function = None,
                     print("Warning! function: " + FUN.__name__ + " not applied to file: " + \
                           dir + filename)
         else:      
-            dataset = subset_function(dataset, **subset_function_args) 
+            dataset = subset_function(dataset, **subset_function_args)
+    
     if return_time_points: time_points = dataset.coord('time').points 
     
     
