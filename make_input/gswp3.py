@@ -32,7 +32,7 @@ def read_variable_from_netcdf_stack(filenames, example_cube = None,
     return cubes
 
 
-def make_variables_for_year_range(year, output_year):
+def make_variables_for_year_range(year, output_year, process, dir, file_years):
     def test_if_process(var): return any(i == var for i in process)
 
     def open_variable(varname, plusMinusYr = False):
@@ -86,7 +86,7 @@ def make_variables_for_year_range(year, output_year):
         for i in cover_vars[1:]:
             dat.data = dat.data + open_variable(i).data
         dat.rename(name)
-        save_ncdf(dat, name)
+        save_ncdf(dat, name + '_jules-es')
         return dat
 
     for var, fun in zip(process_standard, process_function):
@@ -205,40 +205,64 @@ filenames = {"tas": "tas_global_daily_",
              "soil": "soil_global_annual_",
              "total":  "total_global_annual_"}
 
-process = ['vpd', 'tas', 'tas_range', 'pr']
+
 process_standard = ['prsn', "hurs", "hurs", "huss", "huss", "sfcwind"]
 process_function = [iris.analysis.MEAN, 
                     iris.analysis.MEAN, iris.analysis.MAX,
                     iris.analysis.MEAN, iris.analysis.MAX,
                     iris.analysis.MAX]
 
+process_clim = ['vpd', 'tas', 'tas_range', 'pr']
+process_jules =['cover', 'crop', 'pasture', "urban"]
 
-
-example_cube = None#'../../ConFIRE_attribute/isimip3a/driving_data/GSWP3-W5E5-20yrs/Brazil/AllConFire_2000_2009/GFED4.1s_Burned_Fraction.nc'
+example_cube = None
 
 subset_functions = [ar6_region]
 subset_function_argss = [{'region_code': 'NWN'}]
 output_dir = "../data/data/driving_data/"
 
+def process_clim_and_jules():
+    def process(process, dir, file_years):
+        [make_variables_for_year_range(year, output_year, process, dir, file_years) \
+            for year, output_year in  zip(years, output_years)]
+    process(process_jules, dir_jules, file_years_jules)
+    process(process_clim, dir_clim, file_years_clim)
+    
 if __name__=="__main__":
-    dir = "/hpc//data/d00/hadea/isimip3a/InputData/climate/atmosphere/obsclim/GSWP3-W5E5/gswp3-w5e5_obsclimfill_"
+    dir_clim = "/hpc//data/d00/hadea/isimip3a/InputData/climate/atmosphere/obsclim/GSWP3-W5E5/gswp3-w5e5_obsclimfill_"
+    dir_jules = "/scratch/hadea/isimip3a/u-cc669_isimip3a_es/GSWP3-W5E5_obsclim/jules-es-vn6p3_gswp3-w5e5_obsclim_histsoc_default_pft-"
     
-    file_years = ["1901_1910", "1911_1920", "1991_2000", "2001_2010", "2011_2019"]
-    
+    file_years_clim = ["1901_1910", "1911_1920", "1991_2000", "2001_2010", "2011_2019"]
+    file_years_jules = ["1901_2019"]
     years = [[2010, 2012], [1901, 1920], [2000, 2019], [2002, 2019]]
     dataset_name = 'isimp3a/GSWP3-W5E5'
     
     output_years = ['2010_2012', '1901_1920', '2000_2019', '2002_2019']
+    
+    process_clim_and_jules()    
 
-    #[make_variables_for_year_range(year, output_year) for year, output_year in \
-    #        zip(years, output_years)]
-    dir = "/scratch/hadea/isimip3a/u-cc669_isimip3a_es/GSWP3-W5E5_obsclim/jules-es-vn6p3_gswp3-w5e5_obsclim_histsoc_default_pft-"
+    
+    
+    obs_cover_dir = '/home/h02/dkelley/state_of_fires_report_20YY/data/data/driving_data/Canada_extended/'
 
-    process =['cover', 'crop', 'pasture', "urban"]
-    file_years = ["1901_2019"]
+    output_years = '2002_2019'
+    years = [2002, 2019]
+    files = os.listdir(obs_cover_dir)
 
-    [make_variables_for_year_range(year, output_year) for year, output_year in \
-            zip(years, output_years)]
+    def open_regrid_output_file(filename):
+        if '-raw' in filename: return None
+        cube = iris.load_cube(obs_cover_dir + filename)
+        cube0 = cube.copy()
+        cube = sub_year_range(cube, years)
+        for fun, args in zip(subset_functions, subset_function_argss):
+            cube = fun(cube, **args)
+        out_fname = output_dir + '/' + \
+                    subset_function_argss[0][next(iter(subset_function_argss[0]))] + '/' + \
+                    dataset_name + '/period_' + output_years + '/' + \
+                    filename[:-3] + '_VCF-obs.nc'
+        iris.save(cube, out_fname)
 
+    for filename in files: open_regrid_output_file(filename)
 
-
+    #sbs_funs = [sub_year_range] + subset_functions 
+    #sbs_args = [{'year_range': yeari}] + subset_function_argss
