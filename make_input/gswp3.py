@@ -240,9 +240,7 @@ if __name__=="__main__":
     output_years = ['2010_2012', '1901_1920', '2000_2019', '2002_2019']
     
     process_clim_and_jules()    
-
-    
-    
+ 
     obs_cover_dir = '/home/h02/dkelley/state_of_fires_report_20YY/data/data/driving_data/Canada_extended/'
 
     output_years = '2002_2019'
