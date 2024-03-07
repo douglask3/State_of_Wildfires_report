@@ -21,7 +21,11 @@ def read_variable_from_netcdf_stack(filenames, example_cube = None,
     cubes = [read_variable_from_netcdf(file, *args, **kw) for file in filenames]
     cubes = [cube for cube in cubes if cube is not None]
     cubes = iris.cube.CubeList(cubes)
-    cubes = cubes.concatenate_cube()
+    try:
+        cubes = cubes.concatenate_cube()
+    except:
+        iris.util.equalise_attributes(cubes)
+        cubes = cubes.concatenate_cube()
     
     if example_cube is not None:
         example_cube = iris.load_cube(example_cube)
@@ -126,7 +130,13 @@ def make_variables_for_year_range(year, output_year, process, dir, file_years):
                 svp.data =  610.78 * np.exp(svp.data / (svp.data +237.3) * 17.2694)
                 return svp
 
-            rh = open_variable("hurs")
+            sh = open_variable("huss")
+            ps = open_variable("ps")
+
+            rh = sh.copy()
+            rh.data = 0.263 * sh.data * ps.data / \
+                        np.exp(17.67 * (tas_max.data -273.16)/(tas_max.data - 29.65))
+
             svp = SVP(tas_max)
             vpd = svp*(1.0-rh*0.01)
             
@@ -183,7 +193,7 @@ filenames = {"tas": "tas_global_daily_",
              "pr": "pr_global_daily_",
              "prsn": "ps_global_daily_",
              "hurs": "hurs_global_daily_",
-             "huss": "hurs_global_daily_",
+             "huss": "huss_global_daily_",
              "sfcwind": "sfcwind_global_daily_",
              "ps": "ps_global_daily_",
              "bdldcd": "bdldcd_global_annual_",
@@ -225,8 +235,8 @@ def process_clim_and_jules():
     def process(process, dir, file_years):
         [make_variables_for_year_range(year, output_year, process, dir, file_years) \
             for year, output_year in  zip(years, output_years)]
-    process(process_jules, dir_jules, file_years_jules)
     process(process_clim, dir_clim, file_years_clim)
+    process(process_jules, dir_jules, file_years_jules)
     
 if __name__=="__main__":
     dir_clim = "/hpc//data/d00/hadea/isimip3a/InputData/climate/atmosphere/obsclim/GSWP3-W5E5/gswp3-w5e5_obsclimfill_"
@@ -240,7 +250,55 @@ if __name__=="__main__":
     output_years = ['2010_2012', '1901_1920', '2000_2019', '2002_2019']
     
     process_clim_and_jules()    
- 
+
+
+    file_years_clim = ["1961_1970", "1971_1980", "1981_1990", "1991_2000", "2001_2010", "2011_2014"]
+    file_years_jules = ["1850_2014"]
+    years = [[1995, 2014], [1961, 2014]]
+    ismip3b_models = ['GFDL-ESM4', 'IPSL-CM6A-LR', 'MPI-ESM1-2-HR', 'MRI-ESM2-0', 'UKESM1-0-LL']
+    
+    dirs_clim = ['/hpc//data/d00/hadea/isimip3b/InputData/climate/atmosphere/historical/' + \
+                 model + '/' + model.lower() + '_r1i1p1f1_w5e5_historical_'\
+                 for model in ismip3b_models]
+    dirs_jules =  ['/scratch/hadea/isimip3b/u-cc669_isimip3b_es/' + model + '_historical/' + \
+                    'jules-es-vn6p3_' + model.lower() + \
+                    '_w5e5_historical_histsoc_default_pft-' \
+                  for model in ismip3b_models]
+    dataset_names = ['isimp3b/' + model + '/' for model in ismip3b_models]
+
+    filenames = {"tas": "tasAdjust_global_daily_",
+             "tas_range": "tas_rangeAdjust_global_daily_",
+             "pr": "prAdjust_global_daily_",
+             "prsn": "psAdjust_global_daily_",
+             "hurs": "hursAdjust_global_daily_",
+             "huss": "hussAdjust_global_daily_",
+             "sfcwind": "sfcwindAdjust_global_daily_",
+             "ps": "psAdjust_global_daily_",
+             "bdldcd": "bdldcd_global_annual_",
+             "bdlevgtemp": "bdlevgtemp_global_annual_",
+             "bdlevgtrop": "bdlevgtrop_global_annual_",
+             "c3crop": "c3crop_global_annual_",
+             "c3grass": "c3grass_global_annual_",
+             "c3pasture": "c4pasture_global_annual_",
+             "c4crop": "c4crop_global_annual_",
+             "c4grass": "c4grass_global_annual_",
+             "c4pasture": "c4pasture_global_annual_",
+             "ice": "ice_global_annual_",
+             "lake": "lake_global_annual_",
+             "urban": "urban_global_annual_",
+             "ndldcd": "ndldcd_global_annual_",
+             "ndlevg": "ndlevg_global_annual_",
+             "shrubdcd": "shrubdcd_global_annual_",
+             "shrubevg": "shrubevg_global_annual_",
+             "soil": "soil_global_annual_",
+             "total":  "total_global_annual_"}
+
+    for i in range(len(ismip3b_models)):
+        dir_clim = dirs_clim[i]
+        dir_jules = dirs_jules[i]
+        dataset_name = dataset_names[i]
+        process_clim_and_jules()    
+    set_trace()
     obs_cover_dir = '/home/h02/dkelley/state_of_fires_report_20YY/data/data/driving_data/Canada_extended/'
 
     output_years = '2002_2019'
