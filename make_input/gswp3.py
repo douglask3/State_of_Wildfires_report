@@ -11,6 +11,8 @@ from pathlib import Path
 from   io     import StringIO
 import numpy  as np
 import math
+import glob
+import hashlib
 
 import matplotlib.pyplot as plt
 from pdb import set_trace
@@ -35,14 +37,29 @@ def read_variable_from_netcdf_stack(filenames, example_cube = None,
         cubes.data[cubes.data > 9E9] = np.nan
     return cubes
 
+def generate_temp_fname(string1, string2):
+    string = string1 + string2
+    return '../temp/isimip_dat_gen-' + hashlib.sha256(string.encode()).hexdigest() + '.txt'
 
-def make_variables_for_year_range(year, output_year, process, dir, file_years):
-    def test_if_process(var): return any(i == var for i in process)
+def make_variables_for_year_range(year, process, dir):
+    def test_if_process(var, temp_file = None): 
+        if temp_file is not None and os.path.isfile(temp_file) and grab_old_data:
+            out = False
+        else:
+            out = any(i == var for i in process)
+        return out
+    output_year = str(year[0]) + '_' + str(year[1])
 
+    temp_out = dir + output_year
+    print(temp_out)
     def open_variable(varname, plusMinusYr = False):
         filename = filenames[varname]
-        
-        yeari = year.copy()
+        file_years = set([file[-12:-3] for file in glob.glob(dir + '*')]) 
+        file_years = list(file_years)
+        try:
+            yeari = year.copy()
+        except:
+            set_trace()
         if plusMinusYr:
             yeari[0] = yeari[0] - 1
             yeari[1] = yeari[1] + 1
@@ -69,19 +86,23 @@ def make_variables_for_year_range(year, output_year, process, dir, file_years):
     def monthly_mean(cube, fun = iris.analysis.MEAN):
         return cube.aggregated_by(['year', 'month'], fun)
 
-    def save_ncdf(cube, varname):        
+    def save_ncdf(cube, varname): 
+        
         out_dir = output_dir + '/' + \
                     subset_function_argss[0][next(iter(subset_function_argss[0]))] + '/' + \
                     dataset_name + '/period_' + output_year + '/'
         
         if not os.path.exists(out_dir): Path(out_dir).mkdir(parents=True)
+        
         iris.save(cube, out_dir + '/' + varname +  '.nc')
 
     def standard_Monthly_mean(var, fun):
-        if test_if_process(var):
+        temp_file = generate_temp_fname(temp_out, var)
+        if test_if_process(var, temp_file):
             dat = open_variable(var)
             mdat = monthly_mean(dat, fun)
-            save_ncdf(mdat, var + '_mean')    
+            save_ncdf(mdat, var + '_mean') 
+            open(temp_file, 'a').close()   
 
     def cal_cover(cover_vars, name):
         print(name)
@@ -96,33 +117,45 @@ def make_variables_for_year_range(year, output_year, process, dir, file_years):
     for var, fun in zip(process_standard, process_function):
         standard_Monthly_mean(var, fun) 
    
-    if test_if_process('cover'):
+    
+    temp_file = generate_temp_fname(temp_out, 'cover')
+    if test_if_process('cover', temp_file):
         tree_vars = ["bdldcd", "bdlevgtemp", "bdlevgtrop", "ndldcd", "ndlevg", \
                      "shrubdcd", "shrubevg"]
         herb_vars = ["c3crop", "c3grass", "c3pasture", "c4crop", "c4grass", "c4pasture"]
-        soil_vars = ["soil", "urban", "ice"]
-    
+        soil_vars = ["soil", "urban", "ice"] # water
+        
         cal_cover(tree_vars, 'tree_cover')
         cal_cover(herb_vars, 'nonetree_cover')
         cal_cover(herb_vars, 'noneveg_cover')
-
-    if test_if_process('crop'): 
+        open(temp_file, 'a').close()
+    
+    temp_file = generate_temp_fname(temp_out, 'crop')
+    if test_if_process('crop', temp_file)  : 
         cal_cover(["c3crop", "c4crop"], 'crop')
+        open(temp_file, 'a').close()
+    
 
-    if test_if_process('pature'): 
+    temp_file = generate_temp_fname(temp_out, 'pature')
+    if test_if_process('pature', temp_file): 
         cal_cover(["c3pasture", "c4pasture"], 'pasture')
+        open(temp_file, 'a').close()
 
-    if test_if_process('urban'): 
+    temp_file = generate_temp_fname(temp_out, 'urban')
+    if test_if_process('urban', temp_file): 
         cal_cover(["urban"], 'urban')
+        open(temp_file, 'a').close()
         
-    if test_if_process('tas') or test_if_process('vpd'):
+    temp_file_tas = generate_temp_fname(temp_out, 'tas')
+    temp_file_vpd = generate_temp_fname(temp_out, 'vpd')
+    if test_if_process('tas', temp_file_tas) or test_if_process('vpd', temp_file_vpd):
         tas = open_variable('tas')
         tas_range = open_variable('tas_range')
         
         tas_max = tas.copy()
         tas_max.data  = tas_max.data + 0.5 * tas_range.data
 
-        if test_if_process('vpd'):
+        if test_if_process('vpd', temp_file_vpd):
             def SVP(temp):
                 svp = temp.copy()
                 
@@ -147,6 +180,8 @@ def make_variables_for_year_range(year, output_year, process, dir, file_years):
             save_ncdf(vpd_max_monthly, 'vpd_max')
             save_ncdf(vpd_mean_monthly, 'vpd_mean')
             
+            open(temp_file_vpd, 'a').close()
+            
         if test_if_process('tas'):
             
             tas_monthly = monthly_mean(tas)
@@ -154,7 +189,9 @@ def make_variables_for_year_range(year, output_year, process, dir, file_years):
 
             save_ncdf(tas_monthly, 'tas_mean')
             save_ncdf(tas_max_monthly, 'tas_max')
-            
+            open(temp_file_tas, 'a').close()
+     
+    temp_file = generate_temp_fname(temp_out, 'pr')       
     if test_if_process('pr'):
         pr = open_variable('pr', True)
         pr_mean = monthly_mean(sub_year_range(pr, year))
@@ -187,6 +224,7 @@ def make_variables_for_year_range(year, output_year, process, dir, file_years):
         save_ncdf(pr_mean, 'pr_mean')
         save_ncdf(dry_days_mean, 'dry_days')
         save_ncdf(consec_dry_mean, 'consec_dry_mean')
+        open(temp_file, 'a').close()
 
 filenames = {"tas": "tas_global_daily_",
              "tas_range": "tas_range_global_daily_",
@@ -226,17 +264,17 @@ process_clim = ['vpd', 'tas', 'tas_range', 'pr']
 process_jules =['cover', 'crop', 'pasture', "urban"]
 
 example_cube = None
+grab_old_data = False
 
 subset_functions = [ar6_region]
 subset_function_argss = [{'region_code': 'NWN'}]
 output_dir = "../data/data/driving_data/"
 
 def process_clim_and_jules():
-    def process(process, dir, file_years):
-        [make_variables_for_year_range(year, output_year, process, dir, file_years) \
-            for year, output_year in  zip(years, output_years)]
-    process(process_clim, dir_clim, file_years_clim)
-    process(process_jules, dir_jules, file_years_jules)
+    def process(process, dir):
+        [make_variables_for_year_range(year, process, dir) for year in  years]
+    process(process_jules, dir_jules)
+    process(process_clim, dir_clim)
     
 if __name__=="__main__":
     dir_clim = "/hpc//data/d00/hadea/isimip3a/InputData/climate/atmosphere/obsclim/GSWP3-W5E5/gswp3-w5e5_obsclimfill_"
@@ -247,24 +285,10 @@ if __name__=="__main__":
     years = [[2010, 2012], [1901, 1920], [2000, 2019], [2002, 2019]]
     dataset_name = 'isimp3a/GSWP3-W5E5'
     
-    output_years = ['2010_2012', '1901_1920', '2000_2019', '2002_2019']
+    #output_years = ['2010_2012', '1901_1920', '2000_2019', '2002_2019']
     
     process_clim_and_jules()    
 
-
-    file_years_clim = ["1961_1970", "1971_1980", "1981_1990", "1991_2000", "2001_2010", "2011_2014"]
-    file_years_jules = ["1850_2014"]
-    years = [[1995, 2014], [1961, 2014]]
-    ismip3b_models = ['GFDL-ESM4', 'IPSL-CM6A-LR', 'MPI-ESM1-2-HR', 'MRI-ESM2-0', 'UKESM1-0-LL']
-    
-    dirs_clim = ['/hpc//data/d00/hadea/isimip3b/InputData/climate/atmosphere/historical/' + \
-                 model + '/' + model.lower() + '_r1i1p1f1_w5e5_historical_'\
-                 for model in ismip3b_models]
-    dirs_jules =  ['/scratch/hadea/isimip3b/u-cc669_isimip3b_es/' + model + '_historical/' + \
-                    'jules-es-vn6p3_' + model.lower() + \
-                    '_w5e5_historical_histsoc_default_pft-' \
-                  for model in ismip3b_models]
-    dataset_names = ['isimp3b/' + model + '/' for model in ismip3b_models]
 
     filenames = {"tas": "tasAdjust_global_daily_",
              "tas_range": "tas_rangeAdjust_global_daily_",
@@ -293,12 +317,37 @@ if __name__=="__main__":
              "soil": "soil_global_annual_",
              "total":  "total_global_annual_"}
 
-    for i in range(len(ismip3b_models)):
-        dir_clim = dirs_clim[i]
-        dir_jules = dirs_jules[i]
-        dataset_name = dataset_names[i]
-        process_clim_and_jules()    
-    set_trace()
+
+    #file_years_clims = ["1961_1970", "1971_1980", "1981_1990", "1991_2000", "2001_2010", "2011_2014"]
+    #file_years_jules = ["1850_2014"]
+    futr_years = [[2015, 2099]]
+    yearss = [[[1994, 2014]],futr_years, futr_years, futr_years]
+    ismip3b_models = ['GFDL-ESM4', 'IPSL-CM6A-LR', 'MPI-ESM1-2-HR', 'MRI-ESM2-0', 'UKESM1-0-LL']
+    codes = ['r1i1p1f1', 'r1i1p1f1', 'r1i1p1f1', 'r1i1p1f1', 'r1i1p1f2']
+    experiments = ['historical', 'ssp126', 'ssp370', 'ssp585']
+    socs = ['histsoc', '2015soc', '2015soc', '2015soc']
+    
+    for experiment, soc, years in zip(experiments, socs, yearss):
+        for model, code in zip(ismip3b_models, codes):
+            dir_clim = '/hpc//data/d00/hadea/isimip3b/InputData/climate/atmosphere/' + \
+                            experiment + '/'+  model + '/' + model.lower() + '_' + \
+                            code + '_w5e5_' + \
+                            experiment + '_'  
+            dir_jules =  '/scratch/hadea/isimip3b/u-cc669_isimip3b_es/' + model + '_' + \
+                            experiment + '/' + \
+                    'jules-es-vn6p3_' + model.lower() + \
+                    '_w5e5_' + experiment +'_' + soc + '_default_pft-' 
+            dataset_name = 'isimp3b/' +  experiment + '/' + model + '/'
+    
+            process_clim_and_jules()    
+
+    
+        #for i in range(len(ismip3b_models)):
+        #    dir_clim = dirs_clim[i]
+        #    dir_jules = dirs_jules[i]
+        #    dataset_name = dataset_names[i]
+        #    process_clim_and_jules()    
+    
     obs_cover_dir = '/home/h02/dkelley/state_of_fires_report_20YY/data/data/driving_data/Canada_extended/'
 
     output_years = '2002_2019'
