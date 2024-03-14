@@ -1,6 +1,8 @@
 library(ncdf4)
 library(terra)
+library(raster)
 add_date_to_file <- function(file, file_out = file, years, mnn, day, name = NULL, longname = NULL, ...) {
+    
     print(file)
     if (!grepl('.nc', file)) return()
     
