@@ -44,15 +44,16 @@ def generate_temp_fname(string1, string2):
 def make_variables_for_year_range(year, process, dir):
     def test_if_process(var, temp_file = None): 
         if temp_file is not None and os.path.isfile(temp_file) and grab_old_data:
+            print("file found:" + temp_file)
             out = False
         else:
             out = any(i == var for i in process)
         return out
     output_year = str(year[0]) + '_' + str(year[1])
 
-    temp_out = dir + output_year
+    temp_out = dir  + dataset_name + output_year
     print(temp_out)
-    def open_variable(varname, plusMinusYr = False):
+    def open_variable(varname, MinusYr = False):
         filename = filenames[varname]
         file_years = set([file[-12:-3] for file in glob.glob(dir + '*')]) 
         file_years = list(file_years)
@@ -60,9 +61,9 @@ def make_variables_for_year_range(year, process, dir):
             yeari = year.copy()
         except:
             set_trace()
-        if plusMinusYr:
+        if MinusYr:
             yeari[0] = yeari[0] - 1
-            yeari[1] = yeari[1] + 1
+            #yeari[1] = yeari[1] + 1
         
         file_years_ranges = [(int(pair.split('_')[0]), int(pair.split('_')[1])) \
                              for pair in file_years]
@@ -264,7 +265,7 @@ process_clim = ['vpd', 'tas', 'tas_range', 'pr']
 process_jules =['cover', 'crop', 'pasture', "urban"]
 
 example_cube = None
-grab_old_data = False
+grab_old_data = True
 
 subset_functions = [ar6_region]
 subset_function_argss = [{'region_code': 'NWN'}]
@@ -277,19 +278,19 @@ def process_clim_and_jules():
     process(process_clim, dir_clim)
     
 if __name__=="__main__":
-    dir_clim = "/hpc//data/d00/hadea/isimip3a/InputData/climate/atmosphere/obsclim/GSWP3-W5E5/gswp3-w5e5_obsclimfill_"
-    dir_jules = "/scratch/hadea/isimip3a/u-cc669_isimip3a_es/GSWP3-W5E5_obsclim/jules-es-vn6p3_gswp3-w5e5_obsclim_histsoc_default_pft-"
     
-    file_years_clim = ["1901_1910", "1911_1920", "1991_2000", "2001_2010", "2011_2019"]
-    file_years_jules = ["1901_2019"]
     years = [[2010, 2012], [1901, 1920], [2000, 2019], [2002, 2019]]
-    dataset_name = 'isimp3a/GSWP3-W5E5'
+    dataset_name = 'isimp3a/obsclim/GSWP3-W5E5'
     
-    #output_years = ['2010_2012', '1901_1920', '2000_2019', '2002_2019']
+    dir_clim = "/hpc//data/d00/hadea/isimip3a/InputData/climate/atmosphere/obsclim/GSWP3-W5E5/gswp3-w5e5_obsclimfill_"
+    dir_jules = "/scratch/hadea/isimip3a/u-cc669_isimip3a_es/GSWP3-W5E5_obsclim/jules-es-vn6p3_gswp3-w5e5_obsclim_histsoc_default_pft-"  
+    process_clim_and_jules()  
     
-    process_clim_and_jules()    
-
-
+    dir_clim = "/hpc//data/d00/hadea/isimip3a/InputData/climate/atmosphere/counterclim/GSWP3-W5E5/gswp3-w5e5_counterclim_"
+    dir_jules = "/scratch/hadea/isimip3a/u-cc669_isimip3a_es/GSWP3-W5E5_counterclim/jules-es-vn6p3_gswp3-w5e5_counterclim_histsoc_default_pft-"  
+    dataset_name = 'isimp3a/counterclim/GSWP3-W5E5'
+    process_clim_and_jules() 
+    #set_trace()
     filenames = {"tas": "tasAdjust_global_daily_",
              "tas_range": "tas_rangeAdjust_global_daily_",
              "pr": "prAdjust_global_daily_",
@@ -316,10 +317,7 @@ if __name__=="__main__":
              "shrubevg": "shrubevg_global_annual_",
              "soil": "soil_global_annual_",
              "total":  "total_global_annual_"}
-
-
-    #file_years_clims = ["1961_1970", "1971_1980", "1981_1990", "1991_2000", "2001_2010", "2011_2014"]
-    #file_years_jules = ["1850_2014"]
+    
     futr_years = [[2015, 2099]]
     yearss = [[[1994, 2014]],futr_years, futr_years, futr_years]
     ismip3b_models = ['GFDL-ESM4', 'IPSL-CM6A-LR', 'MPI-ESM1-2-HR', 'MRI-ESM2-0', 'UKESM1-0-LL']
@@ -347,7 +345,7 @@ if __name__=="__main__":
         #    dir_jules = dirs_jules[i]
         #    dataset_name = dataset_names[i]
         #    process_clim_and_jules()    
-    
+    set_trace()
     obs_cover_dir = '/home/h02/dkelley/state_of_fires_report_20YY/data/data/driving_data/Canada_extended/'
 
     output_years = '2002_2019'
