@@ -6,14 +6,15 @@ source("libs/add_date_time.r")
 path = '../temp/glob-MODIS/'
 #path = '../temp/MODIS/'
 temp_path = '../temp/regrid_vcf/'
-output_path = '../data/data/driving_data/isimp3a/'
+output_path = '../data/data/driving_data/'
+
 newproj = "+proj=longlat +datum=WGS84"
 example_file = rast('../data/wwf_terr_ecos_0p5.nc')
-extent = c(-180.0, 190.0, -90.0, 90.0)
+extent = c(-180.0, 180.0, -90.0, 90.0)
 #extent = c(-170.0, -30.0, 30, 85)
 area_name = 'Global'
 #area_name = 'Canada'
-variables = c("tree" = 1, "nontree" = 2, "nonveg" = 3)
+variables = rev(c("tree" = 1, "nontree" = 2, "nonveg" = 3))
 
 eg_raster = rast(example_file)
 eg_raster = crop(eg_raster, extent)
@@ -32,6 +33,7 @@ files = list.files(path, full.name = TRUE)
 
 regrid_file <- function(file, band = 1, name = 'tree') {
     print(file)
+    
     out_info0 = gsub('/', '', strsplit(file, path)[[1]][2], fixed = TRUE)
     temp_path = paste0(temp_path, '/', name, '/')
     dir.create(temp_path, recursive = TRUE) 
@@ -44,22 +46,27 @@ regrid_file <- function(file, band = 1, name = 'tree') {
     }
     
     dat = rast(file, band)
-    test = project(aggregate(dat, 100), newproj)
-
+    
    
-    overlap = test_if_overlap(test, eg_raster)
-    if (!overlap) {
+    if (!all(extent == c(-180, 180, -90, 90))) {
+        test = project(aggregate(dat, 100), newproj)
+        overlap = test_if_overlap(test, eg_raster)
+    } else overlap = TRUE
+    
+    if (!overlap || length(unique(dat)) == 1) {
         writeLines('NoOverlap', out_info)
         return(NULL)
     }
-   
+    
     dat = terra::project(dat, newproj)
-
+    
+    out_raster = crop(eg_raster, ext(dat) + c(-0.5, 0.5, -0.5, 0.5))
+    
     find_area <- function(dat, ...) {
         #dat = aggregate(dat, 4)
         #dat = aggregate(dat, 0.5/rev(res(dat)), ...)
         #if ((ext(test)[2] - ext(test)[1])>180)  browser()
-        dat = resample(dat, eg_raster, ...)
+        dat = resample(dat, out_raster, ...)
     }
     veg_cover = land_cover = dat
     veg_cover[veg_cover>150] = 0
@@ -74,6 +81,7 @@ regrid_file <- function(file, band = 1, name = 'tree') {
     out = c(veg_cover, land_cover)
     
     nc_out = paste0(temp_path, sub('.hdf', '.nc',out_info0, fixed = TRUE))
+    
     writeCDF(out, nc_out, overwrite = TRUE)
     writeLines(nc_out, out_info)
     
@@ -83,7 +91,7 @@ years = sapply(files, function(file) substr(strsplit(file, 'MOD44B.A')[[1]][2], 
 mn = 3
 day = 6
 forVegType <- function(band, name) {
-    output_path = paste0(output_path, area_name, '_extended/')
+    output_path = paste0(output_path, area_name, '_extended/isimp3a')
     dir.create(output_path, recursive = TRUE) 
     output_fname = paste0(output_path, '/', name, '_raw.nc')
     temp_fname = paste0(temp_path, '/', name, '/')
@@ -93,7 +101,7 @@ forVegType <- function(band, name) {
     
     dats = lapply(files, regrid_file, band, name)
     years = as.numeric(years)
-    
+     
     test = !sapply(dats, is.null)
     dats = dats[test]
     years = years[test]
@@ -104,10 +112,11 @@ forVegType <- function(band, name) {
 
     for (i in 1:length(dats)) {
         print(i)
-        dat = dats[[i]]
+        dat = resample(dats[[i]], eg_raster)
         dat[is.na(dat)] = 0
         whichY = which(yearI == years[[i]])
     
+        
         output[[whichY]] = output[[whichY]] + dat[[1]] * dat[[2]]
     
         areaR[[whichY]] = areaR[[whichY]] + dat[[2]]
