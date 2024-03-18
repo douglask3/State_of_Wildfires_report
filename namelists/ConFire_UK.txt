@@ -1,5 +1,5 @@
 ## input data paths and filenames
-model_title::  'ConFire_UK'
+model_title::  'ConFire_UK_test'
 dir_training:: "../ConFIRE_attribute/isimip3a/driving_data/ERA5/UK/AllConFire_2000_2009/"
 y_filen:: "GFED4.1s_Burned_Fraction.nc"
 CA_filen:: None
@@ -9,13 +9,14 @@ x_filen_list:: ["crop.nc", "lightn.nc", "soilM.nc", "trees.nc", "csoil.nc", "pas
 ## Model info
 model_class:: ConFire
 priors:: {'pname': "q",'np': 1, 'dist': 'LogNormal', 'mu': 0.0, 'sigma': 1.0}
-priors:: {'pname': "controlID", 'value': [[3, 4, 7, 11], [2, 3, 6, 8, 9, 10], [0, 1, 5], [0, 5]]}
-priors:: {'pname': "control_Direction", 'value': [1, -1, 1, -1]}
-priors:: {'pname': "driver_Direction", 'value': [[1, 1, 1, 1], [1, 1, -1, 1, -1, 1], [1, 1, 1], [1, 1]]}
+priors:: {'pname': "controlID", 'value': [[3, 4, 7, 11], [0, 1, 5], [0, 5], [2, 3, 6, 8, 9, 10], [1, 4]]}
+priors:: {'pname': "control_Direction", 'value': [1, 1, -1, -1, 1]}
+priors:: {'pname': "driver_Direction", 'value': [[1, 1, 1, 1], [1, 1, 1], [1, 1], [1, 1, -1, 1, -1, 1], [1, 1]]}
 priors:: {'pname': "x0",'np': 4, 'dist': 'Normal', 'mu': 0.0, 'sigma': 1.0}
 priors:: {'pname': "betas",'np': 4, 'dist': 'LogNormal', 'mu': 0.0, 'sigma': 1.0}
-priors:: {'pname': "betas",'np': 6, 'dist': 'LogNormal', 'mu': 0.0, 'sigma': 1.0}
 priors:: {'pname': "betas",'np': 3, 'dist': 'LogNormal', 'mu': 0.0, 'sigma': 1.0}
+priors:: {'pname': "betas",'np': 2, 'dist': 'LogNormal', 'mu': 0.0, 'sigma': 1.0}
+priors:: {'pname': "betas",'np': 6, 'dist': 'LogNormal', 'mu': 0.0, 'sigma': 1.0}
 priors:: {'pname': "betas",'np': 2, 'dist': 'LogNormal', 'mu': 0.0, 'sigma': 1.0}
 
 ### optimization info
@@ -24,7 +25,7 @@ cores:: 1
 fraction_data_for_sample:: 0.5
 subset_function:: sub_year_months
 subset_function_args:: {'months_of_year': [6,7,8]}
-grab_old_trace:: True # set to True till you get the code running. 
+grab_old_trace:: False # set to True till you get the code running. 
                           # Then set to False when you start adding in new response curves
 ### output info
 dir_outputs:: 'outputs/'
