@@ -1,7 +1,7 @@
 
 make_plot <- function() {
 openDat <- function(exp, nav = 0) {
-    dat = read.csv(paste0(fname, exp, '.csv'))
+    dat = read.csv(paste0(fname, exp, fileEx))
     
     if (nav>0)  
         dat[,2:3] = apply(dat[,2:3], 2, function(x) filter(x, rep(1/nav, nav), sides = 1))
@@ -30,7 +30,8 @@ for (i in 1:5) mapply(plot_exp, dats, cols)
 }
 
 png("r-code/ConFire_TS.png", height = 6, width = 6, res = 300, units = 'in')
-fname = "outputs/ConFire_UK/figs/crop_lightn_soilM_trees_csoil_pas_vpd_cveg_precip_tas_rhumid_totalVeg-frac_points_0.5-control_TS/time_series"
+fname = "outputs/ConFire_Canada-biasC3/figs/crop_lightn_soilM_tree_biascorrected_csoil_pas_vpd_cveg_precip_tas_rhumid_totalVeg_biascorrected-frac_points_0.02-"
+fileEx = "-control_TS/time_seriesControl.csv"
 
 experiments = c("factual", "ss126_GFDL", "ss126_IPSL", "ss126_MPI",# "ss126_MRI",
                 "ss585_GFDL", "ss585_IPSL", "ss585_MPI")#, "ss585_MRI")

@@ -1,4 +1,6 @@
 fname = "outputs/ConFire_UK/figs/crop_lightn_soilM_trees_csoil_pas_vpd_cveg_precip_tas_rhumid_totalVeg-frac_points_0.5-control_TS/points-"
+fname = "outputs/ConFire_Canada-biasC3/figs/crop_lightn_soilM_tree_biascorrected_csoil_pas_vpd_cveg_precip_tas_rhumid_totalVeg_biascorrected-frac_points_0.02-"
+fileEx = "-control_TS/points-Control.csv"
 
 experiments = c("factual", "ss126_GFDL", "ss126_IPSL")
 #experiments = c("counterfactual", "factual")
@@ -6,7 +8,7 @@ plot_experiments <- function(experiments, conPeriod = "today", expPeriod = "by 2
                              title = '') {
     cols = c('#0000FF', '#FF0000')
     openDat <- function(exp, ny) {
-        dat = tail(t(log10(read.csv(paste0(fname, exp, '.csv')))), ny)
+        dat = tail(t(log10(read.csv(paste0(fname, exp, fileEx)))), ny)
     }
 
     dats = lapply(experiments, openDat, ny = 20)
