@@ -125,7 +125,8 @@ def runSim_MaxEntFire(trace, sample_for_plot, X, eg_cube, lmask, run_name,
             return out
         
 
-    params, params_names = select_post_param(trace)  
+    params, params_names = select_post_param(trace) 
+    
     nits = len(trace.posterior.chain)*len(trace.posterior.draw)
     idx = range(0, nits, int(np.floor(nits/sample_for_plot)))
     out = np.array(list(map(lambda id: sample_model(id, run_name), idx)))
