@@ -1,0 +1,4 @@
+[submodule "ConFire"]
+	path = ConFire
+	url = https://github.com/douglask3/Bayesian_fire_models
+	branch = ConFire
