@@ -10,8 +10,7 @@ import matplotlib.pyplot as plt
 
 
 if __name__=="__main__":
-    namelist = 'namelists/ConFire_UK.txt'
-    control_Direction = [1, -1, 1, -1]
+    namelist = 'namelists/ConFire_Canada.txt'
     
     trace, scalers, training_namelist = \
                     train_MaxEnt_model_from_namelist(namelist)
@@ -24,6 +23,7 @@ if __name__=="__main__":
 
     control_direction = read_variables_from_namelist(params['other_params_file'])
     control_direction = control_direction['control_Direction']
+    
     control_names = read_variables_from_namelist(namelist)['control_names']
 
     experiment_dirs  = run_info['experiment_dir']
@@ -39,7 +39,7 @@ if __name__=="__main__":
     
     def Standard_limitation(controlID, name, *args, **kws):
         
-        control_Directioni = control_Direction
+        control_Directioni = control_direction
         control_Directioni[-controlID] = 0.0
         extra_params = {"control_Direction": control_Directioni}
         
@@ -81,8 +81,9 @@ if __name__=="__main__":
         else:
             run_only = False
         Control = call_eval(name + 'control', run_only = run_only, *args, **kws)
+        
         Standard = [Standard_limitation(i, name, *args, **kws) \
-                    for i in range(len(control_Direction))]
+                    for i in range(len(control_direction))]
 
         figName = output_dir + 'figs/' + output_file + '-' + name + 'control_TS'
         makeDir(figName + '/')
@@ -94,7 +95,8 @@ if __name__=="__main__":
         return Control, Standard, control_TS, standard_TS
     
     origonal = run_experiment()
-    experiment = [call_eval(name, dir = dir, y_filen = y_filen) \
+    
+    experiment = [run_experiment(name, dir = dir, y_filen = y_filen) \
                   for name, dir in zip(experiment_names, experiment_dirs)]
     
     #experiment_TS = np.array([make_time_series(cube[0], name)  for cube, name in zip(experiment, experiment_names)])
