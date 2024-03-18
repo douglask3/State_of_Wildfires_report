@@ -41,18 +41,24 @@ class ConFire(object):
             betas =  self.betas[cid] * self.driver_Direction[cid]
             return self.numPCK.dot(X[:,ids], betas)
             
-
+        
         controls = [cal_control(i) for i in range(len(self.controlID))]
         if return_controls: return controls
 
         def sigmoid(y, k):
-            if k == 0: return None
+            #if k == 0: return None
             return 1.0/(1.0 + self.numPCK.exp(-y * k))
         
+        
         limitations = [sigmoid(y, k) for y, k in zip(controls, self.control_Direction)]
-        if return_limitations: return limitations
+        
+        if return_limitations:
+            return limitations
+
         limitations = [lim for lim in limitations if lim is not None]
-        BA = self.numPCK.prod(limitations, axis = 0)
+        
+        #BA = limitations[0] * limitations[1] * limitations[2] * limitations[3]
+        BA = self.numPCK.prod(limitations[:-1], axis = 0)
         return BA
     
     
