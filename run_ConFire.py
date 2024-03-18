@@ -16,12 +16,14 @@ def call_eval(training_namelist, namelist,
                                                extra_params = extra_params, *args, **kw)
     
     
-def Standard_limitation(controlID, name, *args, **kws):   
+def Standard_limitation(training_namelist, namelist,
+                        controlID, name, control_direction, *args, **kws):   
     control_Directioni = control_direction
     control_Directioni[-controlID] = 0.0
     extra_params = {"control_Direction": control_Directioni}
         
-    return call_eval(name + 'Standard_'+ str(controlID), extra_params, *args, **kws)
+    return call_eval(training_namelist, namelist,
+                     name + 'Standard_'+ str(controlID), extra_params, *args, **kws)
     
 def make_time_series(cube, name, figName):
     try: 
@@ -51,7 +53,8 @@ def make_time_series(cube, name, figName):
     np.savetxt(out_file, TS, delimiter=',', header = "year,p25%,p75%")
     return TS
     
-def run_experiment(training_namelist, namelist, name = '', *args, **kws):
+def run_experiment(training_namelist, namelist, control_direction, output_dir, output_file, 
+                   name = '', *args, **kws):
     if name != "": 
         name = name + '-'
         run_only = True
@@ -60,7 +63,8 @@ def run_experiment(training_namelist, namelist, name = '', *args, **kws):
     Control = call_eval(training_namelist, namelist,
                         name + 'control', run_only = run_only, *args, **kws)
     
-    Standard = [Standard_limitation(i, name, *args, **kws) \
+    Standard = [Standard_limitation(training_namelist, namelist,i, name, control_direction, 
+                                    *args, **kws) \
                 for i in range(len(control_direction))]
 
     figName = output_dir + 'figs/' + output_file + '-' + name + 'control_TS'
@@ -91,9 +95,11 @@ def run_ConFire(namelist):
     experiment_names = run_info['experiment_names']
     y_filen = run_info['x_filen_list'][0]
     
-    origonal = run_experiment(training_namelist, namelist)
+    origonal = run_experiment(training_namelist, namelist, control_direction, 
+                              output_dir, output_file)
     
-    experiment = [run_experiment(name, dir = dir, y_filen = y_filen) \
+    experiment = [run_experiment(training_namelist, namelist, control_direction, 
+                                 output_dir, output_file, name, dir = dir, y_filen = y_filen) \
                   for name, dir in zip(experiment_names, experiment_dirs)]
 
 
