@@ -52,8 +52,8 @@ def make_time_series(cube, name, figName):
     out_file = figName + '/time_series' + name + '.csv'
     np.savetxt(out_file, TS, delimiter=',', header = "year,p25%,p75%")
     return TS
-    
-def run_experiment(training_namelist, namelist, control_direction, output_dir, output_file, 
+
+def run_experiment(training_namelist, namelist, control_direction, control_names, output_dir, output_file, 
                    name = '', *args, **kws):
     if name != "": 
         name = name + '-'
@@ -95,16 +95,17 @@ def run_ConFire(namelist):
     experiment_names = run_info['experiment_names']
     y_filen = run_info['x_filen_list'][0]
     
-    origonal = run_experiment(training_namelist, namelist, control_direction, 
+    origonal = run_experiment(training_namelist, namelist, control_direction, control_names,
                               output_dir, output_file)
     
-    experiment = [run_experiment(training_namelist, namelist, control_direction, 
+    experiment = [run_experiment(training_namelist, namelist, control_direction, control_names,
                                  output_dir, output_file, name, dir = dir, y_filen = y_filen) \
                   for name, dir in zip(experiment_names, experiment_dirs)]
 
 
 if __name__=="__main__":
     namelist = 'namelists/ConFire_Canada.txt'
+    namelist = 'namelists/donotcommit.txt'
     run_ConFire(namelist)
     set_trace()
     #experiment_TS = np.array([make_time_series(cube[0], name)  for cube, name in zip(experiment, experiment_names)])
