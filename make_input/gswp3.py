@@ -117,7 +117,7 @@ def make_variables_for_year_range(year, process, dir):
 
     for var, fun in zip(process_standard, process_function):
         standard_Monthly_mean(var, fun) 
-   
+    
     
     temp_file = generate_temp_fname(temp_out, 'cover')
     if test_if_process('cover', temp_file):
@@ -149,8 +149,13 @@ def make_variables_for_year_range(year, process, dir):
         
     temp_file_tas = generate_temp_fname(temp_out, 'tas')
     temp_file_vpd = generate_temp_fname(temp_out, 'vpd')
-    if test_if_process('tas', temp_file_tas) or test_if_process('vpd', temp_file_vpd):
+    temp_file_lightn = generate_temp_fname(temp_out, 'lightn')
+
+   
+    if test_if_process('tas', temp_file_tas) or test_if_process('vpd', temp_file_vpd)\
+        or  test_if_process('lightn', temp_file_lightn):
         tas = open_variable('tas')
+
         tas_range = open_variable('tas_range')
         
         tas_max = tas.copy()
@@ -183,6 +188,20 @@ def make_variables_for_year_range(year, process, dir):
             
             open(temp_file_vpd, 'a').close()
             
+        if test_if_process('lightn', temp_file_lightn):
+            full_lightn = monthly_mean(tas)
+            lightn = read_variable_from_netcdf(lightn_file, subset_function = subset_functions, 
+                                               subset_function_args = subset_function_argss)
+            lightn = lightn.regrid(full_lightn, iris.analysis.Linear())
+            for i in range(int(full_lightn.shape[0]/12)):
+                try:
+                    full_lightn.data[(i*12):((i+1)*12)] = lightn.data
+                except:
+                    set_trace()
+            full_lightn.units = lightn.units
+            full_lightn.rename(lightn.name())
+            save_ncdf(full_lightn, 'lightning')
+            open(temp_file_lightn, 'a').close()
         if test_if_process('tas'):
             
             tas_monthly = monthly_mean(tas)
@@ -193,7 +212,7 @@ def make_variables_for_year_range(year, process, dir):
             open(temp_file_tas, 'a').close()
      
     temp_file = generate_temp_fname(temp_out, 'pr')       
-    if test_if_process('pr'):
+    if test_if_process('pr', temp_file):
         pr = open_variable('pr', True)
         pr_mean = monthly_mean(sub_year_range(pr, year))
         
@@ -254,14 +273,14 @@ filenames = {"tas": "tas_global_daily_",
              "soil": "soil_global_annual_",
              "total":  "total_global_annual_"}
 
-
+lightn_file = "/hpc//data/d00/hadea/isimip2b/ancils/lightning/LISOTD_HRMC_V2.3.2015.0p5ancil.nc"
 process_standard = ['prsn', "hurs", "hurs", "huss", "huss", "sfcwind"]
 process_function = [iris.analysis.MEAN, 
                     iris.analysis.MEAN, iris.analysis.MAX,
                     iris.analysis.MEAN, iris.analysis.MAX,
                     iris.analysis.MAX]
 
-process_clim = ['vpd', 'tas', 'tas_range', 'pr']
+process_clim = ['vpd', 'tas', 'tas_range', 'pr', 'lightn']
 process_jules =['cover', 'crop', 'pasture', "urban"]
 
 example_cube = None
@@ -345,7 +364,7 @@ if __name__=="__main__":
         #    dir_jules = dirs_jules[i]
         #    dataset_name = dataset_names[i]
         #    process_clim_and_jules()    
-    set_trace()
+    
     obs_cover_dir = '/home/h02/dkelley/state_of_fires_report_20YY/data/data/driving_data/Canada_extended/'
 
     output_years = '2002_2019'
