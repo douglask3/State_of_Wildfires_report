@@ -137,8 +137,8 @@ def make_variables_for_year_range(year, process, dir):
         open(temp_file, 'a').close()
     
 
-    temp_file = generate_temp_fname(temp_out, 'pature')
-    if test_if_process('pature', temp_file): 
+    temp_file = generate_temp_fname(temp_out, 'pasture')
+    if test_if_process('pasture', temp_file): 
         cal_cover(["c3pasture", "c4pasture"], 'pasture')
         open(temp_file, 'a').close()
 
@@ -280,7 +280,7 @@ process_function = [iris.analysis.MEAN,
                     iris.analysis.MEAN, iris.analysis.MAX,
                     iris.analysis.MAX]
 
-process_clim = ['vpd', 'tas', 'tas_range', 'pr', 'lightn']
+process_clim = ['vpd', 'tas', 'tas_range', 'pr'] #, 'lightn'
 process_jules =['cover', 'crop', 'pasture', "urban"]
 
 example_cube = None
@@ -300,6 +300,7 @@ if __name__=="__main__":
     
     years = [[2010, 2012], [1901, 1920], [2000, 2019], [2002, 2019]]
     dataset_name = 'isimp3a/obsclim/GSWP3-W5E5'
+    dataset_name_control = dataset_name
     
     dir_clim = "/hpc//data/d00/hadea/isimip3a/InputData/climate/atmosphere/obsclim/GSWP3-W5E5/gswp3-w5e5_obsclimfill_"
     dir_jules = "/scratch/hadea/isimip3a/u-cc669_isimip3a_es/GSWP3-W5E5_obsclim/jules-es-vn6p3_gswp3-w5e5_obsclim_histsoc_default_pft-"  
@@ -370,7 +371,7 @@ if __name__=="__main__":
     output_years = '2002_2019'
     years = [2002, 2019]
     files = os.listdir(obs_cover_dir)
-
+    
     def open_regrid_output_file(filename):
         if '-raw' in filename: return None
         cube = iris.load_cube(obs_cover_dir + filename)
@@ -380,11 +381,21 @@ if __name__=="__main__":
             cube = fun(cube, **args)
         out_fname = output_dir + '/' + \
                     subset_function_argss[0][next(iter(subset_function_argss[0]))] + '/' + \
-                    dataset_name + '/period_' + output_years + '/' + \
+                    dataset_name_control + '/period_' + output_years + '/' + \
                     filename[:-3] + '_VCF-obs.nc'
         iris.save(cube, out_fname)
 
     for filename in files: open_regrid_output_file(filename)
-
-    #sbs_funs = [sub_year_range] + subset_functions 
-    #sbs_args = [{'year_range': yeari}] + subset_function_argss
+    
+    burnt_area_file = '../data/data/driving_data/burnt_area.nc'
+    burnt_area = read_variable_from_netcdf(burnt_area_file, 
+                                           subset_function = [sub_year_range]+subset_functions, 
+                                               subset_function_args =  [{'year_range': years}]\
+                                                                + subset_function_argss)
+    out_fname = output_dir + '/' + \
+                    subset_function_argss[0][next(iter(subset_function_argss[0]))] + '/' + \
+                    dataset_name_control + '/period_' + output_years + '/burnt_area.nc'
+    iris.save(burnt_area, out_fname)
+    
+    #sbs_funs = 
+    #sbs_args =
