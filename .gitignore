@@ -2,5 +2,5 @@
 outputs/
 temp/
 data/
-
+*.png
 
