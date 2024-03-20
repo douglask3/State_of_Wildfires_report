@@ -147,7 +147,7 @@ def train_MaxEnt_model_from_namelist(namelist = None, **kwargs):
     variables = read_variable_from_namelist_with_overwite(namelist, **kwargs)
     
     variables['filename_out'] = \
-              '_'.join([file[:-3] for file in variables['x_filen_list']]) + \
+              '_' + str(len(variables['x_filen_list'])) + \
               '-frac_points_' + str(variables['fraction_data_for_sample'])
     
     if 'dir' not in variables and 'dir_training' in variables:

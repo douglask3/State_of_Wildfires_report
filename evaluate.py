@@ -61,15 +61,18 @@ def plot_BayesModel_signifcance_maps(Obs, Sim, lmask, plot_n = 1, Nrows = 3, Nco
     plt.xticks(at, 10**at)
     labels = np.array([0, 0.3, 0.5, 0.7, 0.8, 0.9, 0.95, 0.99])
     plt.yticks(10**labels, labels)
-    #set_trace()
-    Sim[1].data.mask[Sim[1].data == 0] = True
     
-    plot_BayesModel_maps(Sim[1], [0.0, 0.5, 0.75, 0.9, 0.95, 0.99, 1.0], 'copper', '', None, 
-                         Nrows = Nrows, Ncols = Ncols, plot0 = plot_n, collapse_dim = 'time',
-                         scale = 1, figure_filename = figure_filename + 'obs_liklihood')
+    try:
+        Sim[1].data.mask[Sim[1].data == 0] = True
+    except:
+        pass
+    
+    #plot_BayesModel_maps(Sim[1], [0.0, 0.5, 0.75, 0.9, 0.95, 0.99, 1.0], 'copper', '', None, 
+    #                     Nrows = Nrows, Ncols = Ncols, plot0 = plot_n, collapse_dim = 'time',
+    #                     scale = 1, figure_filename = figure_filename + 'obs_liklihood')
     
     ax = plt.subplot(Nrows, Ncols, plot_n + 3)
-    BayesScatter(Obs, Sim[0], lmask,  0.000001, 0.000001, ax)
+    #BayesScatter(Obs, Sim[0], lmask,  0.000001, 0.000001, ax)
     
     pos = np.mean(X[np.newaxis, :, :] > Y, axis = 0)
     pos[X == 0] = np.nan
@@ -79,7 +82,7 @@ def plot_BayesModel_signifcance_maps(Obs, Sim, lmask, plot_n = 1, Nrows = 3, Nco
     _, p_value = wilcoxon(pos - 0.5, axis = 0, nan_policy = 'omit')
     
     apos = np.nanmean(pos, axis = 0)
-
+    
     mask = lmask.reshape([ X.shape[0], int(lmask.shape[0]/X.shape[0])])[0]
     apos_cube = insert_data_into_cube(apos, Obs[0], mask)
     p_value_cube = insert_data_into_cube(p_value, Obs[0], mask)
@@ -248,8 +251,8 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file,
     Obs = read_variable_from_netcdf(y_filen, dir,
                                     subset_function = subset_function, 
                                     subset_function_args = subset_function_args)
-
     
+    Obs.data[~np.reshape(lmask, Obs.shape)] = np.nan
     #plot_basic_parameter_info(trace, fig_dir)
     #paramter_map(trace, x_filen_list, fig_dir) 
     
@@ -265,6 +268,7 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file,
         'grab_old_trace': grab_old_trace}
     
     Sim = runSim_MaxEntFire(**common_args, run_name = control_run_name, test_eg_cube = True)
+    
     if run_only: return Sim
     #plot_limitation_maps(fig_dir, filename_out, **common_args)
         
