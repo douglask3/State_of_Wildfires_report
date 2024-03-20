@@ -20,6 +20,44 @@ import numbers
 import pymc  as pm
 import arviz as az
 
+def set_priors(priors, X):
+    
+    nvars = X.shape[1]
+    def define_prior(prior, pn):
+        try:
+            kws = prior.copy()
+            kws.pop('pname')
+            kws.pop('np')
+            kws.pop('dist')
+            shape = prior['np']
+            if shape == 'nvars': shape = nvars               
+            return getattr(pm, prior['dist'])(prior['pname'] + str(pn), 
+                              shape = shape, **kws)
+        except:
+            return prior['value']
+            
+    priors_names =[prior['pname'] for prior in priors]
+    count_priors = [priors_names[:i].count(string) \
+                    for i, string in enumerate(priors_names)]
+            
+    priors = [define_prior(prior, pn) for prior, pn in zip(priors, count_priors)]
+        
+    # Create a dictionary to store items based on the first list
+    grouped_items = {}
+    for idx, string in enumerate(priors_names):
+        if string not in grouped_items:
+            grouped_items[string] = []
+        grouped_items[string].append(priors[idx])
+
+    # Convert the dictionary values to a list
+    result_list = list(grouped_items.values())
+    
+    priors_names = list(dict.fromkeys(priors_names))
+    priors = {priors_names[idx]: item[0] if len(item) == 1 else item \
+              for idx, item in enumerate(result_list)}
+
+    return(priors)
+            
 
 def fit_MaxEnt_probs_to_data(Y, X, CA = None, model_class = FLAME, niterations = 100, priors = None, *arg, **kw):
     """ Bayesian inerence routine that fits independant variables, X, to dependant, Y.
@@ -51,57 +89,8 @@ def fit_MaxEnt_probs_to_data(Y, X, CA = None, model_class = FLAME, niterations =
     except:
         pass
     with pm.Model() as max_ent_model:
-        ## set priors
-        nvars = X.shape[1]
-        if priors is None:
-            priors = {"q":     pm.LogNormal('q', mu = 0.0, sigma = 1.0),
-                     "lin_beta_constant": pm.Normal('lin_beta_constant', mu = 0, sigma = 100),
-                     "lin_betas": pm.Normal('lin_betas', mu = 0, sigma = 100, shape = nvars),
-                     "pow_betas": pm.Normal('pow_betas', mu = 0, sigma = 100, shape = nvars),
-                     "pow_power": pm.LogNormal('pow_power', mu = 0, sigma = 1, shape = nvars),
-                     "x2s_betas": pm.Normal('x2s_betas', mu = 0, sigma = 100, shape = nvars),
-                     "x2s_X0"   : pm.Normal('x2s_X0'   , mu = 0, sigma = 1, shape = nvars),
-                     "comb_betas": pm.Normal('comb_betas', mu = 0, sigma = 100, shape = nvars),
-                     "comb_X0": pm.Normal('comb_X0', mu = 0.5, sigma = 1, shape = nvars),
-                     "comb_p": pm.Normal('comb_p', mu = 0, sigma = 1 , shape = nvars)
-                     }
-        else:
-            def define_prior(prior, pn):
-                try:
-                    kws = prior.copy()
-                    kws.pop('pname')
-                    kws.pop('np')
-                    kws.pop('dist')
-                    shape = prior['np']
-                    if shape == 'nvars': shape = nvars 
-                    
-                    return getattr(pm, prior['dist'])(prior['pname'] + str(pn), 
-                                      shape = shape, **kws)
-                except:
-                    return prior['value']
-            
-            priors_names =[prior['pname'] for prior in priors]
-
-            count_priors = [priors_names[:i].count(string) \
-                            for i, string in enumerate(priors_names)]
-            
-            priors = [define_prior(prior, pn) for prior, pn in zip(priors, count_priors)]
-            
-            # Create a dictionary to store items based on the first list
-            grouped_items = {}
-            for idx, string in enumerate(priors_names):
-                if string not in grouped_items:
-                    grouped_items[string] = []
-                grouped_items[string].append(priors[idx])
-
-            # Convert the dictionary values to a list
-            result_list = list(grouped_items.values())
-            
-            priors_names = list(dict.fromkeys(priors_names))
-            priors = {priors_names[idx]: item[0] if len(item) == 1 else item \
-                      for idx, item in enumerate(result_list)}
-            
-        
+        priors = set_priors(priors, X)
+        set_trace()
         ## run model
         model = model_class(priors, inference = True)
         prediction = model.burnt_area(X)  
