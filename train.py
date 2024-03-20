@@ -1,9 +1,11 @@
 import sys
 sys.path.append('fire_model/')
 sys.path.append('libs/')
+sys.path.append('link_distribution/')
 
 from FLAME import FLAME
 from ConFire import ConFire
+from MaxEnt import *
 
 from read_variable_from_netcdf import *
 from combine_path_and_make_dir import * 
@@ -90,7 +92,7 @@ def fit_MaxEnt_probs_to_data(Y, X, CA = None, model_class = FLAME, niterations =
         pass
     with pm.Model() as max_ent_model:
         priors = set_priors(priors, X)
-        set_trace()
+        
         ## run model
         model = model_class(priors, inference = True)
         prediction = model.burnt_area(X)  
@@ -105,7 +107,7 @@ def fit_MaxEnt_probs_to_data(Y, X, CA = None, model_class = FLAME, niterations =
             error = pm.DensityDist("error", prediction, priors['q'], CA, 
                                    logp = logistic_probability_tt, 
                                    observed = Y)
-                
+              
         ## sample model
         trace = pm.sample(niterations, return_inferencedata=True, 
                           callback = trace_callback, *arg, **kw)
