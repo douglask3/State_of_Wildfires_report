@@ -2,10 +2,8 @@ import pytensor
 import pytensor.tensor as tt
 
 class MaxEnt(object):
-    def __init__(self):
-        pass
 
-    def obs_given_model(self, Y, fx, qSpread = None, CA = None):
+    def obs_given_model(Y, fx, qSpread = None, CA = None):
         """calculates the log-transformed continuous logit likelihood for Y given fx when Y
             and fx are probabilities between 0-1 with relative areas, CA
             Works with tensor variables.   
@@ -32,7 +30,7 @@ class MaxEnt(object):
             prob = Y*tt.log(fx) + (1.0-Y)*tt.log((1-fx))
         return prob
     
-    def model_given_obs(self, Y, X):
+    def model_given_obs(Y, X, *args, **kw):
         X1 = 1 - X
         def prob_fun(y):
             return (y**X) * ((1-y)**X1)
