@@ -8,6 +8,7 @@ from constrain_cubes_standard import *
 from FLAME import FLAME
 from ConFire import ConFire
 from MaxEnt import MaxEnt
+from zero_inflated_logit import zero_inflated_logit
 
 from pdb import set_trace
 
