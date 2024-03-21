@@ -5,7 +5,7 @@ sys.path.append('link_distribution/')
 
 from FLAME import FLAME
 from ConFire import ConFire
-from MaxEnt import *
+from MaxEnt import MaxEnt
 
 from read_variable_from_netcdf import *
 from combine_path_and_make_dir import * 
@@ -61,7 +61,9 @@ def set_priors(priors, X):
     return(priors)
             
 
-def fit_MaxEnt_probs_to_data(Y, X, CA = None, model_class = FLAME, niterations = 100, priors = None, *arg, **kw):
+def fit_MaxEnt_probs_to_data(Y, X, CA = None, 
+                             model_class = FLAME, link_func_class = MaxEnt,
+                             niterations = 100, priors = None, *arg, **kw):
     """ Bayesian inerence routine that fits independant variables, X, to dependant, Y.
         Based on the MaxEnt solution of probabilities. 
     Arguments:
@@ -100,17 +102,18 @@ def fit_MaxEnt_probs_to_data(Y, X, CA = None, model_class = FLAME, niterations =
         ## define error measurement
         if CA is None:
             error = pm.DensityDist("error", prediction, priors['q'], 
-                                   logp = logistic_probability_tt, 
+                                   logp = link_func_class.obs_given_model, 
                                    observed = Y)
         else:
             CA = CA.data
             error = pm.DensityDist("error", prediction, priors['q'], CA, 
-                                   logp = logistic_probability_tt, 
+                                   logp = link_func_class.obs_given_model, 
                                    observed = Y)
               
         ## sample model
         trace = pm.sample(niterations, return_inferencedata=True, 
                           callback = trace_callback, *arg, **kw)
+        set_trace()
         attempts = 1
         while attempts <= 10:
             try:
@@ -150,7 +153,7 @@ def train_MaxEnt_model_from_namelist(namelist = None, **kwargs):
 
 
 def train_MaxEnt_model(y_filen, x_filen_list, CA_filen = None, model_class = FLAME,
-                       priors = None,
+                       priors = None, link_func_class = MaxEnt,
                        dir = '', filename_out = '',
                        dir_outputs = '',
                        fraction_data_for_sample = 1.0,
@@ -256,6 +259,7 @@ def train_MaxEnt_model(y_filen, x_filen_list, CA_filen = None, model_class = FLA
         print("======================")
         trace, none_trace_params = fit_MaxEnt_probs_to_data(Y, X, CA = CA, 
                                          model_class = model_class,
+                                         link_func_class = link_func_class, 
                                          niterations = niterations, 
                                          cores = cores, priors = priors)
         
