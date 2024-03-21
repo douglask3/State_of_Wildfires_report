@@ -2,9 +2,12 @@ import json
 import sys
 sys.path.append('libs/')
 sys.path.append('fire_model/')
+sys.path.append('link_distribution/')
+
 from constrain_cubes_standard import *
 from FLAME import FLAME
 from ConFire import ConFire
+from MaxEnt import MaxEnt
 
 from pdb import set_trace
 
