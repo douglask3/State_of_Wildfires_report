@@ -177,6 +177,7 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file,
                           extra_params = None,
                           other_params_file = None, CA_filen = None, 
                           model_class = FLAME,
+                          link_func_class = MaxEnt,
                           dir = '', 
                           dir_outputs = '', model_title = '', filename_out = '',
                           control_run_name = "control",
@@ -258,6 +259,7 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file,
     
     common_args = {
         'class_object': model_class,
+        'link_func_class': link_func_class,
         'trace': trace,
         'extra_params': extra_params,
         'sample_for_plot': sample_for_plot,
@@ -291,7 +293,7 @@ if __name__=="__main__":
     """ Running optimization and basic analysis. 
     Variables that need setting:
     For Optimization:
-        model_title -- name of model run. Used as directory and filename.
+        ,model_title -- name of model run. Used as directory and filename.
         trace_file -- netcdf filename containing trace (produced in pymc_MaxEnt_train.py)
         y_filen -- filename of dependant variable (i.e burnt area)
         x_filen_list -- filanames of independant variables

@@ -6,11 +6,14 @@ import os
 import sys
 sys.path.append('fire_model/')
 sys.path.append('libs/')
+sys.path.append('link_distribution/')
 
 from combine_path_and_make_dir import * 
 
 from FLAME import FLAME
 from ConFire import ConFire
+from MaxEnt import MaxEnt
+from zero_inflated_logit import zero_inflated_logit
 
 from iris_plus import insert_data_into_cube
 
@@ -18,6 +21,11 @@ import pytensor
 import pytensor.tensor as tt
 
 from pdb import set_trace
+
+
+import iris.plot as iplt
+import iris.quickplot as qplt
+import matplotlib.pyplot as plt
 
 def select_post_param(trace):
     """Selects paramaeters from a pymc nc trace file.   
@@ -43,6 +51,7 @@ def select_post_param(trace):
 def runSim_MaxEntFire(trace, sample_for_plot, X, eg_cube, lmask, run_name, 
                       dir_samples, grab_old_trace, extra_params = None,
                       class_object = FLAME, method = 'burnt_area',
+                      link_func_class = MaxEnt,
                       test_eg_cube = False, out_index = None, *args, **kw):  
     
     def sample_model(i, run_name = 'control'):   
@@ -67,6 +76,7 @@ def runSim_MaxEntFire(trace, sample_for_plot, X, eg_cube, lmask, run_name,
         coord = iris.coords.DimCoord(i, "realization")
         def make_into_cube(dat, filename):            
             dat = insert_data_into_cube(dat, eg_cube, lmask)
+            
             dat.add_aux_coord(coord)
             iris.save(dat, filename)
             return dat
@@ -75,13 +85,17 @@ def runSim_MaxEntFire(trace, sample_for_plot, X, eg_cube, lmask, run_name,
         param_in = [param[i] if param.ndim == 1 else param[i,:] for param in params]
         param_in = dict(zip(params_names, param_in))
         param_in.update(extra_params)
-        
+        link_param_in = {key: value for key, value in param_in.items() \
+                       if key.startswith('link-')}
+
         obj = class_object(param_in)
         out = getattr(obj, method)(X, *args, **kw)
         
         if out_index is not None: out = out[:, out_index]
-        if test_eg_cube: 
-            prob = logistic_how_likely(eg_cube.data.flatten()[lmask], out)
+        if test_eg_cube:
+            prob = link_func_class.model_given_obs(eg_cube.data.flatten()[lmask], out, 
+                                                   *link_param_in.values())
+            
             prob = make_into_cube(prob, file_prob)       
         out = make_into_cube(out, file_sample)
 
