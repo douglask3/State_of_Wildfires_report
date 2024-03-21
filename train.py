@@ -33,7 +33,7 @@ def set_priors(priors, X):
             kws.pop('dist')
             shape = prior['np']
             if shape == 'nvars': shape = nvars               
-            return getattr(pm, prior['dist'])(prior['pname'] + str(pn), 
+            return getattr(pm, prior['dist'])(prior['pname'].replace('link-', '') + str(pn), 
                               shape = shape, **kws)
         except:
             return prior['value']
@@ -58,7 +58,10 @@ def set_priors(priors, X):
     priors = {priors_names[idx]: item[0] if len(item) == 1 else item \
               for idx, item in enumerate(result_list)}
 
-    return(priors)
+    link_priors = {key.replace('link-', ''): value for key, value in priors.items() \
+                       if key.startswith('link-')}
+    
+    return priors, link_priors
             
 
 def fit_MaxEnt_probs_to_data(Y, X, CA = None, 
@@ -93,32 +96,33 @@ def fit_MaxEnt_probs_to_data(Y, X, CA = None,
     except:
         pass
     with pm.Model() as max_ent_model:
-        priors = set_priors(priors, X)
+        priors, link_priors = set_priors(priors, X)
         
         ## run model
         model = model_class(priors, inference = True)
         prediction = model.burnt_area(X)  
         
         ## define error measurement
+        def yay(a1, a2):
+            print(a1)
+            print(a2)
+            
+        
         if CA is None:
-            error = pm.DensityDist("error", prediction, priors['q'], 
+            error = pm.DensityDist("error", prediction, *link_priors.values(), 
                                    logp = link_func_class.obs_given_model, 
                                    observed = Y)
         else:
             CA = CA.data
-            error = pm.DensityDist("error", prediction, priors['q'], CA, 
+            error = pm.DensityDist("error", prediction, *link_priors.values(), CA, 
                                    logp = link_func_class.obs_given_model, 
                                    observed = Y)
               
         ## sample model
-        trace = pm.sample(niterations, return_inferencedata=True, 
-                          callback = trace_callback, *arg, **kw)
-        set_trace()
         attempts = 1
         while attempts <= 10:
             try:
-                trace = pm.sample(niterations, return_inferencedata=True, 
-                                  callback = trace_callback, *arg, **kw)
+                trace = pm.sample(niterations, return_inferencedata=True,  callback = trace_callback, *arg, **kw)
                 attempts = 100
             except:
                 print("sampling attempt " + str(attempts) + " failed. Trying a max of 10 times")
