@@ -31,8 +31,7 @@ class MaxEnt(object):
         else:
             prob = Y*tt.log(fx) + (1.0-Y)*tt.log((1-fx))
         return prob
-
-
+    
     def model_given_obs(self, Y, X):
         X1 = 1 - X
         def prob_fun(y):
