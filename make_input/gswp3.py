@@ -384,14 +384,20 @@ if __name__=="__main__":
                     dataset_name_control + '/period_' + output_years + '/' + \
                     filename[:-3] + '_VCF-obs.nc'
         iris.save(cube, out_fname)
+        return cube
 
-    for filename in files: open_regrid_output_file(filename)
+    cubes = [open_regrid_output_file(filename) for filename in files]
     
+    output_years = '2000_2019'
+    years = [2000, 2019]
     burnt_area_file = '../data/data/driving_data/burnt_area.nc'
+    mask_file = iris.load_cube("../data/data/driving_data/NWN/isimp3a/obsclim/GSWP3-W5E5/period_2000_2019/tree_cover_jules-es.nc")
     burnt_area = read_variable_from_netcdf(burnt_area_file, 
                                            subset_function = [sub_year_range]+subset_functions, 
                                                subset_function_args =  [{'year_range': years}]\
                                                                 + subset_function_argss)
+    burnt_area = burnt_area.regrid(mask_file[0], iris.analysis.Linear())
+    burnt_area.data[:, np.isnan(mask_file[0].data)] = np.nan
     out_fname = output_dir + '/' + \
                     subset_function_argss[0][next(iter(subset_function_argss[0]))] + '/' + \
                     dataset_name_control + '/period_' + output_years + '/burnt_area.nc'
