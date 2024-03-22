@@ -6,58 +6,6 @@ from iris_plus import *
 from constrain_cubes_standard import *
 from scipy.interpolate import RegularGridInterpolator
 
-def get_new_lat_lons(cube, extent):
-    # Extract original latitude and longitude coordinates
-    lat_points = cube.coord('latitude').points
-    lon_points = cube.coord('longitude').points
-
-    # Determine the resolution of the original cube
-    lat_resolution = -np.mean(np.diff(lat_points))
-    lon_resolution = np.mean(np.diff(lon_points))
-
-    # Define new latitude and longitude ranges based on original resolution
-    new_lons = np.arange(extent[0], extent[1] + lon_resolution, lon_resolution)
-    new_lats = np.arange(extent[2], extent[3] + lat_resolution, lat_resolution)
-    
-    return new_lons, new_lats
-
-
-def extend_cube(cube, new_lats, new_lons):
-    # Get the original latitude and longitude coordinates
-    orig_lats = cube.coord('latitude').points
-    orig_lons = cube.coord('longitude').points
-
-    # Generate meshgrid for new latitudes and longitudes
-    new_lons_mesh, new_lats_mesh = np.meshgrid(new_lons, new_lats)
-
-    # Create a new empty cube with extended latitude and longitude ranges
-    extended_data = np.full((cube.shape[0], len(new_lats), len(new_lons)), np.nan)
-    extended_cube = cube.copy(data=extended_data)
-    extended_cube.coord('latitude').points = new_lats
-    extended_cube.coord('longitude').points = new_lons
-
-    # Loop through each time slice and interpolate the data onto the new grid
-    for t_idx, time_slice in enumerate(cube.slices_over('time')):
-        interpolator = RegularGridInterpolator((orig_lats, orig_lons), time_slice.data)
-        points = np.array([new_lats_mesh.flatten(), new_lons_mesh.flatten()]).T
-        extended_cube.data[t_idx] = interpolator(points).reshape(len(new_lats), len(new_lons))
-
-    return extended_cube
-def calculate_mean_of_neighbors(array, row, col):
-    neighbors = []
-    for i in range(row - 1, row + 2):
-        for j in range(col - 1, col + 2):
-            if 0 <= i < array.shape[0] and 0 <= j < array.shape[1] and (i != row or j != col):
-                neighbors.append(array[i, j])
-    return np.nanmean(neighbors)
-
-def set_mean_of_neighbors(array, rows, cols):
-    result_array = array.copy()
-    for row, col in zip(rows, cols):
-        mean_value = calculate_mean_of_neighbors(array, row, col)
-        result_array[row, col] = mean_value
-    return result_array
-
 def read_variable_from_netcdf(filename, dir = '', subset_function = None, 
                               make_flat = False, units = None, 
                               subset_function_args = None,
@@ -121,14 +69,6 @@ def read_variable_from_netcdf(filename, dir = '', subset_function = None,
     if extent is not None:
         dataset = dataset.regrid(extent, iris.analysis.Linear())
         dataset0 = dataset.copy()
-        
-        if 'debiased' in filename:
-            for i in range(dataset.shape[0]): 
-                loc = np.where(np.isnan(dataset.data[i]) & ~np.isnan(extent.data))
-                ntry = 0
-                while len(loc[0]) > 0 and ntry < 5:
-                    dataset.data[i] = set_mean_of_neighbors(dataset.data[i], loc[0], loc[1])
-                    ntry = ntry + 1
     
     if units is not None: dataset.units = units
     if subset_function is not None:
