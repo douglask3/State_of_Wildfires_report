@@ -22,7 +22,6 @@ import pytensor.tensor as tt
 
 from pdb import set_trace
 
-
 import iris.plot as iplt
 import iris.quickplot as qplt
 import matplotlib.pyplot as plt
@@ -51,7 +50,7 @@ def select_post_param(trace):
 def runSim_MaxEntFire(trace, sample_for_plot, X, eg_cube, lmask, run_name, 
                       dir_samples, grab_old_trace, extra_params = None,
                       class_object = FLAME, method = 'burnt_area',
-                      link_func_class = MaxEnt,
+                      link_func_class = MaxEnt, hyper = True,
                       test_eg_cube = False, out_index = None, *args, **kw):  
     
     def sample_model(i, run_name = 'control'):   
@@ -91,12 +90,17 @@ def runSim_MaxEntFire(trace, sample_for_plot, X, eg_cube, lmask, run_name,
         obj = class_object(param_in)
         out = getattr(obj, method)(X, *args, **kw)
         
+    
         if out_index is not None: out = out[:, out_index]
         if test_eg_cube:
-            prob = link_func_class.model_given_obs(eg_cube.data.flatten()[lmask], out, 
+            prob = link_func_class.sample_given_(eg_cube.data.flatten()[lmask], out, 
                                                    *link_param_in.values())
             
-            prob = make_into_cube(prob, file_prob)       
+            prob = make_into_cube(prob, file_prob) 
+        
+        
+        if hyper:
+            out = link_func_class.random_sample_given_(out, *link_param_in.values())      
         out = make_into_cube(out, file_sample)
 
         if test_eg_cube: 
@@ -112,7 +116,10 @@ def runSim_MaxEntFire(trace, sample_for_plot, X, eg_cube, lmask, run_name,
     out = np.array(list(map(lambda id: sample_model(id, run_name), idx)))
     
     if test_eg_cube: 
-        prob = iris.cube.CubeList(out[:,1]).merge_cube()
+        try:
+            prob = iris.cube.CubeList(out[:,1]).merge_cube()
+        except:
+            set_trace()
         prob = prob.collapsed('realization', iris.analysis.MEAN)
         return iris.cube.CubeList(out[:,0]).merge_cube(), prob
     else:

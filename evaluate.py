@@ -177,7 +177,7 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file,
                           extra_params = None,
                           other_params_file = None, CA_filen = None, 
                           model_class = FLAME,
-                          link_func_class = MaxEnt,
+                          link_func_class = MaxEnt, hyper = True,
                           dir = '', 
                           dir_outputs = '', model_title = '', filename_out = '',
                           control_run_name = "control",
@@ -185,7 +185,7 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file,
                           sample_for_plot = 1, grab_old_trace = False, 
                           response_grouping = None, run_only = False,
                           *args, **kw):
-
+    
     """ Runs prediction and evalutation of the sampled model based on previously run trace.
     Arguments:
         trace - pymc traces nc or nc fileiles, probably from a 'train_MaxEnt_model' run
@@ -260,6 +260,7 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file,
     common_args = {
         'class_object': model_class,
         'link_func_class': link_func_class,
+        'hyper': hyper,
         'trace': trace,
         'extra_params': extra_params,
         'sample_for_plot': sample_for_plot,
@@ -273,7 +274,7 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file,
     
     if run_only: return Sim
     #plot_limitation_maps(fig_dir, filename_out, **common_args)
-        
+    
     common_args['Sim'] = Sim[0]
     #set_trace()
     #jackknife(x_filen_list, fig_dir = fig_dir, **common_args)       

@@ -7,11 +7,14 @@ import numpy as np
 def ttLogit(x): return tt.log(x/(1-x))
 
 def npLogit(x):
-    return np.log(x/(1-x))
+    return np.log(x/(1.0-x))
+
+def npSigmoid(x):
+    return 1.0/(1.0 + np.exp(-x))
 
 class zero_inflated_logit(object):
 
-    def obs_given_model(Y, fx, sigma, p0, p1):
+    def obs_given_(Y, fx, sigma, p0, p1):
         '''return tt.sw1itch(
             tt.lt(Y, -150),
             -p0,
@@ -24,11 +27,23 @@ class zero_inflated_logit(object):
         Y = ttLogit(Y)
         fx = ttLogit(fx)
 
-        return tt.switch( tt.lt(Y, -30), tt.log(pz), tt.log(1-pz) - tt.log(sigma * tt.sqrt(2*math.pi)) - ((Y-fx)**2)/(2*sigma**2))
-
-
+        return tt.switch( tt.lt(Y, -30), 
+                          tt.log(pz), 
+                          tt.log(1-pz) - tt.log(sigma * tt.sqrt(2*math.pi)) - 
+                                ((Y-fx)**2)/(2*sigma**2))
     
-    def model_given_obs(Y, X, sigma, p0, p1):
+    def random_sample_given_(mod, sigma, p0, p1):
+        mod0 = mod.copy()
+        pz = 1.0 - (mod**p1) * (1.0 - p0)
+        mod = npLogit(mod)
+        test = (np.random.rand(*pz.shape)) < pz
+        mod[test] = 0.0
+        test = ~test
+        mod[test] = npSigmoid(np.random.normal(mod[test], sigma, size=sum(test)))
+        return mod
+    
+    
+    def sample_given_(Y, X, sigma, p0, p1):
         
         pz = 1.0 - (X**p1) * (1.0 - p0)
         
