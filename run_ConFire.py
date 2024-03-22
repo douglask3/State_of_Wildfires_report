@@ -18,12 +18,15 @@ def call_eval(training_namelist, namelist,
     
 def Standard_limitation(training_namelist, namelist,
                         controlID, name, control_direction, *args, **kws):   
-    control_Directioni = control_direction
-    control_Directioni[-controlID] = 0.0
+    control_Directioni = np.array(control_direction.copy())
+    control_Directioni[:] = 0.0
+    control_Directioni[controlID] = control_direction[controlID]
+    
     extra_params = {"control_Direction": control_Directioni}
-        
+    
     return call_eval(training_namelist, namelist,
-                     name + 'Standard_'+ str(controlID), extra_params, *args, **kws)
+                     name + 'Standard_'+ str(controlID), extra_params, hyper = False,
+                     *args, **kws)
     
 def make_time_series(cube, name, figName):
     try: 
