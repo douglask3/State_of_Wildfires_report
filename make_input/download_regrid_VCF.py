@@ -17,29 +17,34 @@ from combine_path_and_make_dir import *
 
 from pdb import set_trace
 
+
+def dowload_vcf(temp_dir2, bbox):
+    # Authenticate a session
+    session = ModisSession(username=username, password=password)
+
+    # Query the MODIS catalog for collections
+    collection_client = CollectionApi(session=session)
+    collections = collection_client.query(short_name="MOD44B", version="061")
+
+    # Query the selected collection for granules
+    granule_client = GranuleApi.from_collection(collections[0], session=session)
+
+    # Filter the selected granules via spatial and temporal parameters
+     
+    granules = granule_client.query(start_date="2000-01-01", end_date="2023-12-31", bounding_box=bbox)
+
+    path = combine_path_and_make_dir(temp_dir1, temp_dir2)
+
+    # Download the granules
+    GranuleHandler.download_from_granules(granules, session, path = path)
+
+
+temp_dir1 = '../temp/'
 # Define latitude and longitude ranges for your region
-lat_min, lat_max = -90.0, 90.0
-lon_min, lon_max = -180.0, 180.0
+bbox = [17.50, 33.0, 30.0, 43.0]
+temp_dir2 = 'Greece-MODIS/'
+dowload_vcf(temp_dir2, bbox)
 
-temp_dir = '../temp'
-new_download = True
-
-# Authenticate a session
-session = ModisSession(username=username, password=password)
-
-# Query the MODIS catalog for collections
-collection_client = CollectionApi(session=session)
-collections = collection_client.query(short_name="MOD44B", version="061")
-
-# Query the selected collection for granules
-granule_client = GranuleApi.from_collection(collections[0], session=session)
-
-# Filter the selected granules via spatial and temporal parameters
-bbox = [lon_min, lat_min, lon_max, lat_max]
-granules = granule_client.query(start_date="2000-01-01", end_date="2023-12-31", bounding_box=bbox)
-
-path = combine_path_and_make_dir(temp_dir, 'glob-MODIS')
-
-# Download the granules
-GranuleHandler.download_from_granules(granules, session, path = path)
-
+bbox = [-82.0, -55.0, -55.0, -5.0]
+temp_dir2 = 'BoliviaChile-MODIS/'
+dowload_vcf(temp_dir2, bbox)
