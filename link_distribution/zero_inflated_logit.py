@@ -44,7 +44,7 @@ class zero_inflated_logit(object):
                                 ((mod[test])**2)/(2*sigma**2))
         #npSigmoid(np.random.normal(mod[test], sigma, size=sum(test)))
         return mod
-    
+        
     
     def sample_given_(Y, X, sigma, p0, p1):
         
@@ -60,7 +60,6 @@ class zero_inflated_logit(object):
             set_trace()
         test = ~test   
         
-        Y[test] = (1-pz[test]) * np.exp(-((Y[test]-X[test])**2)/(2*sigma**2))/\
-                        (sigma * np.sqrt(2*math.pi))
+        Y[test] = np.exp(-((Y[test]-X[test])**2)/(2*sigma**2))/np.exp(-1.0/(2*sigma**2))#(sigma * np.sqrt(2*math.pi))
         
         return Y
