@@ -39,7 +39,10 @@ class zero_inflated_logit(object):
         test = (np.random.rand(*pz.shape)) < pz
         mod[test] = 0.0
         test = ~test
-        mod[test] = npSigmoid(np.random.normal(mod[test], sigma, size=sum(test)))
+        #set_trace()
+        mod[test] = np.exp(np.log(1-pz[test]) - np.log(sigma * np.sqrt(2*math.pi)) - 
+                                ((mod[test])**2)/(2*sigma**2))
+        #npSigmoid(np.random.normal(mod[test], sigma, size=sum(test)))
         return mod
     
     
