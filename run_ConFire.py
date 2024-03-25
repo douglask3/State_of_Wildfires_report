@@ -56,7 +56,8 @@ def make_time_series(cube, name, figName):
     np.savetxt(out_file, TS, delimiter=',', header = "year,p25%,p75%")
     return TS
 
-def run_experiment(training_namelist, namelist, control_direction, control_names, output_dir, output_file, 
+def run_experiment(training_namelist, namelist, control_direction, control_names, 
+                   output_dir, output_file, 
                    name = '', *args, **kws):
     if name != "": 
         name = name + '-'
@@ -88,13 +89,14 @@ def run_ConFire(namelist):
 
     output_dir = params['dir_outputs']
     output_file = params['filename_out']
-
+    
     control_direction = read_variables_from_namelist(params['other_params_file'])
     control_direction = control_direction['control_Direction']
     
     control_names = read_variables_from_namelist(namelist)['control_names']
 
     experiment_dirs  = run_info['experiment_dir']
+    
     experiment_names = run_info['experiment_names']
     y_filen = run_info['x_filen_list'][0]
     
