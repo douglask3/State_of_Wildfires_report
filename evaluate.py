@@ -67,12 +67,12 @@ def plot_BayesModel_signifcance_maps(Obs, Sim, lmask, plot_n = 1, Nrows = 3, Nco
     except:
         pass
     
-    #plot_BayesModel_maps(Sim[1], [0.0, 0.5, 0.75, 0.9, 0.95, 0.99, 1.0], 'copper', '', None, 
-    #                     Nrows = Nrows, Ncols = Ncols, plot0 = plot_n, collapse_dim = 'time',
-    #                     scale = 1, figure_filename = figure_filename + 'obs_liklihood')
+    plot_BayesModel_maps(Sim[1], [0.0, 0.5, 0.75, 0.9, 0.95, 0.99, 1.0], 'copper', '', None, 
+                         Nrows = Nrows, Ncols = Ncols, plot0 = plot_n, collapse_dim = 'time',
+                         scale = 1, figure_filename = figure_filename + 'obs_liklihood')
     
     ax = plt.subplot(Nrows, Ncols, plot_n + 3)
-    #BayesScatter(Obs, Sim[0], lmask,  0.000001, 0.000001, ax)
+    BayesScatter(Obs, Sim[0], lmask,  0.000001, 0.000001, ax)
     
     pos = np.mean(X[np.newaxis, :, :] > Y, axis = 0)
     pos[X == 0] = np.nan
