@@ -58,7 +58,8 @@ class ConFire(object):
         limitations = [lim for lim in limitations if lim is not None]
         
         #BA = limitations[0] * limitations[1] * limitations[2] * limitations[3]
-        BA = self.numPCK.prod(limitations, axis = 0) 
+        BA = self.numPCK.prod(limitations, axis = 0)
+        
         return BA
     
     
