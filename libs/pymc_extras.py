@@ -116,10 +116,19 @@ def runSim_MaxEntFire(trace, sample_for_plot, X, eg_cube, lmask, run_name,
     out = np.array(list(map(lambda id: sample_model(id, run_name), idx)))
     
     if test_eg_cube: 
+        mout = out[:, 1]
+        for cube in mout:
+            if cube.coords('month'):
+                cube.coord('month').mask = False
+            if cube.coords('month_number'):
+                cube.coord('month_number').mask = False
+            #cube.coord('month').points = mout[0].coord('month').points
+            #cube.coord('month_number').points = mout[0].coord('month').points
         try:
-            prob = iris.cube.CubeList(out[:,1]).merge_cube()
+            prob = iris.cube.CubeList(mout).merge_cube()
         except:
             set_trace()
+        
         prob = prob.collapsed('realization', iris.analysis.MEAN)
         return iris.cube.CubeList(out[:,0]).merge_cube(), prob
     else:
