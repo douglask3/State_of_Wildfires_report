@@ -43,7 +43,7 @@ def make_time_series(cube, name, figName):
     grid_areas = iris.analysis.cartography.area_weights(cube)
     area_weighted_mean = cube.collapsed(['latitude', 'longitude'], 
                                         iris.analysis.MEAN, weights=grid_areas)
-    area_weighted_mean = area_weighted_mean.aggregated_by('year', iris.analysis.MEAN)
+    area_weighted_mean = area_weighted_mean.aggregated_by('year', iris.analysis.MAX)
     out_file = figName + '/points-' + name + '.csv'
     np.savetxt(out_file, area_weighted_mean.data, delimiter=',')
     
@@ -54,7 +54,7 @@ def make_time_series(cube, name, figName):
     time_datetime = time_coord.units.num2date(time_coord.points)
     time_datetime = cftime.date2num(time_datetime, 'days since 0001-01-01 00:00:00')/365.24
     TS = np.append(time_datetime[:, None], np.transpose(TS.data), axis = 1)
-
+    set_trace()
     out_file = figName + '/time_series' + name + '.csv'
     np.savetxt(out_file, TS, delimiter=',', header = "year,p25%,p75%")
     return TS
@@ -100,8 +100,23 @@ def run_ConFire(namelist):
     control_names = read_variables_from_namelist(namelist)['control_names']
 
     experiment_dirs  = run_info['experiment_dir']
-    
     experiment_names = run_info['experiment_names']
+    periods = run_info['experiment_period']
+    models = run_info['experiment_model']
+    
+    def find_replace_period_model(exp_list):
+        exp_list_all = [item for item in exp_list if "<<period>>" not in item and "<<model>>" not in item]
+        looped_items = [item for item in exp_list if "<<period>>" in item and "<<model>>" in item]
+        for period in periods:
+            for model in models:
+                dirs = [item.replace("<<period>>", period) for item in looped_items]    
+                dirs = [item.replace("<<model>>", model) for item in dirs]   
+                exp_list_all += dirs
+ 
+        return exp_list_all
+    experiment_dirs = find_replace_period_model(experiment_dirs)
+    experiment_names = find_replace_period_model(experiment_names)
+
     y_filen = run_info['x_filen_list'][0]
     
     origonal = run_experiment(training_namelist, namelist, control_direction, control_names,
@@ -114,7 +129,7 @@ def run_ConFire(namelist):
 
 if __name__=="__main__":
     namelist = 'namelists/ConFire_Canada.txt'
-    namelist = 'namelists/donotcommit.txt'
+    namelist = 'namelists/Greece.txt'
     run_ConFire(namelist)
     set_trace()
     #experiment_TS = np.array([make_time_series(cube[0], name)  for cube, name in zip(experiment, experiment_names)])
