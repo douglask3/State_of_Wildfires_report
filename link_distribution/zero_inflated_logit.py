@@ -54,10 +54,9 @@ class zero_inflated_logit(object):
         Y = npLogit(Y)
         X = npLogit(X)
         test = Y < -30
-        try:
-            Y[test]  = pz[test]
-        except:
-            set_trace()
+        
+        Y[test]  = pz[test]
+        
         test = ~test   
         
         Y[test] = np.exp(-((Y[test]-X[test])**2)/(2*sigma**2))/np.exp(-1.0/(2*sigma**2))#(sigma * np.sqrt(2*math.pi))
