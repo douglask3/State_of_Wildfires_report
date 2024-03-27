@@ -25,7 +25,7 @@ def Standard_limitation(training_namelist, namelist,
     extra_params = {"control_Direction": control_Directioni}
     
     return call_eval(training_namelist, namelist,
-                     name + 'Standard_'+ str(controlID), extra_params, hyper = False,
+                     name + '/Standard_'+ str(controlID), extra_params, hyper = False,
                      *args, **kws)
     
 def make_time_series(cube, name, figName):
@@ -65,7 +65,7 @@ def run_experiment(training_namelist, namelist, control_direction, control_names
     else:
         run_only = False
     Control = call_eval(training_namelist, namelist,
-                        name + 'control', run_only = run_only, *args, **kws)
+                        name + '/control', run_only = run_only, *args, **kws)
     
     Standard = [Standard_limitation(training_namelist, namelist,i, name, control_direction, 
                                     *args, **kws) \
@@ -101,7 +101,7 @@ def run_ConFire(namelist):
     y_filen = run_info['x_filen_list'][0]
     
     origonal = run_experiment(training_namelist, namelist, control_direction, control_names,
-                              output_dir, output_file)
+                              output_dir, output_file, 'baseline')
     
     experiment = [run_experiment(training_namelist, namelist, control_direction, control_names,
                                  output_dir, output_file, name, dir = dir, y_filen = y_filen) \
