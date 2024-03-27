@@ -19,8 +19,7 @@ grid()
 mtext(side = 2, 'burnt area (%/month)', line = 2)
 #polygon(c(-9E9, 9E9)[c(1, 2, 2, 1)], c(-9E9, 9E9)[c(1, 1, 2, 2)], col = 'black')
 
-plot_exp <- function(dat, col) {
-    
+plot_exp <- function(dat, col) { 
     polygon(c(dat[,1], rev(dat[,1])), c(dat[,2], rev(dat[,3])), 
             border = NA, col = paste0(col, '44'))
 }

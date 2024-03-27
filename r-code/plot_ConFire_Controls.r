@@ -17,6 +17,7 @@ colss = list(c('#ffffe5','#f7fcb9','#d9f0a3','#addd8e','#78c679','#41ab5d','#238
 
 dir = 'outputs//ConFire_UK_test///samples///crop_lightn_soilM_trees_csoil_pas_vpd_cveg_precip_tas_rhumid_totalVeg-frac_points_0.5//Standard_'
 dir = 'outputs/ConFire_Canada-biasC3/samples/crop_lightn_soilM_tree_biascorrected_csoil_pas_vpd_cveg_precip_tas_rhumid_totalVeg_biascorrected-frac_points_0.02/Standard_'
+dir = 'outputs/ConFire_NWN-logitnormal/samples/_13-frac_points_0.01/Standard_'
 
 controls = c('Fuel', 'Moisture', 'Ignitions', 'Suppression')
 
@@ -24,7 +25,7 @@ plot_control <- function(i, name, cols) {
     files = list.files(paste0(dir, i-1), full.names = TRUE)
     files = files[grepl('sample-pred', files)]
     
-    dats = layer.apply(files[1:20], function(i) mean(brick(i)))
+    dats = layer.apply(files, function(i) mean(brick(i)))
     
     dats[dats>9E9] = NaN
     mn = mx = dats[[1]]
