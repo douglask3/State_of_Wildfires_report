@@ -38,6 +38,8 @@ def make_time_series(cube, name, figName):
         cube.coord('longitude').guess_bounds()
     except:
         pass
+    
+    cube.data = np.ma.masked_invalid(cube.data)
     grid_areas = iris.analysis.cartography.area_weights(cube)
     area_weighted_mean = cube.collapsed(['latitude', 'longitude'], 
                                         iris.analysis.MEAN, weights=grid_areas)
@@ -47,6 +49,7 @@ def make_time_series(cube, name, figName):
     
     TS = area_weighted_mean.collapsed('realization', 
                                       iris.analysis.PERCENTILE, percent=[25, 75])
+    
     time_coord = TS.coord('time')
     time_datetime = time_coord.units.num2date(time_coord.points)
     time_datetime = cftime.date2num(time_datetime, 'days since 0001-01-01 00:00:00')/365.24
@@ -59,11 +62,12 @@ def make_time_series(cube, name, figName):
 def run_experiment(training_namelist, namelist, control_direction, control_names, 
                    output_dir, output_file, 
                    name = '', *args, **kws):
-    if name != "": 
-        name = name + '-'
-        run_only = True
-    else:
+    if "baseline" in name: 
         run_only = False
+    else:
+        run_only = True
+    
+    name = name + '-'
     Control = call_eval(training_namelist, namelist,
                         name + '/control', run_only = run_only, *args, **kws)
     
