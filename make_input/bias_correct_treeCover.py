@@ -64,23 +64,28 @@ def bias_correct(dir, file_original, bias_cube, file_out):
     except:
         return None
 
-def bias_correct_veg(dir, dir_original, file_original, file_out, tcube, start_target):
-    dirs = list_directories(dir)
+def bias_correct_veg(dir_for_correcting, dir_original, file_original, file_out, 
+                     tcube, start_target):
+    bias_cube = bias_correct_field(dir_original, file_original, cubet, start_target)
+    for dirC in dir_for_correcting:
+        dirs = list_directories(dirC)
+        [bias_correct(dir, file_original, bias_cube, file_out) for dir in dirs]
     
 
-    bias_cube = bias_correct_field(dir_original, file_original, cubet, start_target)
-    outs = [bias_correct(dir, file_original, bias_cube, file_out) for dir in dirs]
-
-
-dir = '/data/dynamic/dkelley/ConFIRE_ISIMIP/isimip3a/driving_data/ERA5/Canada/'
+dir_for_correcting = ['/data/dynamic/dkelley/ConFIRE_ISIMIP/isimip3a/driving_data/ERA5/Canada/',
+                      '/scratch/dkelley/ConFire/inputs/isimip3b/Canada/']
 dir_original = '/data/dynamic/dkelley/ConFIRE_ISIMIP/isimip3a/driving_data/ERA5/Canada/historic_TS_2001_2020/obsclim/'
+
 file_original = 'trees.nc'
 file_out = 'tree_biascorrected.nc'
 target_file = '/home/h02/dkelley/fireMIPbenchmarking/data/benchmarkData/treecover2000-2014.nc'
-start_target = 2000.5
 
+start_target = 2000.5
 cubet = iris.load_cube(target_file)
-bias_correct_veg(dir, dir_original, file_original, file_out, cubet, start_target)
+
+
+    
+bias_correct_veg(dir_for_correcting, dir_original, file_original, file_out, cubet, start_target)
 
 file_original = 'totalVeg.nc'
 file_out = 'totalVeg_biascorrected.nc'
@@ -88,5 +93,5 @@ target_file = '/home/h02/dkelley/fireMIPbenchmarking/data/benchmarkData/baregrou
 
 cubet = iris.load_cube(target_file)
 cubet.data = 100.0 - cubet.data
-bias_correct_veg(dir, dir_original, file_original, file_out, cubet, start_target)
+bias_correct_veg(dir_for_correcting, dir_original, file_original, file_out, cubet, start_target)
 
