@@ -5,7 +5,7 @@
 #SBATCH --nodes=1                      # Number of nodes
 #SBATCH --output=outputs/output_%j.txt         # Output file (%j expands to job ID)
 #SBATCH --error=outputs/error_%j.txt           # Error file (%j expands to job ID)
-#SBATCH --time=72:00:00 
+#SBATCH --time=4:00:00 
 
 conda activate pymc5_env
-python pymc_MaxEnt.py
+python run_ConFire.py
