@@ -41,7 +41,8 @@ def generate_temp_fname(string1, string2):
     string = string1 + string2
     return '../temp/isimip_dat_gen-' + hashlib.sha256(string.encode()).hexdigest() + '.txt'
 
-def make_variables_for_year_range(year, process, dir):
+def make_variables_for_year_range(year, process, dir, dataset_name, filenames,
+                                  subset_functions, subset_function_argss):
     def test_if_process(var, temp_file = None): 
         if temp_file is not None and os.path.isfile(temp_file) and grab_old_data:
             print("file found:" + temp_file)
@@ -50,8 +51,9 @@ def make_variables_for_year_range(year, process, dir):
             out = any(i == var for i in process)
         return out
     output_year = str(year[0]) + '_' + str(year[1])
-
-    temp_out = dir  + dataset_name + output_year
+    
+    temp_out = dir  + dataset_name + output_year + \
+             subset_function_argss[0][next(iter(subset_function_argss[0]))]
     print(temp_out)
     def open_variable(varname, MinusYr = False):
         filename = filenames[varname]
@@ -155,7 +157,6 @@ def make_variables_for_year_range(year, process, dir):
     if test_if_process('tas', temp_file_tas) or test_if_process('vpd', temp_file_vpd)\
         or  test_if_process('lightn', temp_file_lightn):
         tas = open_variable('tas')
-
         tas_range = open_variable('tas_range')
         
         tas_max = tas.copy()
@@ -246,7 +247,37 @@ def make_variables_for_year_range(year, process, dir):
         save_ncdf(consec_dry_mean, 'consec_dry_mean')
         open(temp_file, 'a').close()
 
-filenames = {"tas": "tas_global_daily_",
+
+
+lightn_file = "/hpc//data/d00/hadea/isimip2b/ancils/lightning/LISOTD_HRMC_V2.3.2015.0p5ancil.nc"
+process_standard = ['prsn', "hurs", "hurs", "huss", "huss", "sfcwind"]
+process_function = [iris.analysis.MEAN, 
+                    iris.analysis.MEAN, iris.analysis.MAX,
+                    iris.analysis.MEAN, iris.analysis.MAX,
+                    iris.analysis.MAX]
+
+process_clim = ['vpd', 'tas', 'tas_range', 'pr', 'lightn']
+process_jules =['cover', 'crop', 'pasture', "urban"]
+
+example_cube = None
+grab_old_data = True
+
+output_dir = "../data/data/driving_data/"
+
+def process_clim_and_jules(process_jules, dir_jules, process_clim, dir_clim, years,
+                           *args, **kw):
+    def process(process, dir):
+        [make_variables_for_year_range(year, process, dir, *args, **kw) for year in  years]
+    process(process_jules, dir_jules)
+    process(process_clim, dir_clim)
+    
+    
+def for_region(subset_functions, subset_function_argss):   
+    years = [[2010, 2012], [1901, 1920], [2000, 2019], [2002, 2019]]
+    dataset_name = 'isimp3a/obsclim/GSWP3-W5E5'
+    dataset_name_control = dataset_name
+
+    filenames = {"tas": "tas_global_daily_",
              "tas_range": "tas_range_global_daily_",
              "pr": "pr_global_daily_",
              "prsn": "ps_global_daily_",
@@ -272,45 +303,18 @@ filenames = {"tas": "tas_global_daily_",
              "shrubevg": "shrubevg_global_annual_",
              "soil": "soil_global_annual_",
              "total":  "total_global_annual_"}
-
-lightn_file = "/hpc//data/d00/hadea/isimip2b/ancils/lightning/LISOTD_HRMC_V2.3.2015.0p5ancil.nc"
-process_standard = ['prsn', "hurs", "hurs", "huss", "huss", "sfcwind"]
-process_function = [iris.analysis.MEAN, 
-                    iris.analysis.MEAN, iris.analysis.MAX,
-                    iris.analysis.MEAN, iris.analysis.MAX,
-                    iris.analysis.MAX]
-
-process_clim = ['vpd', 'tas', 'tas_range', 'pr'] #, 'lightn'
-process_jules =['cover', 'crop', 'pasture', "urban"]
-
-example_cube = None
-grab_old_data = True
-
-subset_functions = [ar6_region]
-subset_function_argss = [{'region_code': 'NWN'}]
-output_dir = "../data/data/driving_data/"
-
-def process_clim_and_jules():
-    def process(process, dir):
-        [make_variables_for_year_range(year, process, dir) for year in  years]
-    process(process_jules, dir_jules)
-    process(process_clim, dir_clim)
-    
-if __name__=="__main__":
-    
-    years = [[2010, 2012], [1901, 1920], [2000, 2019], [2002, 2019]]
-    dataset_name = 'isimp3a/obsclim/GSWP3-W5E5'
-    dataset_name_control = dataset_name
     
     dir_clim = "/hpc//data/d00/hadea/isimip3a/InputData/climate/atmosphere/obsclim/GSWP3-W5E5/gswp3-w5e5_obsclimfill_"
     dir_jules = "/scratch/hadea/isimip3a/u-cc669_isimip3a_es/GSWP3-W5E5_obsclim/jules-es-vn6p3_gswp3-w5e5_obsclim_histsoc_default_pft-"  
-    process_clim_and_jules()  
+    process_clim_and_jules(process_jules, dir_jules, process_clim, dir_clim, years,
+                           dataset_name, filenames, subset_functions, subset_function_argss)  
     
     dir_clim = "/hpc//data/d00/hadea/isimip3a/InputData/climate/atmosphere/counterclim/GSWP3-W5E5/gswp3-w5e5_counterclim_"
     dir_jules = "/scratch/hadea/isimip3a/u-cc669_isimip3a_es/GSWP3-W5E5_counterclim/jules-es-vn6p3_gswp3-w5e5_counterclim_histsoc_default_pft-"  
     dataset_name = 'isimp3a/counterclim/GSWP3-W5E5'
-    process_clim_and_jules() 
-    #set_trace()
+    process_clim_and_jules(process_jules, dir_jules, process_clim, dir_clim, years,
+                           dataset_name, filenames, subset_functions, subset_function_argss)  
+    
     filenames = {"tas": "tasAdjust_global_daily_",
              "tas_range": "tas_rangeAdjust_global_daily_",
              "pr": "prAdjust_global_daily_",
@@ -357,17 +361,12 @@ if __name__=="__main__":
                     '_w5e5_' + experiment +'_' + soc + '_default_pft-' 
             dataset_name = 'isimp3b/' +  experiment + '/' + model + '/'
     
-            process_clim_and_jules()    
-
+            process_clim_and_jules(process_jules, dir_jules, process_clim, dir_clim, years,
+                           dataset_name, filenames, subset_functions, subset_function_argss)
     
-        #for i in range(len(ismip3b_models)):
-        #    dir_clim = dirs_clim[i]
-        #    dir_jules = dirs_jules[i]
-        #    dataset_name = dataset_names[i]
-        #    process_clim_and_jules()    
+    region_name = subset_function_argss[0][next(iter(subset_function_argss[0]))]
+    obs_cover_dir = '/home/h02/dkelley/state_of_fires_report_20YY/data/data/driving_data/' + region_name + '_extended/isimp3a/'
     
-    obs_cover_dir = '/home/h02/dkelley/state_of_fires_report_20YY/data/data/driving_data/Canada_extended/'
-
     output_years = '2002_2019'
     years = [2002, 2019]
     files = os.listdir(obs_cover_dir)
@@ -389,19 +388,35 @@ if __name__=="__main__":
     cubes = [open_regrid_output_file(filename) for filename in files]
     
     output_years = '2000_2019'
-    years = [2000, 2019]
+    
     burnt_area_file = '../data/data/driving_data/burnt_area.nc'
-    mask_file = iris.load_cube("../data/data/driving_data/NWN/isimp3a/obsclim/GSWP3-W5E5/period_2000_2019/tree_cover_jules-es.nc")
-    burnt_area = read_variable_from_netcdf(burnt_area_file, 
+    mask_file = iris.load_cube("../data/data/driving_data/" + region_name + "/isimp3a/obsclim/GSWP3-W5E5/period_2000_2019/tree_cover_jules-es.nc")
+
+    def regrid_Burnt_area(years):
+        burnt_area = read_variable_from_netcdf(burnt_area_file, 
                                            subset_function = [sub_year_range]+subset_functions, 
                                                subset_function_args =  [{'year_range': years}]\
                                                                 + subset_function_argss)
-    burnt_area = burnt_area.regrid(mask_file[0], iris.analysis.Linear())
-    burnt_area.data[:, np.isnan(mask_file[0].data)] = np.nan
-    out_fname = output_dir + '/' + \
+        burnt_area = burnt_area.regrid(mask_file[0], iris.analysis.Linear())
+        burnt_area.data[:, np.isnan(mask_file[0].data)] = np.nan
+        out_fname = output_dir + '/' + \
                     subset_function_argss[0][next(iter(subset_function_argss[0]))] + '/' + \
-                    dataset_name_control + '/period_' + output_years + '/burnt_area.nc'
-    iris.save(burnt_area, out_fname)
+                    dataset_name_control + '/period_' + output_years + \
+                    '/burnt_area-' + str(years[0]) + '-' + str(years[1]) + '.nc'
+        iris.save(burnt_area, out_fname)
+    regrid_Burnt_area([2000, 2019])
+    regrid_Burnt_area([2000, 2023])
+
+
+subset_functions_main= [constrain_natural_earth]
+countries = ['Greece', 'United Kingdom', 'Chile', 'Bolivia', 'Canada']
+for country in countries:
+    subset_function_argss_main = [{'Country': country}]
+    for_region(subset_functions_main, subset_function_argss_main)
     
-    #sbs_funs = 
-    #sbs_args =
+
+subset_functions_main = [ar6_region]
+regions = ['MED', 'SAW', 'SWS', 'NWN', 'NEN']
+for reg in regions:
+    subset_function_argss_main = [{'region_code': reg}]
+    for_region(subset_functions_main, subset_function_argss_main)
