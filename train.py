@@ -1,3 +1,6 @@
+import multiprocessing as mp
+#mp.set_start_method('forkserver')
+
 import sys
 sys.path.append('fire_model/')
 sys.path.append('libs/')
@@ -332,7 +335,7 @@ if __name__=="__main__":
     """ 
         EXAMPLE 1 - namelist
     """
-
+    mp.set_start_method('forkserver')
     namelist = "namelists//simple_example_namelist.txt"
 
     train_MaxEnt_model_from_namelist('namelists/ConFire_example.txt')
