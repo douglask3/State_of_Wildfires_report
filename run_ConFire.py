@@ -1,3 +1,4 @@
+
 from train import *
 from evaluate import *
 
@@ -43,6 +44,7 @@ def make_time_series(cube, name, figName):
     grid_areas = iris.analysis.cartography.area_weights(cube)
     area_weighted_mean = cube.collapsed(['latitude', 'longitude'], 
                                         iris.analysis.MEAN, weights=grid_areas)
+    
     area_weighted_mean = area_weighted_mean.aggregated_by('year', iris.analysis.MAX)
     out_file = figName + '/points-' + name + '.csv'
     np.savetxt(out_file, area_weighted_mean.data, delimiter=',')
@@ -54,7 +56,7 @@ def make_time_series(cube, name, figName):
     time_datetime = time_coord.units.num2date(time_coord.points)
     time_datetime = cftime.date2num(time_datetime, 'days since 0001-01-01 00:00:00')/365.24
     TS = np.append(time_datetime[:, None], np.transpose(TS.data), axis = 1)
-    set_trace()
+    
     out_file = figName + '/time_series' + name + '.csv'
     np.savetxt(out_file, TS, delimiter=',', header = "year,p25%,p75%")
     return TS
@@ -68,6 +70,7 @@ def run_experiment(training_namelist, namelist, control_direction, control_names
         run_only = True
     
     name = name + '-'
+    
     Control = call_eval(training_namelist, namelist,
                         name + '/control', run_only = run_only, *args, **kws)
     
@@ -84,52 +87,70 @@ def run_experiment(training_namelist, namelist, control_direction, control_names
         
     return Control, Standard, control_TS, standard_TS
 
-def run_ConFire(namelist):    
-    trace, scalers, training_namelist = \
-                    train_MaxEnt_model_from_namelist(namelist)
+def run_ConFire(namelist):   
+    
+    run_info = read_variables_from_namelist(namelist) 
 
-    params = read_variables_from_namelist(training_namelist)
-    run_info = read_variables_from_namelist(namelist)
+    regions = run_info['regions']
 
-    output_dir = params['dir_outputs']
-    output_file = params['filename_out']
-    
-    control_direction = read_variables_from_namelist(params['other_params_file'])
-    control_direction = control_direction['control_Direction']
-    
-    control_names = read_variables_from_namelist(namelist)['control_names']
+    for region in regions:
+        model_title = run_info['model_title'].replace('<<region>>', region)
+        dir_training = run_info['dir_training'].replace('<<region>>', region)
+        
 
-    experiment_dirs  = run_info['experiment_dir']
-    experiment_names = run_info['experiment_names']
-    periods = run_info['experiment_period']
-    models = run_info['experiment_model']
+        trace, scalers, training_namelist = \
+                        train_MaxEnt_model_from_namelist(namelist, model_title = model_title,
+                                                         dir_training = dir_training)
+        
+        params = read_variables_from_namelist(training_namelist)
+        output_dir = params['dir_outputs']
+        output_file = params['filename_out']
+        
+        control_direction = read_variables_from_namelist(params['other_params_file'])
+        control_direction = control_direction['control_Direction']
+        control_names = read_variables_from_namelist(namelist)['control_names']
     
-    def find_replace_period_model(exp_list):
-        exp_list_all = [item for item in exp_list if "<<period>>" not in item and "<<model>>" not in item]
-        looped_items = [item for item in exp_list if "<<period>>" in item and "<<model>>" in item]
-        for period in periods:
-            for model in models:
-                dirs = [item.replace("<<period>>", period) for item in looped_items]    
-                dirs = [item.replace("<<model>>", model) for item in dirs]   
-                exp_list_all += dirs
- 
-        return exp_list_all
-    experiment_dirs = find_replace_period_model(experiment_dirs)
-    experiment_names = find_replace_period_model(experiment_names)
-
-    y_filen = run_info['x_filen_list'][0]
+        def find_replace_period_model(exp_list):
+            exp_list_all = [item.replace('<<region>>', region) for item in exp_list \
+                            if "<<experiment>>" not in item and "<<model>>" not in item]
+            looped_items = [item for item in exp_list \
+                            if "<<experiment>>" in item and "<<model>>" in item]
+            for experiment, period in zip(experiments, periods):
+                for model in models:
+                    dirs = [item.replace("<<period>>", period) for item in looped_items]    
+                    dirs = [item.replace("<<model>>", model) for item in dirs]      
+                    dirs = [item.replace("<<experiment>>", experiment) for item in dirs] 
+                    dirs = [item.replace('<<region>>', region) for item in dirs] 
+                    exp_list_all += dirs
+             
+            return exp_list_all
     
-    origonal = run_experiment(training_namelist, namelist, control_direction, control_names,
-                              output_dir, output_file, 'baseline')
+        dir_projecting = run_info['dir_projecting'].replace('<<region>>', region)
+        experiment_dirs  = run_info['experiment_dir']
+        experiment_names = run_info['experiment_names']
+        experiments = run_info['experiment_experiment']
+        periods = run_info['experiment_period']
+        models = run_info['experiment_model']
+        experiment_dirs = find_replace_period_model(experiment_dirs)
+        experiment_names = find_replace_period_model(experiment_names)
+        
+        y_filen = run_info['x_filen_list'][0]
     
-    experiment = [run_experiment(training_namelist, namelist, control_direction, control_names,
-                                 output_dir, output_file, name, dir = dir, y_filen = y_filen) \
-                  for name, dir in zip(experiment_names, experiment_dirs)]
+        origonal = run_experiment(training_namelist, namelist, control_direction, control_names,
+                                  output_dir, output_file, 'baseline', 
+                                  model_title = model_title)
+    
+        experiment = [run_experiment(training_namelist, namelist, control_direction, 
+                                     control_names,
+                                     output_dir, output_file, name, dir = dir, 
+                                     y_filen = y_filen, model_title = model_title) \
+                          for name, dir in zip(experiment_names, experiment_dirs)]
 
 
 if __name__=="__main__":
     namelist = 'namelists/ConFire_Canada.txt'
     namelist = 'namelists/Greece.txt'
+    
     run_ConFire(namelist)
     set_trace()
     #experiment_TS = np.array([make_time_series(cube[0], name)  for cube, name in zip(experiment, experiment_names)])
