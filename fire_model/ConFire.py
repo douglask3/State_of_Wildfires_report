@@ -39,7 +39,8 @@ class ConFire(object):
         def cal_control(cid = 0):
             ids = self.controlID[cid]
             betas =  self.betas[cid] * self.driver_Direction[cid]
-            return self.numPCK.dot(X[:,ids], betas)
+            
+            return self.numPCK.sum(X[:,ids] * betas[None, ...], axis=-1)
             
         
         controls = [cal_control(i) for i in range(len(self.controlID))]
@@ -57,9 +58,7 @@ class ConFire(object):
 
         limitations = [lim for lim in limitations if lim is not None]
         
-        #BA = limitations[0] * limitations[1] * limitations[2] * limitations[3]
         BA = self.numPCK.prod(limitations, axis = 0)
-        
         return BA
     
     
