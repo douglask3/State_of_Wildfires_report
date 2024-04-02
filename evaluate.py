@@ -183,8 +183,8 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file,
                           control_run_name = "control",
                           subset_function = None, subset_function_args = None,
                           sample_for_plot = 1, grab_old_trace = False, 
-                          response_grouping = None, run_only = False,
-                          *args, **kw):
+                          response_grouping = None, run_only = False, return_inputs = False,
+                          Y = None, X = None, lmask = None, scalers = None, *args, **kw):
     
     """ Runs prediction and evalutation of the sampled model based on previously run trace.
     Arguments:
@@ -243,11 +243,12 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file,
         'subset_function': subset_function,
         'subset_function_args': subset_function_args
     }
-
+        
     if CA_filen is not None:
         Y, X, CA, lmask, scalers = read_all_data_from_netcdf(CA_filename = CA_filen, **common_args)   
     else:
-        Y, X, lmask, scalers = read_all_data_from_netcdf(**common_args)
+        if Y is  None or X is  None or lmask is  None or scalers is  None:
+            Y, X, lmask, scalers = read_all_data_from_netcdf(**common_args)
     
     Obs = read_variable_from_netcdf(y_filen, dir,
                                     subset_function = subset_function, 
@@ -272,7 +273,11 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file,
     
     Sim = runSim_MaxEntFire(**common_args, run_name = control_run_name, test_eg_cube = True)
     
-    if run_only: return Sim
+    if run_only: 
+        if return_inputs: 
+            return Sim, Y, X, lmask, scalers 
+        else:
+            return Sim
     #plot_limitation_maps(fig_dir, filename_out, **common_args)
     
     common_args['Sim'] = Sim[0]
@@ -287,7 +292,10 @@ def evaluate_MaxEnt_model(trace_file, y_filen, x_filen_list, scale_file,
     #                   fig_dir = fig_dir, scalers =  scalers, 
     #                   *args, **kw, **common_args)
          
-    return Sim
+    if return_inputs: 
+        return Sim, Y, X, lmask, scalers 
+    else:
+        return Sim
     
     
 if __name__=="__main__":

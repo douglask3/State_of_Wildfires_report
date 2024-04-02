@@ -45,7 +45,7 @@ def make_time_series(cube, name, figName):
     area_weighted_mean = cube.collapsed(['latitude', 'longitude'], 
                                         iris.analysis.MEAN, weights=grid_areas)
     
-    area_weighted_mean = area_weighted_mean.aggregated_by('year', iris.analysis.MAX)
+    #area_weighted_mean = area_weighted_mean.aggregated_by('year', iris.analysis.MAX)
     out_file = figName + '/points-' + name + '.csv'
     np.savetxt(out_file, area_weighted_mean.data, delimiter=',')
     
@@ -68,14 +68,19 @@ def run_experiment(training_namelist, namelist, control_direction, control_names
         run_only = False
     else:
         run_only = True
-    
+    print("running: " + name)
     name = name + '-'
-    
-    Control = call_eval(training_namelist, namelist,
-                        name + '/control', run_only = run_only, *args, **kws)
+
+    temp_file = 'temp/run_ConFire_lock' + (output_dir + output_file + name).replace('/', '_') + '.txt'
+    if os.path.isfile(temp_file): return None
+
+    Control, Y, X, lmask, scalers  = call_eval(training_namelist, namelist,
+                        name + '/control', run_only = run_only, return_inputs = True,
+                        *args, **kws)
     
     Standard = [Standard_limitation(training_namelist, namelist,i, name, control_direction, 
-                                    *args, **kws) \
+                                    *args, Y = Y, X = X, lmask = lmask, scalers = scalers,
+                                    **kws) \
                 for i in range(len(control_direction))]
 
     figName = output_dir + 'figs/' + output_file + '-' + name + 'control_TS'
@@ -85,7 +90,7 @@ def run_experiment(training_namelist, namelist, control_direction, control_names
                            for cube, name in zip(Standard, control_names)])
     
         
-    return Control, Standard, control_TS, standard_TS
+    open(temp_file, 'a').close() 
 
 def run_ConFire(namelist):   
     
@@ -136,11 +141,11 @@ def run_ConFire(namelist):
         
         y_filen = run_info['x_filen_list'][0]
     
-        origonal = run_experiment(training_namelist, namelist, control_direction, control_names,
+        run_experiment(training_namelist, namelist, control_direction, control_names,
                                   output_dir, output_file, 'baseline', 
                                   model_title = model_title)
     
-        experiment = [run_experiment(training_namelist, namelist, control_direction, 
+        [run_experiment(training_namelist, namelist, control_direction, 
                                      control_names,
                                      output_dir, output_file, name, dir = dir, 
                                      y_filen = y_filen, model_title = model_title) \
@@ -150,6 +155,7 @@ def run_ConFire(namelist):
 if __name__=="__main__":
     namelist = 'namelists/ConFire_Canada.txt'
     namelist = 'namelists/Greece.txt'
+    #namelist = 'namelists/SOW2023.txt'
     
     run_ConFire(namelist)
     set_trace()
