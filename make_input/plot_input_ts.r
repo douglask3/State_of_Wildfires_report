@@ -2,7 +2,7 @@ library(terra)
 
 dir = '../data/data/driving_data/'
 
-regions = c('NWN', 'NWN')
+regions = c('Greece', 'Greece')
 
 isimip3b = c('historical', 'ssp126', 'ssp370', 'ssp585')
 models = c('GFDL-ESM4', 'IPSL-CM6A-LR', 'MPI-ESM1-2-HR', 'MRI-ESM2-0', 'UKESM1-0-LL')
@@ -35,11 +35,12 @@ lwdL = c(imimip3a_lty, rep(imimip3b_lwd, length(isimip3b_period)))
 ltyL = c(imimip3a_lty, rep(imimip3b_lty, length(isimip3b_period)))
 
 
-variables = c('% Tree cover - jules' = 'tree_cover_jules-es.nc', '% None-tree cover - jules' = 'nonetree_cover_jules-es.nc',
-              '% Tree cover - debiased' = 'debiased_tree_cover_jules-es.nc', '% None-tree cover - debiased' = 'debiased_nonetree_cover_jules-es.nc')
-
+#variables = c('% Tree cover - jules' = 'tree_cover_jules-es.nc', '% None-tree cover - jules' = 'nonetree_cover_jules-es.nc',
+#              '% Tree cover - debiased' = 'debiased_tree_cover_jules-es.nc', '% None-tree cover - debiased' = 'debiased_nonetree_cover_jules-es.nc')
+variables = c('Consecutive Dry Days' = "consec_dry_mean.nc", "Max. Temp" = "tas_max.nc")
 variable = variables[1]
 region = regions[1]
+smooth = c(max, max)
 forVariable <- function(variable, title) { 
     openDat <- function(run) {
         dat = rast(paste0(dir, region, '/',run, variable))
@@ -50,14 +51,14 @@ forVariable <- function(variable, title) {
         layer_sums <- rep(0, dim(dat)[3])
         for (i in 1:dim(dat)[3]) 
             layer_sums[i] <- sum(dat[[i]][], na.rm = TRUE)
-        
+        if (!is.null(smooth)) layer_sums = rollmean(layer_sums, k = 12, align = "right", fill = NA)
         return(cbind(tm, layer_sums))
     }
 
     dats = lapply(runs, openDat)
 
-    xrange = range(sapply(dats, function(i) i[,1]))
-    yrange = range(sapply(dats, function(i) i[,2]))
+    xrange = range(sapply(dats, function(i) i[,1]), na.rm = TRUE)
+    yrange = range(sapply(dats, function(i) i[,2]), na.rm = TRUE)
     plot(xrange, yrange, type = 'n', xlab = '', ylab = '')
 
     plotLine <- function(dat, ...) lines(dat[,1], dat[,2], ...)
