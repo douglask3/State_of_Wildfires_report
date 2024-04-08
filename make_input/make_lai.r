@@ -11,7 +11,7 @@ area_name = 'Canada'
 #extent = c(-13.0, 3.0, 49, 62)
 #area_name = 'UK'
 variable = 'LAI'
-
+output_dir = '../data/data/'
 
 example = crop(example, extent)
 
@@ -49,8 +49,6 @@ spread_data_year <- function(year, name = '') {
     dat = rast(dat)
     writeCDF(dat, tfile, overwrite=TRUE)
     gc()
-    detach("package:terra", unload=TRUE)
-    library(terra)
     return(rast(tfile))
 }
 
@@ -116,49 +114,77 @@ gapfill <- function(i) {
                     '.csv'), collapse = '-')
     
     if (file.exists(tfile)) return(read.csv(tfile, stringsAsFactors=FALSE)[,1])
-    if (i == 100*round(i/100)) print(tfile)
+    #if (i == 100*round(i/100)) print(tfile)
     vs = svals[i,]
-    if (all(is.na(vs))) return(vs)
-    if (sum(!is.na(vs)) < minDat) return(vs)
-    vs0 = vs
-    vs = log((vs)^2 + 0.000001)
+    if (all(is.na(vs))) {
+        out = vs
+    } else if (sum(!is.na(vs)) < minDat) {
+        out = vs
+    } else {
+        vs0 = vs
+        vs = log((vs)^2 + 0.000001)
+        
+        
     
+        # Interpolate climatology
+        x = ((months-1) + days/31)/12
+        vs_clim = vs[sort.int(x, index.return=T)[[2]]]
+        x_clim = sort(x)
+        mask_clim = !is.na(vs_clim)
+        clim = fit_loss(x = x_clim[mask_clim], y = vs_clim[mask_clim], x + 1)
+        
+        avs = vs-clim
     
-
-    # Interpolate climatology
-    x = ((months-1) + days/31)/12
-    vs_clim = vs[sort.int(x, index.return=T)[[2]]]
-    x_clim = sort(x)
-    mask_clim = !is.na(vs_clim)
-    clim = fit_loss(x = x_clim[mask_clim], y = vs_clim[mask_clim], x + 1)
+        # Generate indices of non-NaN values
+        non_nan_indices <- !is.nan(vs)
+        
+        # Create a sequence of indices for the entire vector
+        all_indices <- seq_along(vs)
+        
+        
+        #
+        interpolated_values <- approx(x = all_indices[non_nan_indices], 
+                                      y = avs[non_nan_indices], 
+                                      xout = all_indices, method = "linear", rule = 2)$y
     
-    avs = vs-clim
-
-    # Generate indices of non-NaN values
-    non_nan_indices <- !is.nan(vs)
-    
-    # Create a sequence of indices for the entire vector
-    all_indices <- seq_along(vs)
-    
-    
-    #
-    interpolated_values <- approx(x = all_indices[non_nan_indices], y = avs[non_nan_indices], 
-                                  xout = all_indices, method = "linear", rule = 2)$y
-    
-    
-    
-    # Replace NaN values with interpolated values
-    vs[is.nan(vs)] <- interpolated_values[is.nan(vs)] + clim[is.nan(vs)]
-    vs = sqrt(exp(vs))
-    
-    write.csv(vs, tfile, row.names = FALSE) 
-    
+        # Replace NaN values with interpolated values
+        vs[is.nan(vs)] <- interpolated_values[is.nan(vs)] + clim[is.nan(vs)]
+        vs = sqrt(exp(vs))
+        out = vs
+    }   
+    write.csv(out, tfile, row.names = FALSE) 
     return(vs)
 }
 
-svals = values(sdat)
-outs = sapply(1:(nrow(sdat)*ncol(sdat)), gapfill)
-values(sdat) = t(outs)
+gapfill_row <- function(row) {
+    tfile = paste(c('../temp/make_lai/_gfill/row-', row, date[1], tail(date, 1), extent,
+                    '.csv'), collapse = '-')
+    print(tfile)
+    print(row/nrow(sdat))
+    if (file.exists(tfile)) return(as.matrix(read.csv(tfile, stringsAsFactors=FALSE)))
+    index = seq(1 + (row-1) * ncol(sdat), length.out = ncol(sdat))
+    out = sapply(index, gapfill)
+
+    write.csv(out, tfile, row.names = FALSE)
+    
+    return(out)
+}
+tfile = paste(c('../temp/make_lai/_gfill/row-', date[1], tail(date, 1), extent,
+                    '.csv'), collapse = '-')
+
+if (file.exists(tfile)) {
+    outs = read.csv(tfile, stringsAsFactors=FALSE)
+} else {
+    svals = values(sdat)
+    outs = lapply(1:nrow(sdat), gapfill_row)
+    outs = t(do.call(cbind, outs))
+    write.csv(outs, tfile, row.names = FALSE)
+}
+print("all the hard stuff done")
+#values(sdat) = t(outs)
 #sdat = rast(lapply(1:nlyr(rdat), spread_data), 'double')
+
+#out_file = paste0(output_dir, '/', area_name, '-', variable, '.nc')
+#writeCDF(sdat, out_file, overwrite = TRUE)
 browser()
 
