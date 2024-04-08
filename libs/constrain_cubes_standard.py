@@ -83,8 +83,11 @@ def ar6_region(cube, region_code):
 
     
     cube = constrain_cube_to_lonlat_range(cube, min_lon, max_lon, min_lat, max_lat)
-    constrained_mask = region_mask.sel(lat=slice(max_lat, min_lat), lon=slice(min_lon, max_lon))
     
+    constrained_mask = region_mask.sel(lat=slice(min_lat, max_lat), lon=slice(min_lon, max_lon))
+    if constrained_mask.shape[0] == 0:
+        constrained_mask = region_mask.sel(lat=slice(max_lat, min_lat), 
+                                            lon=slice(min_lon, max_lon))
     masked_data = np.where(constrained_mask, cube.data, np.nan)
     masked_cube = cube.copy()   
     masked_cube.data = masked_data
