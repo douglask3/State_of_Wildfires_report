@@ -268,11 +268,11 @@ def process_clim_and_jules(process_jules, dir_jules, process_clim, dir_clim, yea
                            *args, **kw):
     def process(process, dir):
         [make_variables_for_year_range(year, process, dir, *args, **kw) for year in  years]
-    process(process_jules, dir_jules)
+    #process(process_jules, dir_jules)
     process(process_clim, dir_clim)
     
     
-def for_region(subset_functions, subset_function_argss):   
+def for_region(subset_functions, subset_function_argss, vcf_region_name):   
     years = [[2010, 2012], [1901, 1920], [2000, 2019], [2002, 2019]]
     dataset_name = 'isimp3a/obsclim/GSWP3-W5E5'
     dataset_name_control = dataset_name
@@ -306,8 +306,8 @@ def for_region(subset_functions, subset_function_argss):
     
     dir_clim = "/hpc//data/d00/hadea/isimip3a/InputData/climate/atmosphere/obsclim/GSWP3-W5E5/gswp3-w5e5_obsclimfill_"
     dir_jules = "/scratch/hadea/isimip3a/u-cc669_isimip3a_es/GSWP3-W5E5_obsclim/jules-es-vn6p3_gswp3-w5e5_obsclim_histsoc_default_pft-"  
-    process_clim_and_jules(process_jules, dir_jules, process_clim, dir_clim, years,
-                           dataset_name, filenames, subset_functions, subset_function_argss)  
+    #process_clim_and_jules(process_jules, dir_jules, process_clim, dir_clim, years,
+    #                       dataset_name, filenames, subset_functions, subset_function_argss)  
     
     dir_clim = "/hpc//data/d00/hadea/isimip3a/InputData/climate/atmosphere/counterclim/GSWP3-W5E5/gswp3-w5e5_counterclim_"
     dir_jules = "/scratch/hadea/isimip3a/u-cc669_isimip3a_es/GSWP3-W5E5_counterclim/jules-es-vn6p3_gswp3-w5e5_counterclim_histsoc_default_pft-"  
@@ -365,7 +365,8 @@ def for_region(subset_functions, subset_function_argss):
                            dataset_name, filenames, subset_functions, subset_function_argss)
     
     region_name = subset_function_argss[0][next(iter(subset_function_argss[0]))]
-    obs_cover_dir = '/home/h02/dkelley/state_of_fires_report_20YY/data/data/driving_data/' + region_name + '_extended/isimp3a/'
+    obs_cover_dir = '/home/h02/dkelley/state_of_fires_report_20YY/data/data/driving_data/' + \
+                    vcf_region_name + '/'
     
     output_years = '2002_2019'
     years = [2002, 2019]
@@ -377,7 +378,10 @@ def for_region(subset_functions, subset_function_argss):
         cube0 = cube.copy()
         cube = sub_year_range(cube, years)
         for fun, args in zip(subset_functions, subset_function_argss):
-            cube = fun(cube, **args)
+            try:
+                cube = fun(cube, **args)
+            except:
+                set_trace()
         out_fname = output_dir + '/' + \
                     subset_function_argss[0][next(iter(subset_function_argss[0]))] + '/' + \
                     dataset_name_control + '/period_' + output_years + '/' + \
@@ -410,13 +414,15 @@ def for_region(subset_functions, subset_function_argss):
 
 subset_functions_main= [constrain_natural_earth]
 countries = ['Greece', 'United Kingdom', 'Chile', 'Bolivia', 'Canada']
-for country in countries:
+vcf_region_name = ['Greece_extended/isimp3a', 'United_Kingdon_extended/isimp3a', 'BoliviaChile_extended/isimp3a', 'BoliviaChile_extended/isimp3a', 'Canada_extended/']
+for country, vcf_reg in zip(countries, vcf_region_name):
     subset_function_argss_main = [{'Country': country}]
-    for_region(subset_functions_main, subset_function_argss_main)
+    for_region(subset_functions_main, subset_function_argss_main, vcf_reg)
     
 
 subset_functions_main = [ar6_region]
-regions = ['MED', 'SAW', 'SWS', 'NWN', 'NEN']
-for reg in regions:
+regions = ['MED', 'NWN', 'NEN', 'SAW', 'SWS']
+vcf_region_name = ['MED_extended/isimp3a', 'Canada_extended', 'Canada_extended', 'SouthAmerica_extended/isimp3a', 'SouthAmerica_extended/isimp3a']
+for reg, vcf_reg in zip(regions, vcf_region_name):
     subset_function_argss_main = [{'region_code': reg}]
-    for_region(subset_functions_main, subset_function_argss_main)
+    for_region(subset_functions_main, subset_function_argss_main, vcf_reg)
