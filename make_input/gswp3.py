@@ -42,7 +42,7 @@ def generate_temp_fname(string1, string2):
     return '../temp/isimip_dat_gen-' + hashlib.sha256(string.encode()).hexdigest() + '.txt'
 
 def make_variables_for_year_range(year, process, dir, dataset_name, filenames,
-                                  subset_functions, subset_function_argss):
+                                  subset_functions, subset_function_argss, region_name):
     def test_if_process(var, temp_file = None): 
         if temp_file is not None and os.path.isfile(temp_file) and grab_old_data:
             print("file found:" + temp_file)
@@ -52,8 +52,7 @@ def make_variables_for_year_range(year, process, dir, dataset_name, filenames,
         return out
     output_year = str(year[0]) + '_' + str(year[1])
     
-    temp_out = dir  + dataset_name + output_year + \
-             subset_function_argss[0][next(iter(subset_function_argss[0]))]
+    temp_out = dir  + dataset_name + output_year + region_name
     print(temp_out)
     def open_variable(varname, MinusYr = False):
         filename = filenames[varname]
@@ -91,8 +90,7 @@ def make_variables_for_year_range(year, process, dir, dataset_name, filenames,
 
     def save_ncdf(cube, varname): 
         
-        out_dir = output_dir + '/' + \
-                    subset_function_argss[0][next(iter(subset_function_argss[0]))] + '/' + \
+        out_dir = output_dir + '/' + region_name + '/' + \
                     dataset_name + '/period_' + output_year + '/'
         
         if not os.path.exists(out_dir): Path(out_dir).mkdir(parents=True)
@@ -114,6 +112,7 @@ def make_variables_for_year_range(year, process, dir, dataset_name, filenames,
         for i in cover_vars[1:]:
             dat.data = dat.data + open_variable(i).data
         dat.rename(name)
+        
         save_ncdf(dat, name + '_jules-es')
         return dat
 
@@ -268,11 +267,11 @@ def process_clim_and_jules(process_jules, dir_jules, process_clim, dir_clim, yea
                            *args, **kw):
     def process(process, dir):
         [make_variables_for_year_range(year, process, dir, *args, **kw) for year in  years]
-    #process(process_jules, dir_jules)
-    process(process_clim, dir_clim)
+    process(process_jules, dir_jules)
+    #process(process_clim, dir_clim)
     
     
-def for_region(subset_functions, subset_function_argss, vcf_region_name):   
+def for_region(subset_functions, subset_function_argss, vcf_region_name, region_name = None):   
     years = [[2010, 2012], [1901, 1920], [2000, 2019], [2002, 2019]]
     dataset_name = 'isimp3a/obsclim/GSWP3-W5E5'
     dataset_name_control = dataset_name
@@ -306,14 +305,16 @@ def for_region(subset_functions, subset_function_argss, vcf_region_name):
     
     dir_clim = "/hpc//data/d00/hadea/isimip3a/InputData/climate/atmosphere/obsclim/GSWP3-W5E5/gswp3-w5e5_obsclimfill_"
     dir_jules = "/scratch/hadea/isimip3a/u-cc669_isimip3a_es/GSWP3-W5E5_obsclim/jules-es-vn6p3_gswp3-w5e5_obsclim_histsoc_default_pft-"  
-    #process_clim_and_jules(process_jules, dir_jules, process_clim, dir_clim, years,
-    #                       dataset_name, filenames, subset_functions, subset_function_argss)  
+    process_clim_and_jules(process_jules, dir_jules, process_clim, dir_clim, years,
+                           dataset_name, filenames, subset_functions, subset_function_argss, 
+                           region_name)  
     
     dir_clim = "/hpc//data/d00/hadea/isimip3a/InputData/climate/atmosphere/counterclim/GSWP3-W5E5/gswp3-w5e5_counterclim_"
     dir_jules = "/scratch/hadea/isimip3a/u-cc669_isimip3a_es/GSWP3-W5E5_counterclim/jules-es-vn6p3_gswp3-w5e5_counterclim_histsoc_default_pft-"  
     dataset_name = 'isimp3a/counterclim/GSWP3-W5E5'
     process_clim_and_jules(process_jules, dir_jules, process_clim, dir_clim, years,
-                           dataset_name, filenames, subset_functions, subset_function_argss)  
+                           dataset_name, filenames, subset_functions, subset_function_argss,
+                           region_name)  
     
     filenames = {"tas": "tasAdjust_global_daily_",
              "tas_range": "tas_rangeAdjust_global_daily_",
@@ -362,9 +363,11 @@ def for_region(subset_functions, subset_function_argss, vcf_region_name):
             dataset_name = 'isimp3b/' +  experiment + '/' + model + '/'
     
             process_clim_and_jules(process_jules, dir_jules, process_clim, dir_clim, years,
-                           dataset_name, filenames, subset_functions, subset_function_argss)
+                           dataset_name, filenames, subset_functions, subset_function_argss,
+                           region_name)
     
-    region_name = subset_function_argss[0][next(iter(subset_function_argss[0]))]
+    if region_name is None:
+        region_name = subset_function_argss[0][next(iter(subset_function_argss[0]))]
     obs_cover_dir = '/home/h02/dkelley/state_of_fires_report_20YY/data/data/driving_data/' + \
                     vcf_region_name + '/'
     
@@ -383,7 +386,7 @@ def for_region(subset_functions, subset_function_argss, vcf_region_name):
             except:
                 set_trace()
         out_fname = output_dir + '/' + \
-                    subset_function_argss[0][next(iter(subset_function_argss[0]))] + '/' + \
+                    region_name + '/' + \
                     dataset_name_control + '/period_' + output_years + '/' + \
                     filename[:-3] + '_VCF-obs.nc'
         iris.save(cube, out_fname)
@@ -404,13 +407,18 @@ def for_region(subset_functions, subset_function_argss, vcf_region_name):
         burnt_area = burnt_area.regrid(mask_file[0], iris.analysis.Linear())
         burnt_area.data[:, np.isnan(mask_file[0].data)] = np.nan
         out_fname = output_dir + '/' + \
-                    subset_function_argss[0][next(iter(subset_function_argss[0]))] + '/' + \
+                    region_name + '/' + \
                     dataset_name_control + '/period_' + output_years + \
                     '/burnt_area-' + str(years[0]) + '-' + str(years[1]) + '.nc'
         iris.save(burnt_area, out_fname)
     regrid_Burnt_area([2000, 2019])
     regrid_Burnt_area([2000, 2023])
 
+
+
+subset_functions_main = [constrain_cube_to_lonlat_range]
+subset_function_argss_main =[{'lon_min': -77.5, 'lon_max': -56.0, 'lat_min': -10.0, 'lat_max': 2.0}]
+for_region(subset_functions_main, subset_function_argss_main, None, region_name = 'NW_Amazon')
 
 subset_functions_main= [constrain_natural_earth]
 countries = ['Greece', 'United Kingdom', 'Chile', 'Bolivia', 'Canada']
@@ -426,3 +434,4 @@ vcf_region_name = ['MED_extended/isimp3a', 'Canada_extended', 'Canada_extended',
 for reg, vcf_reg in zip(regions, vcf_region_name):
     subset_function_argss_main = [{'region_code': reg}]
     for_region(subset_functions_main, subset_function_argss_main, vcf_reg)
+
