@@ -23,7 +23,7 @@ class zero_inflated_logit(object):
         '''
         
         pz = 1.0 - (fx**p1) * (1.0 - p0)
-
+        
         Y = ttLogit(Y)
         fx = ttLogit(fx)
 
@@ -37,12 +37,12 @@ class zero_inflated_logit(object):
         pz = 1.0 - (mod**p1) * (1.0 - p0)
         mod = npLogit(mod)
         test = (np.random.rand(*pz.shape)) < pz
+        
         mod[test] = 0.0
         test = ~test
-        #set_trace()
-        mod[test] = np.exp(np.log(1-pz[test]) - np.log(sigma * np.sqrt(2*math.pi)) - 
-                                ((mod[test])**2)/(2*sigma**2))
-        #npSigmoid(np.random.normal(mod[test], sigma, size=sum(test)))
+        
+        mod[test] =  npSigmoid(np.random.normal(mod[test], sigma))
+        
         return mod
         
     
