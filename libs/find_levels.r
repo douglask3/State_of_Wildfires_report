@@ -7,7 +7,7 @@ find_levels <- function(z, percentiles = seq(20, 80, by = 20)) {
     scaling_factor = 10^(ceiling(log10((quantiles))))  # Adjust based on the magnitude of your data
 
     # Round the scaled quantiles to the nearest nice looking numbers
-    levels = round(quantiles / scaling_factor, 1) * scaling_factor
+    levels = round(quantiles / scaling_factor, 2) * scaling_factor
     if (symetry) levels = c(-rev(levels), levels)
 
     return(levels)
