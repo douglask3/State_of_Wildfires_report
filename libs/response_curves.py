@@ -42,11 +42,11 @@ def standard_curve_experiment(Sim, Xi, col_to_keep, name, trace, sample_for_plot
 def potential_curve_experiment(Sim, Xi, col_to_go, name, trace, sample_for_plot, 
                               eg_cube, lmask, *args, **kw):
     X = Xi.copy()
-    #X[:, col_to_go] = 0.0
-    X[:, col_to_go] = np.mean(X[:, col_to_go])
+    X[:, col_to_go] = 0.0
+    #X[:, col_to_go] = np.mean(X[:, col_to_go])
     
     Sim2 = runSim_MaxEntFire(trace, sample_for_plot, X, eg_cube, lmask, 
-                             name + "/to_mean", *args, **kw)
+                             name + "/to_0", *args, **kw)
     return Sim, Sim2
 
 
@@ -99,7 +99,9 @@ def sensitivity_curve_experiment(Sim, Xi, col, name, trace, sample_for_plot,
                                  
 
 def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask, 
-                   dir_samples, fig_dir, grab_old_trace, x_filen_list, 
+                   dir_samples, fig_dir, grab_old_trace, extra_params, 
+                   class_object, link_func_class,
+                   x_filen_list, 
                    levels, cmap, dlevels, dcmap, scalers = None, 
                    response_grouping = None, *args, **kw):  
     
@@ -147,7 +149,9 @@ def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask,
                           figure_dir, x_filen_list, scalers=None):
         
         Sim1, Sim2i = response_FUN(Sim, X, g_index, varname, trace, sample_for_plot, 
-                              eg_cube, lmask, dir_samples, grab_old_trace)
+                              eg_cube, lmask, dir_samples, grab_old_trace, 
+                              extra_params = extra_params, class_object = class_object, 
+                              link_func_class = link_func_class)
         Sim2 = Sim2i[0] if isinstance(Sim2i, list) else Sim2i
         plotN = Ncol * (group_index + 1)
         if map_type >= 0:
@@ -160,7 +164,7 @@ def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask,
             
             plotNi = 2
             diff = Sim2.copy()
-            if len(g_index) == 1:
+            if type(g_index) == type(1) or len(g_index) == 1:
                 diff = diff.data - Sim1.data if Sim1 is not None else Sim2
             else:
                 diff.data = np.sqrt(Sim1.data**2 + np.sum([i.data**2 for i in Sim2i], axis = 0))
@@ -184,7 +188,7 @@ def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask,
         ax.set_title(variable_name)
 
         if isinstance(g_index, int) or len(g_index) == 1:
-            num_bins = 10
+            num_bins = 100
             hist, bin_edges = np.histogram(X[:, group_index], bins=num_bins)
             bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
             median_values = []
@@ -268,7 +272,9 @@ def response_curve(Sim, curve_type, trace, sample_for_plot, X, eg_cube, lmask,
             if varname.endswith(".nc"):
                 varname = varname[:-3]
             Sim1, Sim2 = response_FUN(Sim, X, col, varname, trace, sample_for_plot, 
-                                    eg_cube, lmask, dir_samples, grab_old_trace)
+                                    eg_cube, lmask, dir_samples, grab_old_trace, 
+                              extra_params = extra_params, class_object = class_object, 
+                              link_func_class = link_func_class)
             # Process remaining individual variables
             
             process_variables(Sim, X, response_FUN, col, col, varname, trace, sample_for_plot, 
