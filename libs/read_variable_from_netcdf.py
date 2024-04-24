@@ -106,7 +106,8 @@ def read_variable_from_netcdf(filename, dir = '', subset_function = None,
     
     return dataset
 
-def read_all_data_from_netcdf(y_filename, x_filename_list, CA_filename = None, add_1s_columne = False, 
+def read_all_data_from_netcdf(y_filename, x_filename_list, CA_filename = None, 
+                              add_1s_columne = False, 
                               y_threshold = None, x_normalise01 = False, scalers = None,
                               check_mask = True, frac_random_sample = 1.0, 
                               min_data_points_for_sample = None, *args, **kw):
@@ -135,6 +136,7 @@ def read_all_data_from_netcdf(y_filename, x_filename_list, CA_filename = None, a
         Y - a numpy array of the target variable
         X - an n-D numpy array of the feature variables 
     """
+    
     Y, time_points, extent = read_variable_from_netcdf(y_filename, make_flat = True, *args, 
                                     return_time_points = True, return_extent = True, **kw)
     
@@ -171,7 +173,7 @@ def read_all_data_from_netcdf(y_filename, x_filename_list, CA_filename = None, a
         Y = Y[cells_we_want]
         X = X[cells_we_want, :]
         
-    if x_normalise01: 
+    if x_normalise01 and scalers is None: 
         try:
             scalers = np.array([np.min(X, axis=0), np.max(X, axis=0)])
         except:
