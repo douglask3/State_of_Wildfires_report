@@ -1,0 +1,44 @@
+## model info
+regions:: ['Greece']
+model_title::  'ConFire_<<region>>-nrt'
+
+## input data paths and filenames
+dir_training:: "data/data/driving_data/Canada/nrt/period_2011_2024/"
+y_filen:: "burnt_area.nc"
+CA_filen:: None
+x_filen_list:: ["Fuel-Moisture-Dead-Foilage.nc", "pasture.nc", "Fuel-Moisture-Dead-Wood.nc", "population_density.nc", "Fuel-Moisture-Live.nc", "rangeland.nc", "VOD.nc", "rural_population.nc", "burnt_area.nc", "t2m.nc", "cropland.nc", "total_irrigated.nc", "d2m.nc", "tp.nc", "grazing_land.nc", "urban_population.nc", "lightn.nc"]                    
+## Model info
+model_class:: ConFire
+priors:: {'pname': "link-sigma",'np': 1, 'dist': 'HalfNormal', 'sigma': 0.5}
+priors:: {'pname': "link-p0",'np': 1, 'dist': 'Uniform', 'lower': 0.0, 'upper': 1.0}
+priors:: {'pname': "link-p1",'np': 1, 'dist': 'LogNormal', 'mu': -1.0, 'sigma': 1.0}
+priors:: {'pname': "controlID", 'value': [[6], [0, 2, 4, 6, 9, 12, 13], [1, 3, 5, 7, 10, 14, 15, 16], [1, 3, 5, 7, 10, 14, 15]]}
+priors:: {'pname': "control_Direction", 'value': [1, -1, 1, -1]}
+priors:: {'pname': "driver_Direction", 'value': [[1], [1, 1, 1, 1, -1, 1, -1], [1, 1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1]]}
+priors:: {'pname': "x0",'np': 4, 'dist': 'Normal', 'mu': 0.0, 'sigma': 1.0}
+priors:: {'pname': "betas",'np': 1, 'dist': 'LogNormal', 'mu': 0.0, 'sigma': 1.0}
+priors:: {'pname': "betas",'np': 7, 'dist': 'LogNormal', 'mu': 0.0, 'sigma': 1.0}
+priors:: {'pname': "betas",'np': 8, 'dist': 'LogNormal', 'mu': 0.0, 'sigma': 1.0}
+priors:: {'pname': "betas",'np': 7, 'dist': 'LogNormal', 'mu': 0.0, 'sigma': 1.0}
+
+### optimization info
+link_func_class:: zero_inflated_logit
+niterations:: 200
+cores:: 5
+fraction_data_for_sample:: 0.2
+subset_function:: sub_year_months
+subset_function_args:: {'months_of_year': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+
+grab_old_trace:: False # set to True till you get the code running. 
+                      # Then set to False when you start adding in new response curves
+### output info
+dir_outputs:: 'outputs/'
+
+## evaluation info
+sample_for_plot:: 10
+control_names:: ['Fuel', 'Moisture', 'Ignition', 'Suppression']
+levels:: [0, 0.01, 0.03, 0.1, 0.3, 0.5, 1.0] 
+dlevels:: [-20, -10, -5, -2, -1, -0.1, 0.1, 1, 2, 5, 10, 20]
+cmap:: 'OrRd'
+dcmap:: 'RdBu_r'
+
