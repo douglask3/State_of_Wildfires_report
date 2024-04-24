@@ -32,6 +32,7 @@ class ConFire(object):
         self.x0 = select_param_or_default('x0', [0])
         self.betas = select_param_or_default('betas', [[0]], stack = False)
         self.driver_Direction = self.params['driver_Direction']
+        self.Fmax = select_param_or_default('Fmax', 1.0, stack = False)
         
 
     def burnt_area(self, X, return_controls = False, return_limitations = False):
@@ -58,7 +59,7 @@ class ConFire(object):
 
         limitations = [lim for lim in limitations if lim is not None]
         
-        BA = self.numPCK.prod(limitations, axis = 0)
+        BA = self.Fmax * self.numPCK.prod(limitations, axis = 0)
         return BA
     
     
