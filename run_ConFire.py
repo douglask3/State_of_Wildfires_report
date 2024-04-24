@@ -34,7 +34,7 @@ def make_time_series(cube, name, figName):
         cube.coord('latitude').guess_bounds()
     except:
         pass
-
+    
     try:
         cube.coord('longitude').guess_bounds()
     except:
@@ -72,7 +72,7 @@ def run_experiment(training_namelist, namelist, control_direction, control_names
     name = name + '-'
 
     temp_file = 'temp/run_ConFire_lock' + (output_dir + output_file + name).replace('/', '_') + '.txt'
-    if os.path.isfile(temp_file): return None
+    #if os.path.isfile(temp_file): return None
 
     Control, Y, X, lmask, scalers  = call_eval(training_namelist, namelist,
                         name + '/control', run_only = run_only, return_inputs = True,
@@ -97,15 +97,19 @@ def run_ConFire(namelist):
     run_info = read_variables_from_namelist(namelist) 
 
     regions = run_info['regions']
+    subset_function_args = run_info['subset_function_args']
+    
 
     for region in regions:
         model_title = run_info['model_title'].replace('<<region>>', region)
         dir_training = run_info['dir_training'].replace('<<region>>', region)
         
+        subset_function_args['months_of_year'] = run_info['region_months'][region]
 
         trace, scalers, training_namelist = \
                         train_MaxEnt_model_from_namelist(namelist, model_title = model_title,
-                                                         dir_training = dir_training)
+                                                         dir_training = dir_training,
+                                                         subset_function_args = subset_function_args)
         
         params = read_variables_from_namelist(training_namelist)
         output_dir = params['dir_outputs']
@@ -143,18 +147,21 @@ def run_ConFire(namelist):
     
         run_experiment(training_namelist, namelist, control_direction, control_names,
                                   output_dir, output_file, 'baseline', 
-                                  model_title = model_title)
-    
+                                  model_title = model_title, 
+                                  subset_function_args = subset_function_args)
+        
         [run_experiment(training_namelist, namelist, control_direction, 
                                      control_names,
                                      output_dir, output_file, name, dir = dir, 
-                                     y_filen = y_filen, model_title = model_title) \
+                                     y_filen = y_filen, model_title = model_title,
+                                     subset_function_args = subset_function_args) \
                           for name, dir in zip(experiment_names, experiment_dirs)]
 
 
 if __name__=="__main__":
     namelist = 'namelists/ConFire_Canada.txt'
     namelist = 'namelists/Greece.txt'
+    namelist = 'namelists/tuning.txt'
     #namelist = 'namelists/SOW2023.txt'
     
     run_ConFire(namelist)
