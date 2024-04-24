@@ -5,8 +5,7 @@ library(terra)
 region = 'Greece'
 date_test = '2023-08'
 
-fname = "outputs/ConFire_UK/figs/crop_lightn_soilM_trees_csoil_pas_vpd_cveg_precip_tas_rhumid_totalVeg-frac_points_0.5-control_TS/points-"
-fname = paste0("outputs/ConFire_", region, "-logitnormal12/figs/_13-frac_points_0.1-")
+fname = paste0("outputs/ConFire_", region, "-tuning3/figs/_13-frac_points_0.8-")
 fileEx = "-control_TS/points-Control.csv"
 
 burnt_area_data = paste0("data/data/driving_data/", region, "/isimp3a/obsclim/GSWP3-W5E5/period_2000_2019/burnt_area-2000-2023.nc")
@@ -24,7 +23,7 @@ burnt_area_tot = sapply(1:nlyr(burnt_area), function(i) sum((burnt_area[[i]] * g
 
 burnt_area_event = burnt_area_tot[date_test]
 
-percentile = mean(burnt_area_tot <= burnt_area_event)^(1/12)
+percentile = mean(burnt_area_tot <= burnt_area_event)#^(1/12)
 #burnt_area_event = burnt_area_event * cellSize(burnt_area_event) 
 #burnt_area_event = sum(burnt_area_event[], na.rm = T)/ sum(gridArea[], na.rm = T)
 #burnt_area_tot / sum(gridArea[], na.rm = T)
@@ -45,7 +44,7 @@ plot_experiments <- function(experiments, conPeriod = "today", expPeriod = "by 2
         dat = tail(t(trans_fun(0.000001+read.csv(paste0(fname, exp, fileEx)))), ny)
     }
     
-    dats = lapply(experiments, openDat, ny = 20)
+    dats = lapply(experiments, openDat, ny = 20*3)
     if (length(dats)>2) dats = c(dats[1], list(unlist(dats[-1])))
     #dats = lapply(dats, function(i) i[i>0])
 
