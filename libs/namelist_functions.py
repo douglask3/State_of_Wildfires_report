@@ -9,6 +9,7 @@ from FLAME import FLAME
 from ConFire import ConFire
 from MaxEnt import MaxEnt
 from zero_inflated_logit import zero_inflated_logit
+from zero_inflated_logit_global_normal import zero_inflated_logit_global_normal
 from normal_ import normal_
 
 from pdb import set_trace
