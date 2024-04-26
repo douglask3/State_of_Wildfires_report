@@ -16,7 +16,7 @@ def call_eval(training_namelist, namelist,
                                                control_run_name = control_run_name,
                                                extra_params = extra_params, *args, **kw)
     
-    
+   
 def Standard_limitation(training_namelist, namelist,
                         controlID, name, control_direction, *args, **kws):   
     control_Directioni = np.array(control_direction.copy())
@@ -42,8 +42,8 @@ def make_time_series(cube, name, figName):
     
     cube.data = np.ma.masked_invalid(cube.data)
     grid_areas = iris.analysis.cartography.area_weights(cube)
-    area_weighted_mean = cube.collapsed(['latitude', 'longitude'], 
-                                        iris.analysis.MEAN, weights=grid_areas)
+    #set_trace()
+    area_weighted_mean = cube.collapsed(['latitude', 'longitude'], iris.analysis.WPERCENTILE, percent = 90, weights=grid_areas)
     
     #area_weighted_mean = area_weighted_mean.aggregated_by('year', iris.analysis.MAX)
     out_file = figName + '/points-' + name + '.csv'
@@ -127,7 +127,7 @@ def run_ConFire(namelist):
             for experiment, period in zip(experiments, periods):
                 for model in models:
                     dirs = [item.replace("<<period>>", period) for item in looped_items]    
-                    dirs = [item.replace("<<model>>", model) for item in dirs]      
+                    dirs = [item.replace("<<model>>", model) for item in dirs]   
                     dirs = [item.replace("<<experiment>>", experiment) for item in dirs] 
                     dirs = [item.replace('<<region>>', region) for item in dirs] 
                     exp_list_all += dirs
