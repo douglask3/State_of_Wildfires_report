@@ -118,14 +118,8 @@ def fit_MaxEnt_probs_to_data(Y, X, CA = None,
                                    observed = Y)
               
         ## sample model
-        attempts = 1
-        while attempts <= 10:
-            try:
-                trace = pm.sample(niterations, return_inferencedata = True, callback = trace_callback, *arg, **kw)
-                attempts = 100
-            except:
-                print("sampling attempt " + str(attempts) + " failed. Trying a max of 10 times")
-                attempts += 1
+        trace = pm.sample(niterations, return_inferencedata = True, 
+                          callback = trace_callback, *arg, **kw)
 
     def filter_dict_elements_by_type(my_dict, included_types):
         def is_numeric(value):
