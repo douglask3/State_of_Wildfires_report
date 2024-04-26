@@ -14,9 +14,10 @@ class normal_(object):
     
     def random_sample_given_(mod, sigma):
         
-        return np.exp(np.log(sigma * np.sqrt(2*math.pi)) - \
-                                ((mod)**2)/(2*sigma**2))
-        
+        out =  np.random.normal(mod, sigma)#np.exp(np.log(sigma * np.sqrt(2*math.pi)) - \
+                                #((mod)**2)/(2*sigma**2))
+        out[out < 0.0] = 0.0
+        return out
     
     def sample_given_(Y, X, sigma):
         
