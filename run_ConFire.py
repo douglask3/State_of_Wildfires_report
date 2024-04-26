@@ -72,7 +72,7 @@ def run_experiment(training_namelist, namelist, control_direction, control_names
     name = name + '-'
 
     temp_file = 'temp/run_ConFire_lock' + (output_dir + output_file + name).replace('/', '_') + '.txt'
-    #if os.path.isfile(temp_file): return None
+    if os.path.isfile(temp_file): return None
 
     Control, Y, X, lmask, scalers  = call_eval(training_namelist, namelist,
                         name + '/control', run_only = run_only, return_inputs = True,
