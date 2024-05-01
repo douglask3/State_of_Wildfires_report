@@ -28,6 +28,17 @@ def Standard_limitation(training_namelist, namelist,
     return call_eval(training_namelist, namelist,
                      name + '/Standard_'+ str(controlID), extra_params, hyper = False,
                      *args, **kws)
+
+def Potential_limitation(training_namelist, namelist,
+                        controlID, name, control_direction, *args, **kws):   
+    control_Directioni = np.array(control_direction.copy())
+    control_Directioni[controlID] = 0.0
+    
+    extra_params = {"control_Direction": control_Directioni}
+    
+    return call_eval(training_namelist, namelist,
+                     name + '/Potential'+ str(controlID), extra_params, hyper = False,
+                     *args, **kws)
     
 def make_time_series(cube, name, figName):
     try: 
@@ -42,7 +53,7 @@ def make_time_series(cube, name, figName):
     
     cube.data = np.ma.masked_invalid(cube.data)
     grid_areas = iris.analysis.cartography.area_weights(cube)
-    #set_trace()
+     
     area_weighted_mean = cube.collapsed(['latitude', 'longitude'], iris.analysis.WPERCENTILE, percent = 90, weights=grid_areas)
     
     #area_weighted_mean = area_weighted_mean.aggregated_by('year', iris.analysis.MAX)
@@ -57,7 +68,7 @@ def make_time_series(cube, name, figName):
     time_datetime = cftime.date2num(time_datetime, 'days since 0001-01-01 00:00:00')/365.24
     TS = np.append(time_datetime[:, None], np.transpose(TS.data), axis = 1)
     
-    out_file = figName + '/time_series' + name + '.csv'
+    out_file = figName + '/time_series-' + name + '.csv'
     np.savetxt(out_file, TS, delimiter=',', header = "year,p25%,p75%")
     return TS
 
@@ -72,22 +83,29 @@ def run_experiment(training_namelist, namelist, control_direction, control_names
     name = name + '-'
 
     temp_file = 'temp/run_ConFire_lock' + (output_dir + output_file + name).replace('/', '_') + '.txt'
-    if os.path.isfile(temp_file): return None
+    #if os.path.isfile(temp_file): return None
 
     Control, Y, X, lmask, scalers  = call_eval(training_namelist, namelist,
                         name + '/control', run_only = run_only, return_inputs = True,
                         *args, **kws)
     
-    Standard = [Standard_limitation(training_namelist, namelist,i, name, control_direction, 
-                                    *args, Y = Y, X = X, lmask = lmask, scalers = scalers,
-                                    **kws) \
-                for i in range(len(control_direction))]
-
     figName = output_dir + 'figs/' + output_file + '-' + name + 'control_TS'
     makeDir(figName + '/')
+    for ltype, FUN in zip(['standard', 'potential'],
+                          [Standard_limitation, Potential_limitation]):
+        
+        limitation = [Standard_limitation(training_namelist, namelist, i, 
+                      name, control_direction, 
+                                    *args, Y = Y, X = X, lmask = lmask, scalers = scalers,
+                                     **kws) \
+                        for i in range(len(control_direction))]
+        limitation_TS = np.array([make_time_series(cube[0], ltype + '-' + name, figName) \
+                           for cube, name in zip(limitation, control_names)])
+
+    
+    
     control_TS = make_time_series(Control[0], 'Control', figName)
-    standard_TS = np.array([make_time_series(cube[0], name, figName) \
-                           for cube, name in zip(Standard, control_names)])
+    
     
         
     open(temp_file, 'a').close() 
@@ -162,6 +180,7 @@ if __name__=="__main__":
     namelist = 'namelists/ConFire_Canada.txt'
     namelist = 'namelists/Greece.txt'
     namelist = 'namelists/tuning.txt'
+    namelist = 'namelists/isimip.txt'
     #namelist = 'namelists/SOW2023.txt'
     
     run_ConFire(namelist)
