@@ -268,7 +268,7 @@ def process_clim_and_jules(process_jules, dir_jules, process_clim, dir_clim, yea
     def process(process, dir):
         [make_variables_for_year_range(year, process, dir, *args, **kw) for year in  years]
     process(process_jules, dir_jules)
-    #process(process_clim, dir_clim)
+    process(process_clim, dir_clim)
     
     
 def for_region(subset_functions, subset_function_argss, vcf_region_name, region_name = None):   
@@ -415,23 +415,24 @@ def for_region(subset_functions, subset_function_argss, vcf_region_name, region_
     regrid_Burnt_area([2000, 2023])
 
 
+if __name__=="__main__":
+    subset_functions_main = [constrain_cube_to_lonlat_range]
+    subset_function_argss_main =[{'lon_min': -77.5, 'lon_max': -56.0, 'lat_min': -10.0, 'lat_max': 2.0}]
+    for_region(subset_functions_main, subset_function_argss_main, 'SouthAmerica-box_extended/isimp3a', region_name = 'NW_Amazon')
 
-subset_functions_main = [constrain_cube_to_lonlat_range]
-subset_function_argss_main =[{'lon_min': -77.5, 'lon_max': -56.0, 'lat_min': -10.0, 'lat_max': 2.0}]
-for_region(subset_functions_main, subset_function_argss_main, None, region_name = 'NW_Amazon')
-
-subset_functions_main= [constrain_natural_earth]
-countries = ['Greece', 'United Kingdom', 'Chile', 'Bolivia', 'Canada']
-vcf_region_name = ['Greece_extended/isimp3a', 'United_Kingdon_extended/isimp3a', 'BoliviaChile_extended/isimp3a', 'BoliviaChile_extended/isimp3a', 'Canada_extended/']
-for country, vcf_reg in zip(countries, vcf_region_name):
-    subset_function_argss_main = [{'Country': country}]
-    for_region(subset_functions_main, subset_function_argss_main, vcf_reg)
+    set_trace()
+    subset_functions_main= [constrain_natural_earth]
+    countries = ['Greece', 'United Kingdom', 'Chile', 'Bolivia', 'Canada']
+    vcf_region_name = ['Greece_extended/isimp3a', 'United_Kingdon_extended/isimp3a', 'BoliviaChile_extended/isimp3a', 'BoliviaChile_extended/isimp3a', 'Canada_extended/']
+    for country, vcf_reg in zip(countries, vcf_region_name):
+        subset_function_argss_main = [{'Country': country}]
+        for_region(subset_functions_main, subset_function_argss_main, vcf_reg)
     
 
-subset_functions_main = [ar6_region]
-regions = ['MED', 'NWN', 'NEN', 'SAW', 'SWS']
-vcf_region_name = ['MED_extended/isimp3a', 'Canada_extended', 'Canada_extended', 'SouthAmerica_extended/isimp3a', 'SouthAmerica_extended/isimp3a']
-for reg, vcf_reg in zip(regions, vcf_region_name):
-    subset_function_argss_main = [{'region_code': reg}]
-    for_region(subset_functions_main, subset_function_argss_main, vcf_reg)
+    subset_functions_main = [ar6_region]
+    regions = ['MED', 'NWN', 'NEN', 'SAW', 'SWS']
+    vcf_region_name = ['MED_extended/isimp3a', 'Canada_extended', 'Canada_extended', 'SouthAmerica_extended/isimp3a', 'SouthAmerica_extended/isimp3a']
+    for reg, vcf_reg in zip(regions, vcf_region_name):
+        subset_function_argss_main = [{'region_code': reg}]
+        for_region(subset_functions_main, subset_function_argss_main, vcf_reg)
 
