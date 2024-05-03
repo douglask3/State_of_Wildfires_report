@@ -1,14 +1,14 @@
 library(ncdf4)
 library(terra)
 library(raster)
-add_date_to_file <- function(file, file_out = file, years, mnn, day, name = NULL, longname = NULL, ...) {
+add_date_to_file <- function(file, file_out = file, years, mnn, day, name = NULL, longname = NULL, overwrite_date = FALSE, ...) {
     
     print(file)
     if (!grepl('.nc', file)) return()
     
     rtest = raster(file)
         
-    if (substr(getZ(rtest) , 5, 5) == '-' && substr(getZ(rtest) , 8, 8) == '-') return()
+    if (!overwrite_date & (substr(getZ(rtest) , 5, 5) == '-' && substr(getZ(rtest) , 8, 8) == '-')) return()
 
     dat = dat0 = rast(file) 
     
