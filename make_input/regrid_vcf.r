@@ -11,6 +11,7 @@ output_path = '../data/data/driving_data/'
 newproj = "+proj=longlat +datum=WGS84"
 example_file = rast('../data/wwf_terr_ecos_0p5.nc')
 extents = list(#c(-180.0, 180.0, -90.0, 90.0)
+               c(-77.5, -56.0, -10.0, 2.0),
                c(-12.0, 49.0, 3.0, 63.0),
                c(-20.0, 50.0, -55.0, 55.0),
                #c(-85.0, -60.0, -30.0, 15.0),
@@ -18,12 +19,13 @@ extents = list(#c(-180.0, 180.0, -90.0, 90.0)
                c(-82.0, -55.0, -55.0, -5.0))
 #extent = c(-170.0, -30.0, 30, 85)
 area_names = c(#'Global',
+              'SouthAmerica-box',
               'United_Kingdon',
               'MED',
               #'SouthAmerica',
               'Greece',
               'BoliviaChile')
-paths = c('../temp/UK-MODIS/', '../temp/MED-MODIS/', 
+paths = c('../temp/SouthAmerica-MODIS/', '../temp/UK-MODIS/', '../temp/MED-MODIS/', 
 #'../temp/SouthAmerica-MODIS/', 
 '../temp/Greece-MODIS/', '../temp/BoliviaChile-MODIS/')
 
