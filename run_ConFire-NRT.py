@@ -7,9 +7,7 @@ from   io     import StringIO
 import numpy  as np
 import cftime
 
-import matplotlib.pyplot as plt
-
-    
+import matplotlib.pyplot as plt 
 
 def run_ConFire_nrt(namelist):   
     
