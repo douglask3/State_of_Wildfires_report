@@ -30,6 +30,7 @@ class ConFire(object):
         self.controlID = self.params['controlID']
         self.control_Direction = self.params['control_Direction']
         self.x0 = select_param_or_default('x0', [0])
+        self.cp = select_param_or_default('cp', [1.0] * len(self.control_Direction))
         self.betas = select_param_or_default('betas', [[0]], stack = False)
         self.driver_Direction = self.params['driver_Direction']
         self.Fmax = select_param_or_default('Fmax', 1.0, stack = False)
@@ -51,8 +52,8 @@ class ConFire(object):
             if k == 0: return None
             return 1.0/(1.0 + self.numPCK.exp(-y * k))
         
-        
-        limitations = [sigmoid(y, k) for y, k in zip(controls, self.control_Direction)]
+        limitations = [sigmoid(y, k)**p for y, k, p in \
+                                 zip(controls, self.control_Direction, self.cp)]
         
         if return_limitations:
             return limitations
