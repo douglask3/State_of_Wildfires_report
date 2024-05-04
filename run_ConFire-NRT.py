@@ -41,7 +41,7 @@ def run_ConFire_nrt(namelist):
 
 
 if __name__=="__main__":
-    namelist = 'namelists/nrt.txt'
+    namelist = 'namelists/nrt-tuining.txt'
     
     run_ConFire_nrt(namelist)
     set_trace()
