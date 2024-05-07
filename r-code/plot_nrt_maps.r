@@ -28,7 +28,7 @@ dcolss = list(rev(c('#b2182b','#d6604d','#f4a582','#fddbc7','#f7f7f7','#d1e5f0',
 
 cols_r = c('#f7f4f9','#e7e1ef','#d4b9da','#c994c7','#df65b0','#e7298a','#ce1256','#980043','#67001f')
 
-dir = 'outputs/ConFire_Canada-nrt7/samples/_26-frac_points_0.2/baseline-/'
+dir = 'outputs/ConFire_Canada-nrt-tuning7/samples/_14-frac_points_0.2/baseline-/'
 
 runs = c('Burnt area' = 'control', 'Fuel' = 'Standard_0', 'Moisture' = 'Standard_1',    
          'Weather' = 'Standard_2',
@@ -37,7 +37,7 @@ runs = c('Burnt area' = 'control', 'Fuel' = 'Standard_0', 'Moisture' = 'Standard
 mnths = c(6)
 
 
-png("figs/nrt-Canada-map-obs.png", height = 3, width = 4, 
+png("outputs/figs/nrt-Canada-map-obs.png", height = 3, width = 4, 
         res = 300, unit = 'in')
 layout(rbind(1:3, 4:6, 7:9), widths = c(0.1, 1, 0.3))
 par(mar = rep(0.2, 4))
@@ -69,14 +69,14 @@ legendColBar(c(0.1, 0.7), c(0.1, 0.8), cols = cols_r, limits = levels,
                            extend_min = F, minLab = 0)
 
 dev.off()
-
+mnths = c(6)
 plot_run  <- function(run, cols, dcols) {
     files = list.files(paste0(dir, run, '/'), full.names = TRUE)
     files = files[grepl('pred', files)]
     
     openFile <- function(file) {
-        tfile = paste0('temp/plot_nrt_map/', gsub('/', '-', file))
-       
+        tfile = paste0('temp2/plot_nrt_map/', gsub('/', '-', file))
+        
         if (file.exists(tfile)) return(brick(tfile))
         print(file)
         dat0 =  brick(file)
@@ -87,7 +87,6 @@ plot_run  <- function(run, cols, dcols) {
                             sum(dat[[mn]] > dat0[[seq(mn, nlayers(dat0), by = 12)]]))
         
         out = addLayer(dat, clim, dat- clim, is_an, rank)
-
         writeRaster(out, tfile, overwrite = TRUE)
         return(out)
     }
@@ -101,7 +100,7 @@ plot_run  <- function(run, cols, dcols) {
                 out = calc(layer.apply(dats, function(r) r[[mn]]), 
                            function(x) quantile(x, qu,na.rm = TRUE))
             }
-            tfile = paste('temp/plot_nrt_map/', gsub('/', '-', dir), 
+            tfile = paste('temp2/plot_nrt_map/', gsub('/', '-', dir), 
                           run, experiment, qu, '.nc', sep = '-')
             if (file.exists(tfile)) return(brick(tfile))
             out = layer.apply(index, for_mn)
@@ -112,9 +111,8 @@ plot_run  <- function(run, cols, dcols) {
     }
     mn = mnths[1]
     
-    dat = mapply(find_percentile,1:4, c('dat', 'cim', 'anom', 'is_an', 'rank'), 
+    dat = mapply(find_percentile,1:5, c('dat', 'cim', 'anom', 'is_an', 'rank'), 
                  SIMPLIFY = FALSE)
-
     
     #return(dat)
    
@@ -123,7 +121,8 @@ plot_run  <- function(run, cols, dcols) {
     lmat = t(matrix(1:16, nrow = 4))
     lmat = cbind(17:20, lmat, 0)
     lmat = rbind(21:26, lmat, 0)
-    png(paste0("figs/nrt-Canada-map-", run, '.png'), height = 7.2, width = 7.3, 
+    png(paste0("figs/nrt-Canada-map-",gsub('/', '-', dir), run, '.png'), 
+        height = 7.2, width = 7.3, 
         res = 300, unit = 'in')
     layout(lmat, heights = c(0.1, rep(1, 4), 0.1), widths = c(0.1, 1, 1, 1, 0.3, 0.1))
     par(mar = rep(0.2, 4))
