@@ -1,6 +1,6 @@
 ## model info
 regions:: ['Canada']
-model_title::  'ConFire_<<region>>-nrt-tuning6'
+model_title::  'ConFire_<<region>>-nrt-tuning7'
 
 ## input data paths and filenames
 dir_training:: "data/data/driving_data/<<region>>/nrt/period_2012_2023/"
@@ -30,9 +30,10 @@ niterations:: 200
 cores:: 4
 fraction_data_for_sample:: 0.2
 subset_function:: sub_year_months
-subset_function_args:: {'months_of_year': [4, 5, 6, 7, 8, 9]}
+subset_function_args:: {'months_of_year': [ 4, 5, 6, 7, 8]}
+subset_function_args_eval:: {'months_of_year': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
 
-grab_old_trace:: False # set to True till you get the code running. 
+grab_old_trace:: True # set to True till you get the code running. 
                       # Then set to False when you start adding in new response curves
 ### output info
 dir_outputs:: 'outputs/'
