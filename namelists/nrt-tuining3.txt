@@ -1,6 +1,6 @@
 ## model info
 regions:: ['Canada']
-model_title::  'ConFire_<<region>>-nrt-tuning7'
+model_title::  'ConFire_<<region>>-nrt-tuning8'
 
 ## input data paths and filenames
 dir_training:: "data/data/driving_data/<<region>>/nrt/period_2012_2023/"
@@ -27,8 +27,8 @@ priors:: {'pname': "betas",'np': 1, 'dist': 'LogNormal', 'mu': 0.0, 'sigma': 1.0
 ### optimization info
 link_func_class:: zero_inflated_logit
 niterations:: 200
-cores:: 4
-fraction_data_for_sample:: 0.2
+cores:: 10
+fraction_data_for_sample:: 0.5
 subset_function:: sub_year_months
 subset_function_args:: {'months_of_year': [ 4, 5, 6, 7, 8]}
 subset_function_args_eval:: {'months_of_year': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
@@ -39,7 +39,7 @@ grab_old_trace:: True # set to True till you get the code running.
 dir_outputs:: 'outputs/'
 
 ## evaluation info
-sample_for_plot:: 10
+sample_for_plot:: 100
 control_names:: ['Fuel', 'Moisture', 'Weather', 'Ignition', 'Suppression', 'Snow']
 levels:: [0, 0.01, 0.03, 0.1, 0.3, 0.5, 1.0] 
 dlevels:: [-20, -10, -5, -2, -1, -0.1, 0.1, 1, 2, 5, 10, 20]
