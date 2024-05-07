@@ -32,8 +32,9 @@ def run_ConFire_nrt(namelist):
         control_direction = read_variables_from_namelist(params['other_params_file'])
         control_direction = control_direction['control_Direction']
         control_names = read_variables_from_namelist(namelist)['control_names']
-    
-    
+        
+        subset_function_args = read_variables_from_namelist(namelist)['subset_function_args_eval']
+        
         run_experiment(training_namelist, namelist, control_direction, control_names,
                                   output_dir, output_file, 'baseline', 
                                   model_title = model_title, 
@@ -41,7 +42,7 @@ def run_ConFire_nrt(namelist):
 
 
 if __name__=="__main__":
-    namelist = 'namelists/nrt-tuining.txt'
+    namelist = 'namelists/nrt-tuining3.txt'
     
     run_ConFire_nrt(namelist)
     set_trace()
