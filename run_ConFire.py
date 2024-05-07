@@ -40,7 +40,7 @@ def Potential_limitation(training_namelist, namelist,
                      name + '/Potential'+ str(controlID), extra_params, hyper = False,
                      *args, **kws)
     
-def make_time_series(cube, name, figName):
+def make_time_series(cube, name, figName, percentile = None):
     try: 
         cube.coord('latitude').guess_bounds()
     except:
@@ -54,10 +54,21 @@ def make_time_series(cube, name, figName):
     cube.data = np.ma.masked_invalid(cube.data)
     grid_areas = iris.analysis.cartography.area_weights(cube)
      
-    area_weighted_mean = cube.collapsed(['latitude', 'longitude'], iris.analysis.WPERCENTILE, percent = 90, weights=grid_areas)
+    if percentile is None:
+        area_weighted_mean = cube.collapsed(['latitude', 'longitude'], 
+                                            iris.analysis.MEAN, weights = grid_areas)
+        out_dir = figName + '/mean/'
+    
+    else:
+        area_weighted_mean = cube.collapsed(['latitude', 'longitude'], 
+                                            iris.analysis.WPERCENTILE, 
+                                            percent = percentile, weights = grid_areas)
+        out_dir = figName + '/pc-' + str(percentile) + '/'
     
     #area_weighted_mean = area_weighted_mean.aggregated_by('year', iris.analysis.MAX)
-    out_file = figName + '/points-' + name + '.csv'
+    
+    makeDir(out_dir)
+    out_file = out_dir + 'points-' + name + '.csv'
     np.savetxt(out_file, area_weighted_mean.data, delimiter=',')
     
     TS = area_weighted_mean.collapsed('realization', 
@@ -71,6 +82,11 @@ def make_time_series(cube, name, figName):
     out_file = figName + '/time_series-' + name + '.csv'
     np.savetxt(out_file, TS, delimiter=',', header = "year,p25%,p75%")
     return TS
+
+def make_both_time_series(*args, **kw):
+    make_time_series(*args, **kw)
+    make_time_series(*args, **kw, percentile = 90)
+    make_time_series(*args, **kw, percentile = 95) 
 
 def run_experiment(training_namelist, namelist, control_direction, control_names, 
                    output_dir, output_file, 
@@ -99,12 +115,12 @@ def run_experiment(training_namelist, namelist, control_direction, control_names
                                     *args, Y = Y, X = X, lmask = lmask, scalers = scalers,
                                      **kws) \
                         for i in range(len(control_direction))]
-        limitation_TS = np.array([make_time_series(cube[0], ltype + '-' + name, figName) \
+        limitation_TS = np.array([make_both_time_series(cube[0], ltype + '-' + name, figName) \
                            for cube, name in zip(limitation, control_names)])
 
     
     
-    control_TS = make_time_series(Control[0], 'Control', figName)
+    control_TS = make_both_time_series(Control[0], 'Control', figName)
     
     
         
