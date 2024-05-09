@@ -24,7 +24,7 @@ find_levels_n <- function(z, nlvls = 9, not0) {
     } else symetry = F
     if (not0) z = z[z!=0]
     z = unique(z)
-    
+    z = z[!is.na(z)]
     i = 0
     levels = c()
     sigfig = 0
@@ -34,13 +34,18 @@ find_levels_n <- function(z, nlvls = 9, not0) {
     quants = head(seq(0, 1, length.out = nlvls + 2)[-1], -1)
     while (i < 20 && length(levels) < nlvls) {
         sigfig = sigfig + 1
-        levels = quantile(z, quants)
+        levels = quantile(z, quants, na.rm = TRUE)
         scaling_factor = 10^(ceiling(log10((levels))))
         levels = round(levels / scaling_factor, sigfig) * scaling_factor
         levels = unique(levels)
         print(levels)
         i = i + 1
     }
+    levels = unique(signif(levels, 2))
+    levels1 =  unique(signif(levels, 1))
+    if (length(levels1) == length(levels)) levels = levels1
     if (symetry) levels = c(-rev(levels), levels)
+    print(levels)
+    
     return(levels)
 }
