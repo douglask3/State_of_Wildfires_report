@@ -1,5 +1,6 @@
 find_levels <- function(z, percentiles = seq(20, 80, by = 20), not0 = FALSE) {
     if (is.raster(z)) z = as.numeric(z[])[!is.na(as.numeric(z[]))]
+    z = z[!is.na(z)]
     if (any(z < 0)) symetry = T else symetry = F
     if (not0) z = z[z!=0]
     # Find the corresponding quantiles
@@ -18,13 +19,13 @@ find_levels <- function(z, percentiles = seq(20, 80, by = 20), not0 = FALSE) {
 find_levels_n <- function(z, nlvls = 9, not0) {
    
     if (is.raster(z)) z = as.numeric(z[])[!is.na(as.numeric(z[]))]
+    z = z[!is.na(z)]
     if (any(z < 0)) {
         z = abs(z)
         symetry = T 
     } else symetry = F
     if (not0) z = z[z!=0]
     z = unique(z)
-    z = z[!is.na(z)]
     i = 0
     levels = c()
     sigfig = 0
