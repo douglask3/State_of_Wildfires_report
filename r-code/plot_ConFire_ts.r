@@ -1,5 +1,6 @@
 graphics.off()
 
+if (F) {
 burnt_area_data = paste0("data/data/driving_data/", region, "/isimp3a/obsclim/GSWP3-W5E5/period_2000_2019/burnt_area-2000-2023.nc")
 date_test = '2023-06'
 burnt_area = rast(burnt_area_data)
@@ -23,6 +24,7 @@ burnt_area_tot = sapply(1:nlyr(burnt_area), mean_95)#function(i) sum((burnt_area
 burnt_area_event = burnt_area_tot[date_test]
 burnt_area_tot = burnt_area_tot[sort(unlist(lapply(7:8, function(i) seq(i, nlyr(burnt_area), by = 12))))]
 percentile = mean(burnt_area_tot <= burnt_area_event)
+}
 
 rnning_mean <- function(r) 
     filter(r, rep(1 / 10, 10), sides = 1)
@@ -108,72 +110,54 @@ make_plot <- function() {
 
     qdats = mapply(find_quatiles, dats, years, SIMPLIFY = FALSE)
     
-    if (F) {
+    tfun <- function(x) return(100*x)
+    add_Freq <- function(freq, pc, nme, ylab = '', axis1 = FALSE) {
         x_range = range(unlist(years, recursive = TRUE))
-        y_range = range(unlist(qdats, recursive = TRUE), na.rm = TRUE)
-        plot(x_range, y_range, type = 'n', xlab = '', ylab = '')
-        grid()
-        mtext(side = 2, 'burnt area (%/month)', line = 2)
-        #polygon(c(-9E9, 9E9)[c(1, 2, 2, 1)], c(-9E9, 9E9)[c(1, 1, 2, 2)], col = 'black')
-    
-        plot_exp <- function(dat, year, col) { 
-            for_run <- function(y) {
-                if (nchar(col) == 7) col = paste0(col, '44')
-                polygon(c(year, rev(year)), c(y[1,], rev(y[2,])), 
-                        border = NA, col = col)
+        y_range = range(tfun(unlist(freq, recursive = TRUE)), na.rm = TRUE)
+        plot(x_range, y_range, type = 'n', xlab = '', ylab = '', axes = FALSE)
+        mtext(nme, line = -1.5, side = 3)
+        at = seq(1990, 2100, by = 10)
+        axis(1, at = at, rep('', length(at)))
+        if (axis1) axis(1, at = at)
+        axis(2)
+        mtext(ylab, side = 2, line = 2.5)
+        add_experiment <- function(fq, year, col, alpha = '11') {
+            add_run <- function(y) {
+                lines(year, tfun(y), col = col, lty = 3, lwd = 0.5)
             }
-            lapply(dat, for_run)
-        }
-        browser()
-        mapply(plot_exp, qdats, years, cols)
-    }
-    if (T) {
-        tfun <- function(x) return(100*x)
-        add_Freq <- function(freq, pc, nme, ylab = '', axis1 = FALSE) {
-            x_range = range(unlist(years, recursive = TRUE))
-            y_range = range(tfun(unlist(freq, recursive = TRUE)), na.rm = TRUE)
-            plot(x_range, y_range, type = 'n', xlab = '', ylab = '', axes = FALSE)
-            mtext(nme, line = -1.5, side = 3)
-            at = seq(1990, 2100, by = 10)
-            axis(1, at = at, rep('', length(at)))
-            if (axis1) axis(1, at = at)
-            axis(2)
-            mtext(ylab, side = 2, line = 2.5)
-            add_experiment <- function(fq, year, col, alpha = '11') {
-                add_run <- function(y) {
-                    lines(year, tfun(y), col = col, lty = 3, lwd = 0.5)
-                }
                 
-                if (length(fq) == 1) lines(year, tfun(fq[[1]]), col = col, lwd = 2)
-                else {
+            if (length(fq) == 1) lines(year, tfun(fq[[1]]), col = col, lwd = 2)
+            else {
                     
-                    pfq = apply(do.call(cbind, fq), 1, range)
-                    yearp = year[!is.na(pfq[1,])]
-                    pfq = pfq[,!is.na(pfq[1,])]
-                    if (nchar(col) == 7) colp = paste0(col, alpha) else colp = col
-                    polygon(c(yearp, rev(yearp)), tfun(c(pfq[1,], rev(pfq[2,]))), col = colp, border = NA)
-                    lines(yearp, tfun(pfq[1,]), col = col)
-                    lines(yearp, tfun(pfq[2,]), col = col)
-                    lapply(fq, add_run)
-                }
+                pfq = apply(do.call(cbind, fq), 1, range)
+                yearp = year[!is.na(pfq[1,])]
+                pfq = pfq[,!is.na(pfq[1,])]
+                if (nchar(col) == 7) colp = paste0(col, alpha) else colp = col
+                polygon(c(yearp, rev(yearp)), tfun(c(pfq[1,], rev(pfq[2,]))), 
+                        col = colp, border = NA)
+                lines(yearp, tfun(pfq[1,]), col = col)
+                lines(yearp, tfun(pfq[2,]), col = col)
+                lapply(fq, add_run)
             }
-            for (i in 1:4) mapply(add_experiment, freq, years, cols)
-            mapply(add_experiment, freq, years, cols, '00')
         }
-        png(paste0("futures_", region, ".png"), res = 300, height = 7, width = 7.2, units = 'in')
-        par(mfrow = c(3, 2), mar = c(3, 3, 0, 0), oma = c(1, 1, 0, 0))
-        mapply(add_Freq, freqs, percentiles, percentile_names, 
-               c('', '', '% Likelihood of event', rep('', 3)),
-               c(rep(F, 4), T, T))
-        dev.off()
-        browser()
+        for (i in 1:4) mapply(add_experiment, freq, years, cols)
+        mapply(add_experiment, freq, years, cols, '00')
     }
+    png(paste0("futures_", region, ".png"), res = 300, height = 7, width = 7.2, units = 'in')
+    par(mfrow = c(3, 2), mar = c(3, 3, 0, 0), oma = c(1, 1, 0, 0))
+    mapply(add_Freq, freqs, percentiles, percentile_names, 
+            c('', '', '% Likelihood of event', rep('', 3)), c(rep(F, 4), T, T))
+
+    legend('topleft', legend = c('historic', 'ssp126', 'ssp370', 'ssp585'), col = cols[-2], pch = 19, pt.cex = 2)
+    dev.off()
 }
-region = 'Greece'
-#png("r-code/ConFire_TS.png", height = 6, width = 6, res = 300, units = 'in')
+region = 'Canada'
+
 dir = paste0("outputs/ConFire_", region, "-tuning12/figs/")
 pattern = "_13-frac_points_0.5-"
 file = "points-Control.csv"
+
+load(paste0("outputs/obs_time_series/", region, "/outs.Rd"))
 
 experiments = c("factual", "counterfactual", "historical", "ssp126", "ssp370", "ssp585")
 experiments = c("factual", "historical", "ssp126", "ssp370", "ssp585")
@@ -188,12 +172,4 @@ percentile_names = c('2023 event', paste0('1-in-', round(percentile_names, 0)))
 
 nav = 6
 make_plot()
-
-legend('topleft', legend = c('historic', 'ssp126', 'ssp370', 'ssp585'), col = c('black', 'blue', 'yellow', 'red'), pch = 19, pt.cex = 2)
-dev.off()
-browser()
-experiments = c("Fuel", "Moisture", "Ignition", "Suppression")
-cols = c('#00FFFF', '#FFFF00', '#9999FF', '#9999FF', '#FF9999')
-nav = 0
-#make_plot()
 
