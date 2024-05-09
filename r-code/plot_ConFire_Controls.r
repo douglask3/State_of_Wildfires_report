@@ -19,17 +19,22 @@ colss = list(c('#ffffe5','#f7fcb9','#d9f0a3','#addd8e','#78c679','#41ab5d','#238
             c('#fff7f3','#fde0dd','#fcc5c0','#fa9fb5','#f768a1','#dd3497','#ae017e','#7a0177','#49006a'),
             c('#ffffff','#f0f0f0','#d9d9d9','#bdbdbd','#969696','#737373','#525252','#252525','#000000'))
 
+dcolss = list(c('#c51b7d','#de77ae','#f1b6da','#fde0ef','#f7f7f7','#e6f5d0','#b8e186','#7fbc41','#4d9221'), 
+            c('#8c510a','#bf812d','#dfc27d','#f6e8c3','#f5f5f5','#c7eae5','#80cdc1','#35978f','#01665e'),
+            c('#b35806','#e08214','#fdb863','#fee0b6','#f7f7f7','#d8daeb','#b2abd2','#8073ac','#542788')
+            c('#762a83','#9970ab','#c2a5cf','#e7d4e8','#f7f7f7','#d9f0d3','#a6dba0','#5aae61','#1b7837'))
+
 runs = c('factual-', 'counterfactual-', 'early_industrial-')
-dir = 'outputs/ConFire_Greece-tuning2/samples/_13-frac_points_0.8/'
+dir = 'outputs/ConFire_Greece-tuning9/samples/_13-frac_points_0.5/'
 
 controls = c('Fuel', 'Moisture', 'Ignitions', 'Suppression')
-
-plot_control <- function(i, name, cols) {
+quick = TRUE
+plot_control <- function(i, name, cols, dcols) {
     plot_run <- function(run, levels = NULL) {
         
         files = list.files(paste0(dir, '/', run, '/Standard_', i-1), full.names = TRUE)
         files = files[grepl('sample-pred', files)]
-    
+        if (quick) files = files[1:5]
         dats = layer.apply(files, function(i) mean(brick(i)))
         dats[dats>9E9] = NaN     
         quants = apply(dats[], 1, quantile, c(0.1, 0.9), na.rm = TRUE)
@@ -57,5 +62,5 @@ plot_control <- function(i, name, cols) {
 
 layout(matrix(1:(4*(length(runs)*2 + 1)), ncol = 4))
 par(mar = c(0, 0.0, 0.5, 0), oma = c(0, 1, 2, 1))
-out = mapply(plot_control, 1:length(controls), controls, colss)
+out = mapply(plot_control, 1:length(controls), controls, colss, dcolss)
 #dev.off()
