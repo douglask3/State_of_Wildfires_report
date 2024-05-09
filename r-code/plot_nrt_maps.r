@@ -28,13 +28,13 @@ dcolss = list(rev(c('#b2182b','#d6604d','#f4a582','#fddbc7','#f7f7f7','#d1e5f0',
 
 cols_r = c('#f7f4f9','#e7e1ef','#d4b9da','#c994c7','#df65b0','#e7298a','#ce1256','#980043','#67001f')
 
-dir = 'outputs/ConFire_Canada-nrt-tuning7/samples/_14-frac_points_0.2/baseline-/'
+dir = 'outputs/ConFire_Canada-nrt-tuning9/samples/_12-frac_points_0.5/baseline-/'
 
 runs = c('Burnt area' = 'control', 'Fuel' = 'Standard_0', 'Moisture' = 'Standard_1',    
          'Weather' = 'Standard_2',
          'Ignitions' = 'Standard_3', 'Suppression' = 'Standard_4', 'Snow' = 'Standard_5')
 
-mnths = c(6)
+mnths = c(5)
 
 
 png("outputs/figs/nrt-Canada-map-obs.png", height = 3, width = 4, 
@@ -69,22 +69,22 @@ legendColBar(c(0.1, 0.7), c(0.1, 0.8), cols = cols_r, limits = levels,
                            extend_min = F, minLab = 0)
 
 dev.off()
-mnths = c(6)
+mnths = c(4)
 plot_run  <- function(run, cols, dcols) {
     files = list.files(paste0(dir, run, '/'), full.names = TRUE)
     files = files[grepl('pred', files)]
     
     openFile <- function(file) {
-        tfile = paste0('temp2/plot_nrt_map/', gsub('/', '-', file))
+        tfile = paste0('temp2/plot_nrt_map/mn-', mnths, '-', gsub('/', '-', file))
         
         if (file.exists(tfile)) return(brick(tfile))
         print(file)
         dat0 =  brick(file)
-        clim = layer.apply(1:12, function(mn) mean(dat0[[seq(mn, nlayers(dat0), by = 12)]]))
-        dat = dat0[[(nlayers(dat0)-11):(nlayers(dat0))]]
+        clim = layer.apply(mnths, function(mn) mean(dat0[[seq(mn, nlayers(dat0), by = 12)]]))
+        dat = dat0[[((nlayers(dat0)-11):(nlayers(dat0)))[mnths]]]
         is_an = dat > clim
-        rank =  layer.apply(1:12, function(mn) 
-                            sum(dat[[mn]] > dat0[[seq(mn, nlayers(dat0), by = 12)]]))
+        rank =  layer.apply(mnths, function(mn) 
+                            sum(dat[[which(mnths == mn)]] > dat0[[seq(mn, nlayers(dat0), by = 12)]]))
         
         out = addLayer(dat, clim, dat- clim, is_an, rank)
         writeRaster(out, tfile, overwrite = TRUE)
@@ -92,15 +92,14 @@ plot_run  <- function(run, cols, dcols) {
     }
     dats = lapply(files, openFile)
     find_percentile <- function(i, experiment) {
-        
-        index = ((i-1)*12+1):(i*12)
+        index = ((i-1)*length(mnths)+1):(i*length(mnths))
         for_quantile <- function(qu) {
             for_mn <- function(mn) {
                 print(mn)
                 out = calc(layer.apply(dats, function(r) r[[mn]]), 
                            function(x) quantile(x, qu,na.rm = TRUE))
             }
-            tfile = paste('temp2/plot_nrt_map/', gsub('/', '-', dir), 
+            tfile = paste('temp2/plot_nrt_map/mn-', mnths, '-', gsub('/', '-', dir), 
                           run, experiment, qu, '.nc', sep = '-')
             if (file.exists(tfile)) return(brick(tfile))
             out = layer.apply(index, for_mn)
@@ -116,7 +115,7 @@ plot_run  <- function(run, cols, dcols) {
     
     #return(dat)
    
-    dat = lapply(dat, function(r) layer.apply(r, function(x) x[[mn]]))
+    dat = lapply(dat, function(r) layer.apply(r, function(x) x[[mn == mnths]]))
     
     lmat = t(matrix(1:16, nrow = 4))
     lmat = cbind(17:20, lmat, 0)
@@ -139,33 +138,42 @@ plot_run  <- function(run, cols, dcols) {
                            extend_min = T)
 
     
-    levels = find_levels(dat[[5]], seq(10, 90, 10), not0 = TRUE)
+    levels = find_levels(as.vector(dat[[5]])[as.vector(dat[[5]]) < 10], seq(10, 90, 10), not0 = TRUE)
     layer.apply(dat[[5]], plotStandardMap, cols = cols_r, limits = levels)
     legendColBar(c(0.1, 0.7), c(0.1, 0.8), cols = cols_r, limits = levels, 
-                           extend_min = F, minLab = 0)
+                           extend_min = F, minLab = 0, extend_max = F, maxLab = 10)
 
+   
     plot.new()
-    plot.new()
 
-    liki = mean(layer.apply(dats, function(r) r[[37:48]][[mn]]))
-    levels = find_levels(liki, seq(10, 90, 10), not0 = TRUE)
-    cols_l = c('#ffffff','#f0f0f0','#d9d9d9','#bdbdbd','#969696','#737373','#525252','#252525','#000000')
-
-    plotStandardMap(liki, cols = cols_l, limits =  levels)
-    legendColBar(c(0.1, 0.7), c(0.1, 0.8), cols = cols_l, limits = levels, 
-                           extend_min = F, minLab = 0)
+    liki1 = mean(layer.apply(dats, function(r) r[[((3*length(mnths))+1):4*length(mnths)]][[mn==mnths]]))
+    liki2 = mean(layer.apply(dats, function(r) r[[5]]) == 10)
     
-    mtext_pnew <- function(txt) {
+    cols_l = c('#ffffff','#f0f0f0','#d9d9d9','#bdbdbd','#969696','#737373','#525252','#252525','#000000')
+    
+    levels = find_levels(c(liki1[liki1<1], liki2[liki2 < 1]), seq(10, 90, 10), not0 = TRUE)
+    plotStandardMap(liki1, cols = cols_l, limits =  levels)
+    mtext(side = 3, 'of anomolie')
+    #legendColBar(c(0.1, 0.7), c(0.1, 0.8), cols = cols_l, limits = levels*100, 
+    #                       extend_min = F, minLab = 0, extend_max = F, maxLab = 100)
+    
+    plotStandardMap(liki2, cols = cols_l, limits =  levels)
+    mtext(side = 3, 'of highest on record')
+    legendColBar(c(0.1, 0.7), c(0.1, 0.8), cols = cols_l, limits = levels*100, 
+                           extend_min = F, minLab = 0, extend_max = F, maxLab = 100)
+
+    mtext_pnew <- function(txt, side = 4, srt = -90) {
         plot.new()        
-        mtext(txt, side = 4, line = -1, srt = -90)
+        mtext(txt, side = side, line = -1, srt = srt)
     }
     mtext_pnew("annual average burnt area")
     mtext_pnew("2023 anomoly")
     mtext_pnew("Year rank")
     mtext_pnew("likelihood of anomoly")
-    mtext_pnew("10%")
-    mtext_pnew("50%")
-    mtext_pnew("90%")
+    plot.new()
+    mtext_pnew("10%", 3, 0)
+    mtext_pnew("50%", 3, 0)
+    mtext_pnew("90%", 3, 0)
     
     dev.off()
 }
