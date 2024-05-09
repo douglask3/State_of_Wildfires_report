@@ -46,7 +46,7 @@ find_clim_av <- function(x)
 
 
 
-plot_strpes <- function(cdat, levels, cols) {
+plot_strpes <- function(cdat, levels, cols, addAxis = TRUE) {
 	cdat = cut_results(cdat, levels)
 
 	plot(c(1, 365), ncol(cdat) * c(-1, 1), type = 'n', axes = FALSE, xlab = '', ylab = '')
@@ -63,12 +63,15 @@ plot_strpes <- function(cdat, levels, cols) {
 	}
 
 	sapply(1:360, add_Day)
-	axis(at = seq(15, 360-15, 30), labels = month.abb, side = 1, pos = 0)
-	axis(at = c(-260, 700), labels = c('', ''), side = 1, pos = 0, xpd = FALSE)
+	if (addAxis) {
+            axis(at = seq(15, 360-15, 30), labels = month.abb, side = 1, pos = 0)
+	    axis(at = c(0, 360), labels = c('', ''), side = 1, pos = 0, xpd = FALSE)
+        }
 }
 
 
-plot_cols <- function(file, cols, levels = NULL, do_last_year = FALSE, do_anom = FALSE) {   
+plot_cols <- function(file, cols, levels = NULL, do_last_year = FALSE, do_anom = FALSE, 
+                      addLegend = TRUE, ...) {   
 	dat = as.matrix(read.csv(paste0(dir, file), stringsAsFactors = FALSE))*100
 	idat = apply(dat, 1, split_to_day)
         
@@ -78,7 +81,7 @@ plot_cols <- function(file, cols, levels = NULL, do_last_year = FALSE, do_anom =
 	    if (file == files[1]) 
                 clim = tail(idat, 360) - clim
             else
-                clim = log(tail(idat, 360)) - log(clim)
+                clim = (tail(idat, 360) - clim)/clim
 	    #levels = quantile(abs(clim), seq(0, 1, length.out = ceiling(length(cols))/2))[-1]
 	    #levels = c(rev(-levels), levels)
             extend_min = TRUE
@@ -93,11 +96,11 @@ plot_cols <- function(file, cols, levels = NULL, do_last_year = FALSE, do_anom =
         levels = unique(signif(levels), 2)
         cols =  make_col_vector(cols, ncols = length(levels) + 1)
 	
-	plot_strpes(clim, levels, cols)
+	plot_strpes(clim, levels, cols, ...)
         if (file == files[1]) {
-            if (do_anom) mtext(side = 3, line = 1, 'anomoly')
-                else if (do_last_year) mtext(side = 3, line = 1, '2023')
-                else mtext(side = 3, line = 1, 'Climatology')
+            if (do_anom) mtext(side = 3, line = 0, 'anomoly')
+                else if (do_last_year) mtext(side = 3, line = 0, '2023')
+                else mtext(side = 3, line = 0, 'Climatology')
         }
         if (!do_anom && !do_last_year) {
             if (grepl('Control', file)) {
@@ -107,15 +110,18 @@ plot_cols <- function(file, cols, levels = NULL, do_last_year = FALSE, do_anom =
                 txt = str_to_title(txt)
                 txt = gsub(' ', '\n', txt)
             }
-            mtext(side = 2, line = 1, txt)
+            mtext(side = 2, line = 0, txt)
         }
-        legendColBar(c(365, 380), ncol(clim) * c(-0.9, 0.9), cols, levels, extend_max=TRUE, 
-                     extend_min = extend_min, minLab = minLab, add = TRUE, xtext_pos_scale= 1.4)
+        if (addLegend) 
+            legendColBar(c(365, 380), ncol(clim) * c(-0.9, 0.9), cols, levels, 
+                         extend_max = TRUE,  extend_min = extend_min, minLab = minLab, 
+                         add = TRUE, xtext_pos_scale= 1.4)
         return(levels)
         
 }
 
-png("figs/control_stripes.png", height = 6.5, width = 10, units = 'in', res = 300)
+if (F) {
+png("figs/control_stripes.png", height = 6.5, width = 12, units = 'in', res = 300)
 par(mfcol = c(6, 3), mar = c(0, 2, 0, 0), oma = c(0,2, 2, 3.5))
 
 levels = mapply(plot_cols, files, cols, SIMPLIFY = FALSE)
@@ -123,3 +129,56 @@ levels = mapply(plot_cols, files, cols, SIMPLIFY = FALSE)
 mapply(plot_cols, files, cols, levels = levels, MoreArgs = list(do_last_year = TRUE))
 mapply(plot_cols, files, dcols, MoreArgs = list(do_anom = TRUE))
 dev.off()
+}
+
+if (T) {
+png("figs/control_stripes-Joey_stile.png", height = 6.5, width = 10, units = 'in', res = 300)
+
+lmat = matrix(1:18, nrow = 6)
+lmat = rbind(lmat[1,], c(19, 19, 20), lmat[-1,], c(21, 21, 22))
+layout(lmat, height = c(1, 0.6, rep(1, 5), 0.6))
+par(mar = c(0, 0.2, 0, 0), oma = c(0,4, 2, 3.5))
+dcols = c('#2c124c', '#66479a', '#aca2d0', '#e1e2ed', 
+          '#fae5c8', '#f6b15e', '#c56a28', '#813d1b')
+cols = c('#fff7ec', '#fee8c8', '#fdd49e', '#fdbb84', 
+         '#fc8d59', '#ef6548', '#d7301f', '#b30000', '#7f0000')
+
+levels = c(0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50)
+levels = 1:50
+
+dlevels = seq(1, 6, by = 0.03)
+dlevels = 0.030*(((dlevels)^3.5)/(6^3.5))
+dlevels = unique(signif(dlevels, 1))
+dlevels = c(-rev(dlevels), dlevels)
+
+levels_BA = unique(signif(10^seq(-5, -1, length.out = 51), 2))
+
+dlevels_BA = unique(signif(10^seq(-5, -2, length.out = 25), 2))
+dlevels_BA = c(-rev(dlevels_BA), dlevels_BA)
+
+for (do_last_year in c(FALSE, TRUE)) {
+    plot_cols(files[1], cols = cols, addLegend = FALSE, do_last_year = do_last_year,
+              levels = levels_BA)
+
+    mapply(plot_cols, files[-1], 
+           MoreArgs = list(levels = levels, cols = cols, 
+                           do_last_year = do_last_year, addLegend = FALSE, addAxis = FALSE))
+}
+
+#mapply(plot_cols, files, 
+#       MoreArgs = list(levels = levels, cols = cols, 
+#                       addLegend = FALSE, do_last_year = TRUE, addAxis = FALSE))
+
+
+plot_cols(files[1], levels = dlevels_BA, cols = dcols,
+          addLegend = FALSE, do_anom = TRUE , addAxis = FALSE)
+mapply(plot_cols, files[-1], MoreArgs = list(levels = dlevels, cols = dcols, 
+                                         addLegend = FALSE, do_anom = TRUE , addAxis = FALSE))
+
+legendColBar(c(0.3, 0.7), c(0.0, 1), cols = cols, limits = levels_BA, extend_max = TRUE, extend_min = FALSE, minLab = 0, transpose = TRUE, oneSideLabels = FALSE)
+legendColBar(c(0.3, 0.7), c(0.0, 1), cols = dcols, limits = dlevels_BA, extend_max = TRUE, extend_min = TRUE, transpose = TRUE, oneSideLabels = FALSE)
+
+legendColBar(c(0.3, 0.7), c(0.0, 1), cols = cols, limits = levels, extend_max = TRUE, extend_min = FALSE, minLab = 0, transpose = TRUE, oneSideLabels = FALSE)
+legendColBar(c(0.3, 0.7), c(0.0, 1), cols = dcols, limits = dlevels, extend_max = TRUE, extend_min = TRUE, transpose = TRUE, oneSideLabels = FALSE)
+dev.off()
+}
