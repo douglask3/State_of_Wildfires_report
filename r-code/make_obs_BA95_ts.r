@@ -37,7 +37,7 @@ for_region <- function(region, date_test) {
     burnt_area_tot = burnt_area_tot[sort(unlist(lapply((month_number-1):(month_number+1), function(i) seq(i, nlyr(burnt_area), by = 12))))]
     percentile = mean(burnt_area_tot <= burnt_area_event)
     
-    out_file = paste0(out_dir_region, 'Rd')
+    out_file = paste0(out_dir_region, 'outs.Rd')
     save(burnt_area_tot, percentile, burnt_area_event, file = out_file)
 }
 
