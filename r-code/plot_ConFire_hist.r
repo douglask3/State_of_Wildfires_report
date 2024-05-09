@@ -3,7 +3,13 @@ library(terra)
 library(modi)
 
 region = 'Greece'
+region = 'Canada'
+region = 'NW_Amazon'
 date_test = '2023-08'
+date_test = '2023-06'
+date_test = '2023-09'
+#spar = 0.75
+spar = 0.5
 
 fname = paste0("outputs/ConFire_", region, "-tuning12/figs/_13-frac_points_0.5-")
 fileEx = "-control_TS/points-Control.csv"
@@ -35,6 +41,7 @@ burnt_area_tot = sapply(1:nlyr(burnt_area), mean_95)#function(i) sum((burnt_area
 burnt_area_event = burnt_area_tot[date_test]
 burnt_area_tot = burnt_area_tot[sort(unlist(lapply(7:8, function(i) seq(i, nlyr(burnt_area), by = 12))))]
 percentile = mean(burnt_area_tot <= burnt_area_event)
+if (percentile > 0.98) percentile = 0.98
 #burnt_area_event = burnt_area_event * cellSize(burnt_area_event) 
 #burnt_area_event = sum(burnt_area_event[], na.rm = T)/ sum(gridArea[], na.rm = T)
 #burnt_area_tot / sum(gridArea[], na.rm = T)
@@ -62,14 +69,18 @@ plot_experiments <- function(experiments, cols = c('#FF0000', '#0000FF'), conPer
     scale = extreme/quantile(dats[[1]], c(percentile))
     dats = lapply(dats, '*', scale)
     
-    bins = range(unlist(dats)); bins = seq(bins[1], bins[2], 
-                 length.out = floor(sqrt(length(unlist(dats[[1]])))))
-    bins = c(bins, tail(bins, 1) + diff(tail(bins, 2)) * 1:(round(0.1 * length(bins))))
+    bins = range(unlist(dats))
+    bins = seq(bins[1], bins[2], length.out = floor(sqrt(length(unlist(dats[[1]])))))
+    bins0 = bins
+    bins = c(sort(seq(bins[1], 0, by = -diff(bins[1:2]))[-1]), bins, tail(bins, 1) + diff(tail(bins, 2)) * 1:(round(0.1 * length(bins))))
+    
     ys = lapply(dats, function(x) hist(unlist(x), bins, plot = FALSE)$density)
-    ys = lapply(ys, function(i) log(i + 1))
+    mys = max(unlist(ys))
+    ys = lapply(ys, '/', mys)
+    #ys = lapply(ys, function(i) log(i + 1))
     x = bins[-1] - diff(bins)
     
-    plot(range(x, extreme), range(unlist(ys)), 
+    plot(range(bins0, extreme), range(unlist(ys)), 
          type = 'n', axes = FALSE, xlab = '', ylab = '')
     #axis(1, at = seq(-100, 100), itrans_fun(seq(-100, 100)))
     axis(1)
@@ -80,8 +91,10 @@ plot_experiments <- function(experiments, cols = c('#FF0000', '#0000FF'), conPer
         mapply(addLine, x, y)
         smoothx = seq(min(x), max(x), length.out = 1000)
         ly = log(y + 0.0001)
-        
-        smoothy = exp(predict(smooth.spline(ly~x, spar = 0.75), x = smoothx)[[2]])
+        xs = log(x)
+        #browser()
+        smoothy = exp(predict(smooth.spline(ly~x, spar = spar), x = smoothx)[[2]])
+        smoothy = smoothy / max(smoothy) 
         
         polygon(c(smoothx[1], smoothx, tail(smoothx, 1)),
                 c(log(1), smoothy, log(1)), col = paste0(col, '44'), border = NA)
@@ -99,12 +112,13 @@ plot_experiments <- function(experiments, cols = c('#FF0000', '#0000FF'), conPer
     pc_diff <- function(i) 100*(quantile(dats[[1]][,i], pc)/quantile(dats[[2]][,i], pc)-1)
     pcs = sapply(1:ncol(dats[[1]]), pc_diff)
     pcsq = round(quantile(pcs, c(0.1, 0.9)), 2)
-    pval = round(mean(pcs<0), 2)
-    
+    pval = round(100*mean(pcs<0), 2)
+    if (pval < 50) pval = 100 - pval
+    if (pval == 100) pval = '> 99.9'
     mtext(side = 3, adj = 1, line = 1, paste(conPeriod, "vs", expPeriod), xpd = NA, font = 2)
     mtext(side = 3, adj = 1, line = -0.5, paste0("2023 risk ratio: ", extreme_fut))
-    mtext(side = 3, adj = 1, line = -2, paste0("p-val: ", pval))
-    mtext(side = 3, adj = 1, line = -3.5, paste0('Impact: ', pcsq[1], ' to ', pcsq[2], '%' ))
+    mtext(side = 3, adj = 1, line = -2, paste0('Impact: ', pcsq[1], ' to ', pcsq[2], '%' ))
+    mtext(side = 3, adj = 1, line = -3.5, paste0("Likelihood: ", pval, '%'))
 
     for (pch in c(16, 19))
         legend('right', c(conPeriod, expPeriod, ''), pch = pch, 
