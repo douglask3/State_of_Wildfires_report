@@ -1,5 +1,5 @@
 ## model info
-regions:: ['Canada']
+regions:: ['Greece', 'NW_Amazon', 'Canada']
 model_title::  'ConFire_<<region>>-nrt-tuning9'
 
 ## input data paths and filenames
@@ -39,7 +39,7 @@ grab_old_trace:: True # set to True till you get the code running.
 dir_outputs:: 'outputs/'
 
 ## evaluation info
-sample_for_plot:: 25
+sample_for_plot:: 100
 control_names:: ['Fuel', 'Moisture', 'Weather', 'Ignition', 'Suppression', 'Snow']
 levels:: [0, 0.01, 0.03, 0.1, 0.3, 0.5, 1.0] 
 dlevels:: [-20, -10, -5, -2, -1, -0.1, 0.1, 1, 2, 5, 10, 20]
