@@ -55,14 +55,28 @@ def make_time_series(cube, name, figName, percentile = None):
     grid_areas = iris.analysis.cartography.area_weights(cube)
      
     if percentile is None:
-        area_weighted_mean = cube.collapsed(['latitude', 'longitude'], 
-                                            iris.analysis.MEAN, weights = grid_areas)
+        try:
+            area_weighted_mean = cube.collapsed(['latitude', 'longitude'],iris.analysis.MEAN, weights = grid_areas)
+        except:
+            area_weighted_mean =  [cube[i].collapsed(['latitude', 'longitude'],
+                                                 iris.analysis.MEAN, weights = grid_areas[i]) \
+                                   for i in range(cube.shape[0])]
+            area_weighted_mean = iris.cube.CubeList(area_weighted_mean).merge_cube()
         out_dir = figName + '/mean/'
     
     else:
-        area_weighted_mean = cube.collapsed(['latitude', 'longitude'], 
+        try:
+            area_weighted_mean = cube.collapsed(['latitude', 'longitude'], 
                                             iris.analysis.WPERCENTILE, 
                                             percent = percentile, weights = grid_areas)
+            
+        except:
+            area_weighted_mean =  [cube[i].collapsed(['latitude', 'longitude'],
+                                                 iris.analysis.WPERCENTILE, 
+                                                 percent = percentile, 
+                                                 weights = grid_areas[i]) \
+                                   for i in range(cube.shape[0])]
+            area_weighted_mean = iris.cube.CubeList(area_weighted_mean).merge_cube()
         out_dir = figName + '/pc-' + str(percentile) + '/'
     
     #area_weighted_mean = area_weighted_mean.aggregated_by('year', iris.analysis.MAX)
