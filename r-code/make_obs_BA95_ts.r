@@ -9,7 +9,7 @@ out_dir = "outputs/obs_time_series/"
 for_region <- function(region, date_test) {
     month_number = as.numeric(substr(date_test, 6, 7))
     burnt_area_data = paste0("data/data/driving_data/", region, "/isimp3a/obsclim/GSWP3-W5E5/period_2000_2019/burnt_area-2000-2023.nc")
-    date_test = '2023-06'
+
     burnt_area = rast(burnt_area_data)
     date_test = substr(time(burnt_area), 1, 7) == date_test
     #burnt_area_event = burnt_area[[date_test]]
