@@ -1,7 +1,7 @@
 library(terra)
 source("libs/add_date_time.r")
 dir = "/net/data/users/dkelley/state_of_fires_report_20YY/data/"
-region = 'Canada'
+region = 'NW_Amazon'
 extent = c(-180, 180, -90, 70)
 data_file = paste0('raw_bioclim/data-', region, '.nc')
 variables_info = list('d2m' = c(data_file, 'd2m'),
@@ -27,7 +27,7 @@ out_dir2 = 'nrt'
 
 eg_rast = rast(paste0('../data/data/driving_data/', region, '/isimp3a/obsclim/GSWP3-W5E5/period_2000_2019/burnt_area-2000-2023.nc'))[[1]]
 eg_rast = crop(eg_rast, extent)
-year_range = c(2012, 2023)
+year_range = c(2013, 2023)
 
 out_dir = paste0(out_dir1, '/', out_dir2, '/period_', year_range[1], '_', year_range[2], '/')
 try(dir.create(out_dir, recursive = TRUE))
@@ -44,7 +44,9 @@ open_and_process <- function(var_info, name) {
     file = paste0(dir, '/', var_info[1])
     fname_out = paste0(out_dir, '/', name, '.nc')
     #if (file.exists(fname_out)) return(fname_out)
-    if (name == 'VOD') year_range[1] = year_range[1] - 1
+    test_moisture = name == 'VOD' || grepl("Fuel-Moisture", name) || name == 'tp'
+
+    if (test_moisture) year_range[1] = year_range[1] - 1
     if (file.exists(file)  && !dir.exists(file)) {
         dat = rast(file, var_info[2])
         dat = dat[[sapply(unique(time(dat)), function(i) which(time(dat) == i)[1])]]
@@ -62,7 +64,7 @@ open_and_process <- function(var_info, name) {
             tfile = paste0(c('../temp/nrt/', var_info[2], region, 
                            gsub('/', '', strsplit(file, dir)[[1]][2])), collapse = '')
             
-            #if (file.exists(tfile)) return(rast(tfile))
+            if (file.exists(tfile)) return(rast(tfile))
             print(file)
             out = rast(file, var_info[2])
             
@@ -95,13 +97,8 @@ open_and_process <- function(var_info, name) {
 
     dat[is.na(dat)] = mean(dat[], na.rm = TRUE)
     dat[is.na(eg_rast)] = NaN
-    #yay = sum(is.na(dat))[]
-    #if (length(unique(yay)) !=2) browser()
-    #if (max(yay) != 156 && max(yay) !=13) browser()
-    #print(fname_out)
-    #print(sum(!is.na(dat[])))
 
-    if (name == "VOD") {
+    if (test_moisture) {
         index = 13:nlyr(dat)
         writeCDF(dat[[index]], '../temp/nrt/temp_no_time_file.nc', overwrite = TRUE)
         years = years[index]
@@ -110,18 +107,37 @@ open_and_process <- function(var_info, name) {
         add_date_to_file('../temp/nrt/temp_no_time_file.nc', 
                          fname_out, years, mnths, days, name,
                          overwrite_date = TRUE)
-        dat12 = rast(lapply( 13:nlyr(dat), function(mn) max(dat[[(mn-11):mn]])))
+        dat12 = rast(lapply( index, function(mn) max(dat[[(mn-11):mn]])))
     
         dat12 = writeCDF(dat12, '../temp/nrt/temp_no_time_file.nc', overwrite = TRUE)
         add_date_to_file('../temp/nrt/temp_no_time_file.nc', 
                          paste0(substr(fname_out, 1, nchar(fname_out) - 3), '-12monthMax.nc'), 
                          years, mnths, days, name,
                          overwrite_date = TRUE)
-    #for ( i in 1:nlyr(dat)) {
-    #    dat[[i]][is.na(eg_rast)] = NaN
-    #    mask = ((is.na(dat[[i]]) & (!is.na(eg_rast))))
-    #    if (sum(mask[]) > 0) browser()
-    #}
+
+        datQu = rast(lapply(index, function(mn) mean(dat[[(mn-2):mn]])))
+        datQu = writeCDF(datQu, '../temp/nrt/temp_no_time_file.nc', overwrite = TRUE)
+        add_date_to_file('../temp/nrt/temp_no_time_file.nc', 
+                         paste0(substr(fname_out, 1, nchar(fname_out) - 3), '-Quater.nc'), 
+                         years, mnths, days, name,
+                         overwrite_date = TRUE)
+
+        datAn = rast(lapply(index, function(mn) mean(dat[[(mn-11):mn]])))
+        datAn = writeCDF(datAn, '../temp/nrt/temp_no_time_file.nc', overwrite = TRUE)
+        add_date_to_file('../temp/nrt/temp_no_time_file.nc', 
+                         paste0(substr(fname_out, 1, nchar(fname_out) - 3), '-12Annual.nc'), 
+                         years, mnths, days, name,
+                         overwrite_date = TRUE)
+        defict = 1-exp(-(dat[[index]]/datAn))
+
+        defict[is.na(defict)] = mean(defict[], na.rm = TRUE)
+        dat[is.na(eg_rast)] = NaN
+        writeCDF(defict, '../temp/nrt/temp_no_time_file.nc', overwrite = TRUE)
+        add_date_to_file('../temp/nrt/temp_no_time_file.nc', 
+                         paste0(substr(fname_out, 1, nchar(fname_out) - 3), '-Deficity.nc'), 
+                         years, mnths, days, name,
+                         overwrite_date = TRUE)
+        
     } else {
         
         writeCDF(dat, '../temp/nrt/temp_no_time_file.nc', overwrite = TRUE)
@@ -137,7 +153,7 @@ open_and_process <- function(var_info, name) {
 fname_outs = mapply(open_and_process, variables_info, names(variables_info))
 
 
-spread_clim <- function(name, file, vname = NULL) {
+spread_clim <- function(name, file, vname = NULL, partition = NULL) {
     file_out = paste0(out_dir, '/', name, '.nc')
     file.copy(fname_outs[1], file_out, overwrite = TRUE)
     
@@ -158,7 +174,17 @@ spread_clim <- function(name, file, vname = NULL) {
         for (mn_out in seq(mn, nlyr(dat_out), by = 12)) dat_out[[mn_out]] = dat[[mn]]
 
     time(dat_out) = time(rast(file_out))
-    dat_out = writeCDF(dat_out,file_out, overwrite = TRUE)
+    dat_out = writeCDF(dat_out, file_out, overwrite = TRUE)
+
+    if (!is.null(partition)) {
+        part = resample_not_scale(rast(partition), dat_out)
+        part = part/sum(part)
+        for (ip in 1:nlyr(part)) {
+            dat_out_p = dat_out * part[[ip]]
+            fname_out_p = paste0(strsplit(file_out, '.nc')[[1]], '-', tail(strsplit(partition[ip], '/')[[1]], 1))
+            writeCDF(dat_out_p, fname_out_p, overwrite = TRUE)
+        }
+    }
 }
 
 spread_clim('lightn',"/hpc//data/d00/hadea/isimip2b/ancils/lightning/LISOTD_HRMC_V2.3.2015.0p5ancil.nc")
@@ -166,4 +192,5 @@ spread_clim('lightn',"/hpc//data/d00/hadea/isimip2b/ancils/lightning/LISOTD_HRMC
 mapply(spread_clim, name = c('LiveFuelFoilage', "LiveFuelWood", 
                              "DeadFuelFoilage", "DeadFuelWood"), 
        file = '../data/data/raw_bioclim/C_FUEL/',
-       vname = c("Live_Leaf", "Live_Wood", "Dead_Foliage", "Dead_Wood"))
+       vname = c("Live_Leaf", "Live_Wood", "Dead_Foliage", "Dead_Wood"), 
+       MoreArgs = list(partition = paste0("../data/data/raw_bioclim/", c("cvh_C.nc", "cvl_C.nc"))))
