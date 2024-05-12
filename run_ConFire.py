@@ -39,6 +39,49 @@ def Potential_limitation(training_namelist, namelist,
     return call_eval(training_namelist, namelist,
                      name + '/Potential'+ str(controlID), extra_params, hyper = False,
                      *args, **kws)
+
+def above_percentile_mean(cube, percentile = 0.95):
+    
+    area_cube = iris.analysis.cartography.area_weights(cube)
+    # Sort the cube by fractional burnt values in descending order
+    sorted_indices = np.argsort(cube.data.ravel())
+    sorted_cube_data = cube.data.ravel()[sorted_indices]
+    area_data_np = np.array(area_cube.data)
+    sorted_area_data = area_data_np.ravel()[sorted_indices]
+
+    cumulative_area = np.cumsum(sorted_area_data * sorted_cube_data)
+
+    # Determine the total area of the grid cells
+    total_area = np.sum(sorted_area_data * sorted_cube_data)
+
+    # Find the index where the cumulative sum exceeds the 95% threshold of the total area
+    threshold_index = np.argmax(cumulative_area > (percentile/100.0) * total_area)
+
+    # Use this index to obtain the fractional burnt value 
+    # corresponding to the area-weighted 95th percentile threshold
+    threshold_value = sorted_cube_data[threshold_index]
+    
+    # Mask out grid cells below the area-weighted 95th percentile threshold
+    masked_cube = cube.copy()
+    masked_cube.data = np.ma.masked_less(cube.data, threshold_value)
+    
+    # Calculate the area of the grid cells above the threshold
+    masked_area_cube = area_cube.copy()
+    #masked_area_cube.data = np.ma.masked_where(masked_cube.data.mask, area_cube.data)
+    #masked_area_cube.data[masked_area_cube.data.mask]
+    # Calculate the total area of the grid cells above the threshold
+    #total_masked_area = np.sum(masked_area_cube.data)
+    
+    # Calculate the area-weighted mean fractional burnt in the top 5% grid cells
+    #area_weighted_mean_fractional_burnt = np.sum(masked_cube.data * masked_area_cube.data) / total_masked_area
+   
+    mean_cube = masked_cube.collapsed(['latitude', 'longitude'], iris.analysis.MEAN, weights=masked_area_cube)
+    
+    #mean_cube.data = area_weighted_mean_fractional_burnt
+    
+    return(mean_cube)
+    
+
     
 def make_time_series(cube, name, figName, percentile = None):
     try: 
@@ -65,18 +108,29 @@ def make_time_series(cube, name, figName, percentile = None):
         out_dir = figName + '/mean/'
     
     else:
-        try:
-            area_weighted_mean = cube.collapsed(['latitude', 'longitude'], 
-                                            iris.analysis.WPERCENTILE, 
-                                            percent = percentile, weights = grid_areas)
-            
-        except:
-            area_weighted_mean =  [cube[i].collapsed(['latitude', 'longitude'],
-                                                 iris.analysis.WPERCENTILE, 
-                                                 percent = percentile, 
-                                                 weights = grid_areas[i]) \
-                                   for i in range(cube.shape[0])]
-            area_weighted_mean = iris.cube.CubeList(area_weighted_mean).merge_cube()
+        def percentile_for_relization(cube, i):
+            out = [above_percentile_mean(cube[i][j], percentile) for j in range(cube.shape[1])]
+            for i in range(len(out)): out[i].remove_coord('month')
+            for i in range(len(out)): out[i].remove_coord('year')
+            out = iris.cube.CubeList(out).merge_cube()
+            return(out)
+
+        area_weighted_mean = [percentile_for_relization(cube, i) for i in range(cube.shape[0])]
+        area_weighted_mean = iris.cube.CubeList(area_weighted_mean).merge_cube()       
+        
+        #try:
+        #    area_weighted_mean = cube.collapsed(['latitude', 'longitude'], 
+        #                                    iris.analysis.WPERCENTILE, 
+        #                                    percent = percentile, weights = grid_areas)
+        #    
+        #except:
+        #    area_weighted_mean =  [cube[i].collapsed(['latitude', 'longitude'],
+        #                                         iris.analysis.WPERCENTILE, 
+        #                                         percent = percentile, 
+        #                                         weights = grid_areas[i]) \
+        #                           for i in range(cube.shape[0])]
+        #    area_weighted_mean = iris.cube.CubeList(area_weighted_mean).merge_cube()
+        
         out_dir = figName + '/pc-' + str(percentile) + '/'
     
     #area_weighted_mean = area_weighted_mean.aggregated_by('year', iris.analysis.MAX)
@@ -98,8 +152,8 @@ def make_time_series(cube, name, figName, percentile = None):
     return TS
 
 def make_both_time_series(*args, **kw):
-    make_time_series(*args, **kw)
-    make_time_series(*args, **kw, percentile = 90)
+    #make_time_series(*args, **kw)
+    #make_time_series(*args, **kw, percentile = 90)
     make_time_series(*args, **kw, percentile = 95) 
 
 def run_experiment(training_namelist, namelist, control_direction, control_names, 
@@ -115,12 +169,24 @@ def run_experiment(training_namelist, namelist, control_direction, control_names
     temp_file = 'temp/run_ConFire_lock' + (output_dir + output_file + name).replace('/', '_') + '.txt'
     #if os.path.isfile(temp_file): return None
 
-    Control, Y, X, lmask, scalers  = call_eval(training_namelist, namelist,
-                        name + '/control', run_only = run_only, return_inputs = True,
-                        *args, **kws)
-    
     figName = output_dir + 'figs/' + output_file + '-' + name + 'control_TS'
     makeDir(figName + '/')
+
+    Evaluate, Y, X, lmask, scalers  = call_eval(training_namelist, namelist,
+                        name + '/Evaluate', run_only = run_only, return_inputs = True,
+                        *args, **kws)
+
+    evaluate_TS = make_both_time_series(Evaluate[0], 'Evaluate', figName)
+
+    Control, Y, X, lmask, scalers  = call_eval(training_namelist, namelist,
+                        name + '/control', run_only = True, return_inputs = True, 
+                        Y = Y, X = X, lmask = lmask, scalers = scalers,
+                        sample_error = False,
+                        *args, **kws)
+    
+    control_TS = make_both_time_series(Control[0], 'Control', figName)
+    
+    
     for ltype, FUN in zip(['standard', 'potential'],
                           [Standard_limitation, Potential_limitation]):
         
@@ -131,12 +197,6 @@ def run_experiment(training_namelist, namelist, control_direction, control_names
                         for i in range(len(control_direction))]
         limitation_TS = np.array([make_both_time_series(cube[0], ltype + '-' + name, figName) \
                            for cube, name in zip(limitation, control_names)])
-
-    
-    
-    control_TS = make_both_time_series(Control[0], 'Control', figName)
-    
-    
         
     open(temp_file, 'a').close() 
 

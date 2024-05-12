@@ -51,7 +51,7 @@ def select_post_param(trace):
 def runSim_MaxEntFire(trace, sample_for_plot, X, eg_cube, lmask, run_name, 
                       dir_samples, grab_old_trace, extra_params = None,
                       class_object = FLAME, method = 'burnt_area',
-                      link_func_class = MaxEnt, hyper = True,
+                      link_func_class = MaxEnt, hyper = True, sample_error = True,
                       test_eg_cube = False, out_index = None, *args, **kw):  
     
     def sample_model(i, run_name = 'control'):   
@@ -101,7 +101,12 @@ def runSim_MaxEntFire(trace, sample_for_plot, X, eg_cube, lmask, run_name,
         
         
         if hyper:
-            out = link_func_class.random_sample_given_(out, *link_param_in.values())      
+            if sample_error:
+                out = link_func_class.random_sample_given_(out, *link_param_in.values()) 
+            else:
+                out = link_func_class.random_sample_given_central_limit_(out, 
+                                                                    *link_param_in.values()) 
+                     
         out = make_into_cube(out, file_sample)
 
         if test_eg_cube: 

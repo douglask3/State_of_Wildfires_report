@@ -32,16 +32,25 @@ class zero_inflated_logit(object):
                           tt.log(1-pz) - tt.log(sigma * tt.sqrt(2*math.pi)) - 
                                 ((Y-fx)**2)/(2*sigma**2))
     
-    def random_sample_given_(mod, sigma, p0, p1):
+    def random_sample_given_central_limit_(mod, sigma, p0, p1): #
+        if np.any(mod < 0.0): set_trace()
+        
         mod0 = mod.copy()
+        
+        pz = 1.0 - (mod**p1) * (1.0 - p0)
+        
+        return mod * (1-pz)
+
+    def random_sample_given_(mod, sigma, p0, p1):
         pz = 1.0 - (mod**p1) * (1.0 - p0)
         mod = npLogit(mod)
+
         test = (np.random.rand(*pz.shape)) < pz
         
         mod[test] = 0.0
         test = ~test
         
-        mod[test] =  npSigmoid(np.random.normal(mod[test], sigma))
+        mod[test] = npSigmoid(np.random.normal(mod[test], sigma)) #(1-pz[test]) * 
         
         return mod
         
