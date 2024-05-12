@@ -131,8 +131,8 @@ def make_time_series(cube, name, figName, percentile = None, cube_assess = None,
     return TS
 
 def make_both_time_series(*args, **kw):
-    #make_time_series(*args, **kw)
-    #make_time_series(*args, **kw, percentile = 90)
+    make_time_series(*args, **kw)
+    make_time_series(*args, **kw, percentile = 90)
     make_time_series(*args, **kw, percentile = 95) 
 
 def run_experiment(training_namelist, namelist, control_direction, control_names, 
