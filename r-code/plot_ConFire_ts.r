@@ -29,7 +29,7 @@ percentile = mean(burnt_area_tot <= burnt_area_event)
 rnning_mean <- function(r) 
     filter(r, rep(1 / 10, 10), sides = 1)
 
-make_plot <- function() {
+make_plot <- function(dir, file) {
     openDat <- function(exp) {
         print(exp)
         dirs = list.dirs(dir, full.name = TRUE, recursive=TRUE)
@@ -154,13 +154,10 @@ make_plot <- function() {
     dev.off()
     return(fqss)
 }
-region = 'Canada'
 
-dir = paste0("outputs/ConFire_", region, "-tuning12/figs/")
-pattern = c("_13-frac_points_0.5-")
-file = "points-Control.csv"
+regions = c('Canada', 'Greece', 'NW_Amazon')
 
-load(paste0("outputs/obs_time_series/", region, "/outs.Rd"))
+
 
 experiments = c("factual", "counterfactual", "historical", "ssp126", "ssp370", "ssp585")
 experiments = c("factual", "counterfactual", "historical", "ssp126", "ssp370", "ssp585")
@@ -168,78 +165,94 @@ start = c(2000, 2000, 1994, 2015, 2015, 2015)
 #cols = c('#000000', '#0000FF', '#0000FF', '#0000FF', '#FF0000', '#FF0000', '#FF0000')#, '#FF0000')
 cols = c('#000000', '#648FFF', '#DC267F00', '#785EF0', '#FFB000', '#FE6100')
 cols = c('#000000', '#999999', '#DC267F00', '#7570b3', '#1b9e77', '#d95f02')
+
 percentiles = c(0.5, 0.9, 0.95, 0.99, 0.999)
 percentile_names = 1/(1-percentiles)
 percentiles = c(percentile, percentiles)
 percentile_names = c('2023 event', paste0('1-in-', round(percentile_names, 0)))
 
-nav = 6
-fqss = make_plot()
+
 
 start = c(2000, 2000, -999, 1994, 1994, 1994)
 
-for (fi in 1:ncol(fqss)) {
-fqs = fqss[,fi]
+plot_region_fqi <- function(control_name, col_hint, region, fi = 1) {
+    dir = paste0("outputs/ConFire_", region, "-tuning12/figs/")
+    pattern = c("_13-frac_points_0.5-")
+    file = paste0("points-", control_name, ".csv")
 
-fact = tail(fqs[[1]], 1)
-cfact = tail(fqs[[2]], 1)
+    load(paste0("outputs/obs_time_series/", region, "/outs.Rd"))
+    fqss = make_plot(dir, file)
+    fqs = fqss[,fi]
 
-years = seq(2019, 2099, by = 10)
-
-get_points_for_year <- function(year) {
-    get_dat <- function(fq, st, id) {
-        if (id ==2) return(NULL)
-        if (is.null(dim(fq))) {
-            yrs = st + 1:length(fq) - 1
-            id = which(yrs == year)
-            if (length(id) == 0) id = which(abs(yrs - year) == 1)
-            if (length(id) == 0) return(NULL)
-            return(fq[id] * 100)
-        } else {
-            yrs = st + 1:(dim(fq)[1])
-            id = which(yrs == year)
-            if (length(id) == 0) id = which(abs(yrs - year) == 1)
-            if (length(id) == 0) return(NULL)
-            return(fq[id,] * 100)
+    years = seq(2019, 2099, by = 10)
+    if(col_hint != "NULL") cols = sapply(cols, function(col) make_col_vector(c(col, col_hint), ncols = 3)[2])
+    get_points_for_year <- function(year) {
+        get_dat <- function(fq, st, id) {
+            if (id ==2) return(NULL)
+            if (is.null(dim(fq))) {
+                yrs = st + 1:length(fq) - 1
+                id = which(yrs == year)
+                if (length(id) == 0) id = which(abs(yrs - year) == 1)
+                if (length(id) == 0) return(NULL)
+                return(fq[id] * 100)
+            } else {
+                yrs = st + 1:(dim(fq)[1])
+                id = which(yrs == year)
+                if (length(id) == 0) id = which(abs(yrs - year) == 1)
+                if (length(id) == 0) return(NULL)
+                return(fq[id,] * 100)
+            }
         }
+        mapply(get_dat, fqs, start, 1:length(fqs))
     }
-    mapply(get_dat, fqs, start, 1:length(fqs))
-}
 
-pnts = lapply(years, get_points_for_year)
+    pnts = lapply(years, get_points_for_year)
 
-
-plot_for_year <- function(pnt, year) {
-    plot_point <- function(y, col, off) {
-        if (is.null(y)) return()      
-        x = year + (off-5)*2 + c(-1, 1)
-        if (length(y) == 1) {  
-            lines(range(years), c(y, y), col = col, lwd = 2, lty = 2)
-        } else {
-            yp = range(y)
-            polygon(x[c(1, 2, 2, 1, 1)], yp[c(1, 1, 2, 2, 1)], 
-                    col = paste0(col, '66'), border = paste0(col, 'BB'))
-            lapply(y, function(i) lines(x, rep(i, 2), col = col))
+    plot_for_year <- function(pnt, year) {
+        plot_point <- function(y, col, off) {
+            #col = make_col_vector(c(col, col_hint), ncols = 3)[2]
+            if (is.null(y)) return()      
+            x = year + (off-5)*2 + c(-1, 1)
+            if (length(y) == 1) {  
+                lines(range(years), c(y, y), col = col, lwd = 2, lty = 2)
+            } else {
+                yp = range(y)
+                polygon(x[c(1, 2, 2, 1, 1)], yp[c(1, 1, 2, 2, 1)], 
+                        col = paste0(col, '66'), border = paste0(col, 'BB'))
+                lapply(y, function(i) lines(x, rep(i, 2), col = col))
+            }
+            return(col)
         }
+        cols = mapply(plot_point, pnt, cols, 1:length(pnt))
     }
-    mapply(plot_point, pnt, cols, 1:length(pnt))
+
+    yrange = range(unlist(pnts))
+
+
+    plot(c(2010, 2110), yrange, type = 'n', axes = FALSE, xlab = '', ylab = '')
+    axis(1, at = years + 1, labels = rep('', length(years)))
+    if (control_name == tail(controls, 1)) axis(1, at = years + 1)
+    colsp = mapply(plot_for_year, pnts, years)
+
+    yrange4 = yrange/pnts[[1]][[1]]
+
+    labels = round(seq(yrange4[1], yrange4[2], length.out = 6), 1)
+    axis(2)
+    
+    axis(4, at = labels *pnts[[1]][[1]], labels = labels)
+    if (control_name == controls[1]) mtext(side = 3, line = -1, region)
+    if (region == regions[1]) {
+        mtext(side = 2, line = 2, control_name)
+        legend('topleft', experiments[-(2:3)], col = paste0(cols[-(2:3)], 'BB'), pt.cex = 2, pch = 15, bty = 'n')
+        legend('topleft', experiments[-(2:3)], col = cols[-(2:3)], pt.cex = 2, pch = 1, bty = 'n')
+    }
 }
-
-yrange = range(unlist(pnts))
-
-png(paste0("figs/box_futures-", region, "-", fi, ".png"), res = 300, units = 'in', width = 6, height = 6)
-par(oma = c(2, 2, 2, 2))
-plot(c(2010, 2110), yrange, type = 'n', axes = FALSE, xlab = '', ylab = '')
-axis(1, at = years + 1)
-mapply(plot_for_year, pnts, years)
-
-yrange4 = yrange/pnts[[1]][[1]]
-
-labels = round(seq(yrange4[1], yrange4[2], length.out = 6), 1)
-axis(2)
-mtext(side = 2, line = 2, 'Liklihood (%)')
-mtext(side = 4, line = 2, 'times more likely)')
-axis(4, at = labels *pnts[[1]][[1]], labels = labels)
-mtext(side = 3, line = -1, paste(region, percentile_names[fi]))
+controls = c('Control', 'Fuel', 'Moisture', 'Ignition') 
+cols_hint = c('NULL', '#00FF00', '#0000FF', '#FF0000')#, '#333333')
+png(paste0("figs/box_futures-", region, "-", fi, ".png"), 
+    res = 300, units = 'in', width = 8, height = 7)
+par(mfcol = c(4, 3), oma = c(2, 4, 2, 4), mar = c(1, 2, 0, 2))
+lapply(regions, function(region) mapply(plot_region_fqi, controls, cols_hint, MoreArgs = list(region)))
+mtext(side = 2, 'Liklihood (%)', outer = TRUE, line = 2.5)
+mtext(side = 4, line = 2, 'times more likely)', outer = TRUE, line = 2.5)
 dev.off()
-}
