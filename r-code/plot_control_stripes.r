@@ -224,12 +224,12 @@ plot_for_region <- function(region, Anom_title, dir, xlim, levels_controls_regio
         png(paste0("figs/control_stripes-2-", region, ".png"),
             height = 7, width = 12, units = 'in', res = 300)
 
-            par(mfcol = c(6, 3), mar = c(0, 2, 0, 0), oma = c(0,2, 2, 3.5))
+            par(mfcol = c(6, 3), mar = c(0, 3.5, 0, 0), oma = c(2,2, 3.5, 4))
             levels = mapply(plt_colsR, files, cols, SIMPLIFY = FALSE)
             mapply(plt_colsR, files, cols, levels = levels, 
                    MoreArgs = list(do_last_year = TRUE))
-            mapply(plt_colsR, files, dcols, MoreArgs = list(do_anom = TRUE))
-    
+            mapply(plt_colsR, head(files, -1), head(dcols, -1), MoreArgs = list(do_anom = TRUE))
+            plt_colsR(tail(files, 1)[[1]], tail(cols, 1)[[1]], do_last_year = TRUE)  
         dev.off()
     }
     levels_BA = levels_BA_region[[1]]
