@@ -41,6 +41,7 @@ def Potential_limitation(training_namelist, namelist,
                      *args, **kws)
 
 def above_percentile_mean(cube, cube_assess = None, percentile = 0.95):
+    
     if cube_assess is None: cube_assess = cube
     area_cube = iris.analysis.cartography.area_weights(cube_assess)
     # Sort the cube by fractional burnt values in descending order
@@ -64,14 +65,15 @@ def above_percentile_mean(cube, cube_assess = None, percentile = 0.95):
     # Mask out grid cells below the area-weighted 95th percentile threshold
     
     masked_cube = cube.copy()
-    masked_cube.data = np.ma.masked_less(cube_assess.data, threshold_value)
+    #masked_cube.data = np.ma.masked_less(cube_assess.data, threshold_value)
+    masked_cube.data[cube_assess.data < threshold_value] = np.nan
+    masked_cube.data.mask[cube_assess.data < threshold_value] = True
     
     # Calculate the area of the grid cells above the threshold
     masked_area_cube = area_cube.copy()
    
-    mean_cube = masked_cube.collapsed(['latitude', 'longitude'], 
-                                      iris.analysis.MEAN, weights=masked_area_cube)
-    
+    mean_cube = masked_cube.collapsed(['latitude', 'longitude'], iris.analysis.MEAN, weights=masked_area_cube)
+    #set_trace()#0.00125249
     return(mean_cube)
     
 def add_lan_lon_bounds(cube):
@@ -131,8 +133,8 @@ def make_time_series(cube, name, figName, percentile = None, cube_assess = None,
     return TS
 
 def make_both_time_series(*args, **kw):
-    make_time_series(*args, **kw)
-    make_time_series(*args, **kw, percentile = 90)
+    #make_time_series(*args, **kw)
+    #make_time_series(*args, **kw, percentile = 90)
     make_time_series(*args, **kw, percentile = 95) 
 
 def run_experiment(training_namelist, namelist, control_direction, control_names, 
@@ -155,8 +157,6 @@ def run_experiment(training_namelist, namelist, control_direction, control_names
                         name + '/Evaluate', run_only = run_only, return_inputs = True,
                         *args, **kws)
 
-    
-
     Control, Y, X, lmask, scalers  = call_eval(training_namelist, namelist,
                         name + '/control', run_only = True, return_inputs = True, 
                         Y = Y, X = X, lmask = lmask, scalers = scalers,
@@ -165,6 +165,7 @@ def run_experiment(training_namelist, namelist, control_direction, control_names
     
     evaluate_TS = make_both_time_series(Evaluate[0], 'Evaluate', figName, 
                                         cube_assess = Control[0])
+    
     control_TS = make_both_time_series(Control[0], 'Control', figName, cube_assess = Control[0])
     
     
