@@ -1,6 +1,6 @@
 ## model info
 regions:: ['Greece']
-model_title::  'ConFire_<<region>>-tuning12'
+model_title::  'ConFire_<<region>>-tuning15'
 
 ## input data paths and filenames
 dir_training:: "data/data/driving_data/<<region>>/isimp3a/obsclim/GSWP3-W5E5/period_2000_2019/"
@@ -25,8 +25,8 @@ priors:: {'pname': "betas",'np': 3, 'dist': 'LogNormal', 'mu': 0.0, 'sigma': 1.0
 
 ### optimization info
 link_func_class:: zero_inflated_logit
-niterations:: 100
-cores:: 20
+niterations:: 20
+cores:: 100
 fraction_data_for_sample:: 0.5
 subset_function:: sub_year_months
 subset_function_args:: {'months_of_year': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
