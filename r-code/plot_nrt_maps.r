@@ -13,7 +13,8 @@ graphics.off()
 #########
 ## cfg ##
 #########
-
+region = 'Canada'
+mnths = c(6)
 colss = list(c('#ffffcc','#ffeda0','#fed976','#feb24c','#fd8d3c','#fc4e2a','#e31a1c','#bd0026','#800026'),
              c('#ffffe5','#f7fcb9','#d9f0a3','#addd8e','#78c679','#41ab5d','#238443','#006837','#004529'), 
              c('#ffffe5','#fff7bc','#fee391','#fec44f','#fe9929','#ec7014','#cc4c02','#993404','#662506'),
@@ -22,27 +23,28 @@ colss = list(c('#ffffcc','#ffeda0','#fed976','#feb24c','#fd8d3c','#fc4e2a','#e31
 
 dcolss = list(rev(c('#b2182b','#d6604d','#f4a582','#fddbc7','#f7f7f7','#d1e5f0','#92c5de','#4393c3','#2166ac')),
               c('#c51b7d','#de77ae','#f1b6da','#fde0ef','#f7f7f7','#e6f5d0','#b8e186','#7fbc41','#4d9221'), 
-              rev(c('#8c510a','#bf812d','#dfc27d','#f6e8c3','#f5f5f5','#c7eae5','#80cdc1','#35978f','#01665e')),
+              c('#8c510a','#bf812d','#dfc27d','#f6e8c3','#f5f5f5','#c7eae5','#80cdc1','#35978f','#01665e'),
               c('#b35806','#e08214','#fdb863','#fee0b6','#f7f7f7','#d8daeb','#b2abd2','#8073ac','#542788'),
               c('#762a83','#9970ab','#c2a5cf','#e7d4e8','#f7f7f7','#d9f0d3','#a6dba0','#5aae61','#1b7837'))
 
 cols_r = c('#f7f4f9','#e7e1ef','#d4b9da','#c994c7','#df65b0','#e7298a','#ce1256','#980043','#67001f')
 
-dir = 'outputs/ConFire_Canada-nrt-tuning9/samples/_12-frac_points_0.5/baseline-/'
+
+dir = paste0('outputs/ConFire_', region, '-nrt-tuning9/samples/_12-frac_points_0.5/baseline-/')
 
 runs = c('Burnt area' = 'control', 'Fuel' = 'Standard_0', 'Moisture' = 'Standard_1',    
          'Weather' = 'Standard_2',
          'Ignitions' = 'Standard_3', 'Suppression' = 'Standard_4', 'Snow' = 'Standard_5')
 
-mnths = c(5)
 
 
-png("outputs/figs/nrt-Canada-map-obs.png", height = 3, width = 4, 
+
+png(paste0("figs/nrt-", region, "-map-obs.png"), height = 3, width = 4, 
         res = 300, unit = 'in')
 layout(rbind(1:3, 4:6, 7:9), widths = c(0.1, 1, 0.3))
 par(mar = rep(0.2, 4))
 
-obs = brick('data/data/driving_data/Canada/nrt/period_2011_2023/burnt_area.nc')
+obs = brick(paste0('data/data/driving_data/', region, '/nrt/period_2013_2023/burnt_area.nc'))
 
 obs_clim = mean(layer.apply(mnths, function(mn) mean(obs[[seq(mn, nlayers(obs), by = 12)]])))
 plot.new()
@@ -69,7 +71,7 @@ legendColBar(c(0.1, 0.7), c(0.1, 0.8), cols = cols_r, limits = levels,
                            extend_min = F, minLab = 0)
 
 dev.off()
-mnths = c(4)
+mnths = c(8)
 plot_run  <- function(run, cols, dcols) {
     files = list.files(paste0(dir, run, '/'), full.names = TRUE)
     files = files[grepl('pred', files)]
@@ -120,7 +122,7 @@ plot_run  <- function(run, cols, dcols) {
     lmat = t(matrix(1:16, nrow = 4))
     lmat = cbind(17:20, lmat, 0)
     lmat = rbind(21:26, lmat, 0)
-    png(paste0("figs/nrt-Canada-map-",gsub('/', '-', dir), run, '.png'), 
+    png(paste0("figs/nrt-", region, "-map-",gsub('/', '-', dir), run, '.png'), 
         height = 7.2, width = 7.3, 
         res = 300, unit = 'in')
     layout(lmat, heights = c(0.1, rep(1, 4), 0.1), widths = c(0.1, 1, 1, 1, 0.3, 0.1))
