@@ -23,7 +23,7 @@ run_names = c('Burnt area' = 'control', 'Fuel' = 'Standard_0', 'Moisture' = 'Sta
 control_groups = list(1, 2, 3, 4, c(5, 6))
 
 levels = c(0.01, 0.03, 0.1, 0.3)
-nlevs = 4
+nlevs = 3
 cols = c('#00FF00', '#0000BB', '#FF0000')
 
 
@@ -80,6 +80,7 @@ BA = runs[[1]]
 controls = runs[-1]
 
 root_square_diff <- function(rs) sqrt(sum(rs**2))
+diff_ <- function(rs) rs[[2]] - rs[[1]]
 
 get_control_range <- function(control, ctr,  metric, FUN) {
     tfile = paste(c('temp2/plot_nrt_map_4ways_qus/mn-', mnths, '-', region, run_names[ctr], 
@@ -87,7 +88,7 @@ get_control_range <- function(control, ctr,  metric, FUN) {
                   collapse = '-')
     if (file.exists(tfile)) return(brick(tfile))
     
-    dats = layer.apply(control, function(i) FUN(i[[metric]]))
+    dats = layer.apply(control, function(i) FUN(i[[metric]]))  
     for_quantile <- function(qu) {
         print(qu)
         calc(dats, function(x) quantile(x, qu,na.rm = TRUE))
@@ -98,23 +99,23 @@ get_control_range <- function(control, ctr,  metric, FUN) {
 }
 
 control_qu = mapply(get_control_range, controls, control_groups[-1], 
-                    MoreArgs = list(1:2, root_square_diff))
+                    MoreArgs = list(1:2, diff_))
 #control_qu = mapply(get_control_range, controls, control_groups[-1], 
 #                    MoreArgs = list(3:4, root_square_diff))
 
-control_qu = mapply(get_control_range, controls, control_groups[-1], 
-                    MoreArgs = list(1, function(i) i))
+#control_qu = mapply(get_control_range, controls, control_groups[-1], 
+#                    MoreArgs = list(1, function(i) i))
 
-levels = find_levels_n(do.call(addLayer, control_qu), nlevs-1, TRUE)
+levels = find_levels_n(do.call(addLayer, control_qu)+1, nlevs-2, TRUE)-1
+levels = sort(c(levels, 0))
 
 plot_uncertain_corners <- function(control_i) {
     control_sample = rep(2, 4)
     control_sample[control_i] = 1
     map = do.call(addLayer, mapply(function(r, i) r[[i]], control_qu, control_sample))
-    #map = addLayer(control_qu[[1]][[1]], control_qu[[2]][[2]], control_qu[[3]][[1]], control_qu[[4]][[1]])
-    #browser()
-    #levels = quantile(map[], head(seq(0, 1, length.out = nlevs+1)[-1], -1), na.rm = TRUE)
-    cmap = cut_results(map, levels)
+    cmap = map#raster::disaggregate(map, fact = 10, method = 'bilinear')   
+    
+    cmap = cut_results(cmap, levels)
     #browser()
     cmap = calc(cmap, find_superLevel)
 
@@ -126,6 +127,10 @@ plot_uncertain_corners <- function(control_i) {
     }
 
     plotStandardMap(cmap, pcols, limits = NULL, readyCut = TRUE)
+    
+    cmap = map
+    cmap = cut_results(cmap, levels)
+    cmap = calc(cmap, find_superLevel)
     pnts = cbind(xyFromCell(cmap, which(!is.na(cmap[]))), cmap[!is.na(cmap)])
     #browser()
     points(pnts[,1], pnts[,2], cex = (as.numeric(dots)[pnts[,3]]-1)/2, pch = 19, col = 'white')
@@ -135,50 +140,75 @@ layout(rbind(1:2, 3:4, 5))
 par(mar = rep(0, 4))
 lapply(1:4, plot_uncertain_corners)
 
-
-leg_cube = 1:nlevs
-leg_cube = rep(leg_cube, length.out = nlevs^4)
-for (i in 2:4) 
-    leg_cube = cbind(leg_cube, rep(leg_cube, each = 2^(i-1), , length.out = nlevs^4))
+add_legend <- function(levels, cmap = NULL) {
+    nlevs = length(levels) + 1
+    if (!is.null(cmap)) cmap = lapply(cmap, cut_results, levels)
 
 
-plot_leg_square <- function(i, j, k = 1, l = 1) {
-    col = select_col(i, j, k, l)
-    x = i + (k - 1) * (nlevs + 1)
-    y = j + (l - 1) * (nlevs + 1)
-    polygon(x + c(-1, 0, 0, -1, -1), y + c(-1, -1, 0, 0, -1), col = col[1])
-    points(x-0.5, y-0.5, col = 'white', pch = 19, cex = (as.numeric(col[2])-1)/4)
+    leg_cube = 1:nlevs
+    leg_cube = rep(leg_cube, length.out = nlevs^4)
+    for (i in 2:4) 
+        leg_cube = cbind(leg_cube, rep(leg_cube, each = 2^(i-1), , length.out = nlevs^4))
     
-    ascale = diff(par("usr")[1:2])
-    
-    if (j == 1) {
-        text(x-1, -0.06 * ascale, c(0, levels)[i], xpd = NA)
-        lines(c(x-1, x-1),c(0, -0.02*ascale))
-    }
-    if (i == 1) {
-        text(-0.03 * ascale, y-1, c(0, levels)[j], xpd = NA, adj = 1)
-        lines(c(0, -0.02*ascale), c(y-1, y-1))
-    }
-    if (i == 1 && j == 1 && l == 1) {
-        text(x-1, -0.18 * ascale, c(0, levels)[k], xpd = NA)
+    plot_leg_square <- function(i, j, k = 1, l = 1) {
+        x = i + (k - 1) * (nlevs + 1)
+        y = j + (l - 1) * (nlevs + 1)
+
+        if (is.null(cmap)) {
+            col = select_col(i, j, k, l)
+            polygon(x + c(-1, 0, 0, -1, -1), y + c(-1, -1, 0, 0, -1), col = col[1])
+            points(x-0.5, y-0.5, col = 'white', pch = 19, cex = (as.numeric(col[2])-1)/4)
+        } else {
+            #in_bin <- function(r, x) 
+                #quantile(unlist(layer.apply(r, function(rl) mean(rl[] == x, na.rm = TRUE))), c(0.1, 0.9))
+                #range(unlist(layer.apply(r, function(rl) mean(rl[] == x, na.rm = TRUE))))
+            
+            test = mapply(function(r, x) r == x, cmap, c(i, j, k, l))
+            val = sapply(1:nlayers(test[[1]]), function(ly) mean(all(layer.apply(test, function(r) r[[ly]]))[], na.rm = TRUE))
+            polygon(x + c(-1, 0, 0, -1, -1), y + c(-1, -1, 0, 0, -1), col = '#FFFFFF00', 
+                    lty = 2, border = '#999999')
+            if (any(val > 0)) {
+                val = sort(val)
+                vcol = make_col_vector(c("white", "black"), ncol = length(val) + 1)[-1]
+                addShade_poly <- function(v, col)
+                    polygon(x + c(-1, 0, 0, -1, -1), y -1 + c(0, 0, v, v, 0), col = col)
+                mapply(addShade_poly, val^(0.5), vcol)
+            }        
+        }
         
-        lines(c(x-1, x + nlevs), rep(-0.12 *ascale, 2), xpd = NA)
-        lines(c(x-1, x-1), c(-0.12 *ascale, -0.14*ascale), xpd = NA)
-    }   
-    if (i == 1 && j == 1 && k == 1) {
-        text(-0.09 * ascale, y-1, c(0, levels)[l], xpd = TRUE, adj = 1)
-
-        lines(rep(-0.05 *ascale, 2), c(y-1, y + nlevs), xpd = NA)
-        lines(c(-0.05 *ascale, -0.07*ascale), c(y-1, y-1), xpd = NA)
-    }    
-    if (i == 1 && j == 1 && k == 1 && l == 1) {
-        text(nlevs/2, -0.09 * ascale, 'Fuel', xpd = T)
-        text(nlevs^2/2, -0.21 * ascale, 'Weather', xpd = T)
+        ascale = diff(par("usr")[1:2])
+        
+        if (j == 1) {
+            text(x-1, -0.06 * ascale, levels[i], xpd = NA)
+            lines(c(x-1, x-1),c(0, -0.02*ascale))
+        }
+        if (i == 1) {
+            text(-0.03 * ascale, y-1, levels[j], xpd = NA, adj = 1)
+            lines(c(0, -0.02*ascale), c(y-1, y-1))
+        }
+        if (i == 1 && j == 1 && l == 1) {
+            text(x-1, -0.18 * ascale, levels[k], xpd = NA)
+            
+            lines(c(x-1, x + nlevs), rep(-0.12 *ascale, 2), xpd = NA)
+            lines(c(x-1, x-1), c(-0.12 *ascale, -0.14*ascale), xpd = NA)
+        }       
+        if (i == 1 && j == 1 && k == 1) {
+            text(-0.09 * ascale, y-1, levels[l], xpd = TRUE, adj = 1)
+            
+            lines(rep(-0.05 *ascale, 2), c(y-1, y + nlevs), xpd = NA)
+            lines(c(-0.05 *ascale, -0.07*ascale), c(y-1, y-1), xpd = NA)
+        }    
+        if (i == 1 && j == 1 && k == 1 && l == 1) {
+            text(nlevs/2, -0.09 * ascale, 'Fuel', xpd = T)
+            text(nlevs^2/2, -0.21 * ascale, 'Weather', xpd = T)
+       }
     }
+    par(mar = c(6, 6, 0, 0))
+    plot(c(0, (nlevs+1)^2), c(0, (nlevs+1)^2), type = 'n', xlab = '', ylab = '', axes = FALSE)
+    
+    lapply(1:nlevs, function(i) lapply(1:nlevs, function(j) 
+        lapply(1:nlevs, function(k) lapply(1:nlevs, function(l) plot_leg_square(i,j, k, l)))))
 }
-par(mar = c(6, 6, 0, 0))
-plot(c(0, (nlevs+1)^2), c(0, (nlevs+1)^2), type = 'n', xlab = '', ylab = '', axes = FALSE)
 
-lapply(1:nlevs, function(i) lapply(1:nlevs, function(j) 
-       lapply(1:nlevs, function(k) lapply(1:nlevs, function(l) plot_leg_square(i,j, k, l)))))
+add_legend(levels, control_qu)
 
