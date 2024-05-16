@@ -16,11 +16,11 @@ find_levels <- function(z, percentiles = seq(20, 80, by = 20), not0 = FALSE) {
     return(levels)
 }
 
-find_levels_n <- function(z, nlvls = 9, not0) {
+find_levels_n <- function(z, nlvls = 9, not0, zeroAt0 = TRUE) {
    
     if (is.raster(z)) z = as.numeric(z[])[!is.na(as.numeric(z[]))]
     z = z[!is.na(z)]
-    if (any(z < 0)) {
+    if (any(z < 0) && zeroAt0) {
         z = abs(z)
         symetry = T 
     } else symetry = F
@@ -37,6 +37,7 @@ find_levels_n <- function(z, nlvls = 9, not0) {
         sigfig = sigfig + 1
         levels = quantile(z, quants, na.rm = TRUE)
         scaling_factor = 10^(ceiling(log10((levels))))
+        
         levels = round(levels / scaling_factor, sigfig) * scaling_factor
         levels = unique(levels)
         print(levels)

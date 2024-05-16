@@ -13,6 +13,7 @@ graphics.off()
 
 region = 'Greece'
 mnths = c(8)
+speedy = TRUE
 
 dir = paste0('outputs/ConFire_', region, '-nrt-tuning10/samples/_12-frac_points_0.5/baseline-/')
 
@@ -23,7 +24,7 @@ run_names = c('Burnt area' = 'control', 'Fuel' = 'Standard_0', 'Moisture' = 'Sta
 control_groups = list(1, 2, 3, 4, c(5, 6))
 
 levels = c(0.01, 0.03, 0.1, 0.3)
-nlevs = 3
+nlevs = 4
 cols = c('#00FF00', '#0000BB', '#FF0000')
 
 
@@ -106,8 +107,9 @@ control_qu = mapply(get_control_range, controls, control_groups[-1],
 #control_qu = mapply(get_control_range, controls, control_groups[-1], 
 #                    MoreArgs = list(1, function(i) i))
 
-levels = find_levels_n(do.call(addLayer, control_qu)+1, nlevs-2, TRUE)-1
+levels = find_levels_n(do.call(addLayer, control_qu), nlevs-2, TRUE, zeroAt0 = TRUE)
 levels = sort(c(levels, 0))
+nlevs = length(levels) + 1
 
 plot_uncertain_corners <- function(control_i, txt) {
     control_sample = rep(2, 4)
@@ -125,8 +127,8 @@ plot_uncertain_corners <- function(control_i, txt) {
         pcols = c(pcols, select_col(i,j,k,l)[1])
         dots = c(dots, select_col(i,j,k,l)[2])
     }
-
-    plotStandardMap(cmap, pcols, limits = NULL, readyCut = TRUE)
+    
+    plotStandardMap(cmap, pcols, limits = NULL, readyCut = TRUE, speedy = speedy)
     mtext(paste('Max.', txt, 'limitation'), side = 3, font = 2)
     cmap = map
     cmap = cut_results(cmap, levels)
@@ -154,8 +156,8 @@ add_legend <- function(levels, cmap = NULL) {
         x = i + (k - 1) * (nlevs + 1)
         y = j + (l - 1) * (nlevs + 1)
 
+        col = select_col(i, j, k, l)
         if (is.null(cmap)) {
-            col = select_col(i, j, k, l)
             polygon(x + c(-1, 0, 0, -1, -1), y + c(-1, -1, 0, 0, -1), col = col[1])
             points(x-0.5, y-0.5, col = 'white', pch = 19, cex = (as.numeric(col[2])-1)/4)
         } else {
@@ -166,7 +168,7 @@ add_legend <- function(levels, cmap = NULL) {
             test = mapply(function(r, x) r == x, cmap, c(i, j, k, l))
             val = sapply(1:nlayers(test[[1]]), function(ly) mean(all(layer.apply(test, function(r) r[[ly]]))[], na.rm = TRUE))
             polygon(x + c(-1, 0, 0, -1, -1), y + c(-1, -1, 0, 0, -1), col = '#FFFFFF00', 
-                    lty = 2, border = '#999999')
+                    lty = 2, border = col)
             if (any(val > 0)) {
                 val = sort(val)
                 vcol = make_col_vector(c("white", "black"), ncol = length(val) + 1)[-1]
@@ -179,24 +181,24 @@ add_legend <- function(levels, cmap = NULL) {
         ascale = diff(par("usr")[1:2])
         
         if (j == 1) {
-            text(x-1, -0.06 * ascale, levels[i], xpd = NA)
-            lines(c(x-1, x-1),c(0, -0.02*ascale))
+            text(x, -0.06 * ascale, levels[i], xpd = NA)
+            lines(c(x, x),c(0, -0.02*ascale))
         }
         if (i == 1) {
-            text(-0.03 * ascale, y-1, levels[j], xpd = NA, adj = 1)
-            lines(c(0, -0.02*ascale), c(y-1, y-1))
+            text(-0.03 * ascale, y, levels[j], xpd = NA, adj = 1)
+            lines(c(0, -0.02*ascale), c(y, y))
         }
         if (i == 1 && j == 1 && l == 1) {
-            text(x-1, -0.18 * ascale, levels[k], xpd = NA)
+            text(x+ nlevs, -0.18 * ascale, levels[k], xpd = NA)
             
             lines(c(x-1, x + nlevs), rep(-0.12 *ascale, 2), xpd = NA)
-            lines(c(x-1, x-1), c(-0.12 *ascale, -0.14*ascale), xpd = NA)
+            lines(c(x + nlevs, x + nlevs), c(-0.12 *ascale, -0.14*ascale), xpd = NA)
         }       
         if (i == 1 && j == 1 && k == 1) {
-            text(-0.09 * ascale, y-1, levels[l], xpd = TRUE, adj = 1)
+            text(-0.09 * ascale, y, levels[l], xpd = TRUE, adj = 1)
             
-            lines(rep(-0.05 *ascale, 2), c(y-1, y + nlevs), xpd = NA)
-            lines(c(-0.05 *ascale, -0.07*ascale), c(y-1, y-1), xpd = NA)
+            lines(rep(-0.05 *ascale, 2), c(y, y + nlevs), xpd = NA)
+            lines(c(-0.05 *ascale, -0.07*ascale), c(y, y), xpd = NA)
         }    
         if (i == 1 && j == 1 && k == 1 && l == 1) {
             text(nlevs/2, -0.09 * ascale, 'Fuel', xpd = T)
