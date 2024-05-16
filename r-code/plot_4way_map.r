@@ -13,7 +13,18 @@ graphics.off()
 
 region = 'Greece'
 mnths = c(8)
-speedy = TRUE
+speedy = FALSE
+pltHeight = 0.5*8/7
+
+region = 'Canada'
+mnths = c(6)
+speedy = FALSE
+pltHeight = 0.33
+
+region = 'NW_Amazon'
+mnths = c(10)
+speedy = FALSE
+pltHeight = 0.33
 
 dir = paste0('outputs/ConFire_', region, '-nrt-tuning10/samples/_12-frac_points_0.5/baseline-/')
 
@@ -31,7 +42,8 @@ cols = c('#00FF00', '#0000BB', '#FF0000')
 make_col_map <- function(col1, col2) make_col_vector(c(col1, col2), ncols = 3)[2]
 
 select_col <- function(i, j, k = 1, l = 1) 
-    (c(paste0('#', number_to_hex(i, j), number_to_hex(j, k), number_to_hex(i,k)), l))
+    c(paste0('#', number_to_hex(k, k), number_to_hex(i, i), number_to_hex(j, j)), l)
+    #c(paste0('#', number_to_hex(i, j), number_to_hex(j, k), number_to_hex(i,k)), l)
 
 find_superLevel <- function(x) {
     if (any(is.na(x))) return(NaN)
@@ -74,7 +86,7 @@ open_runs  <- function(cntrl_ID) {
     return(outs)
 }
 
-#runs = lapply(control_groups, open_runs)
+runs = lapply(control_groups, open_runs)
 
 BA = runs[[1]]
 
@@ -132,15 +144,16 @@ plot_uncertain_corners <- function(control_i, txt) {
     mtext(paste('Max.', txt, 'limitation'), side = 3, font = 2)
     cmap = map
     cmap = cut_results(cmap, levels)
+    
     cmap = calc(cmap, find_superLevel)
     pnts = cbind(xyFromCell(cmap, which(!is.na(cmap[]))), cmap[!is.na(cmap)])
-    #browser()
-    points(pnts[,1], pnts[,2], cex = (as.numeric(dots)[pnts[,3]]-1)/2, pch = 19, col = 'white')
+    
+    dts = nlevs * (as.numeric(dots)/nlevs)^2
+    points(pnts[,1], pnts[,2], cex = (25/ncol(cmap)) * (dts[pnts[,3]]-1)/2, 
+           pch = 19, col = 'white')
 }
 
-layout(rbind(1:2, 3:4, 5))
-par(mar = c(0, 0, 1.5, 0))
-mapply(plot_uncertain_corners, 1:4, c('Fuel', 'Moisture', 'Weather', 'Human'))
+
 
 add_legend <- function(levels, cmap = NULL) {
     nlevs = length(levels) + 1
@@ -153,13 +166,14 @@ add_legend <- function(levels, cmap = NULL) {
         leg_cube = cbind(leg_cube, rep(leg_cube, each = 2^(i-1), , length.out = nlevs^4))
     
     plot_leg_square <- function(i, j, k = 1, l = 1) {
+        print(i*1000 + j*100 + k*10 + l)
         x = i + (k - 1) * (nlevs + 1)
         y = j + (l - 1) * (nlevs + 1)
 
         col = select_col(i, j, k, l)
         if (is.null(cmap)) {
             polygon(x + c(-1, 0, 0, -1, -1), y + c(-1, -1, 0, 0, -1), col = col[1])
-            points(x-0.5, y-0.5, col = 'white', pch = 19, cex = (as.numeric(col[2])-1)/4)
+            points(x-0.5, y-0.5, col = 'white', pch = 19, cex = 1.3*(as.numeric(col[2])-1))
         } else {
             #in_bin <- function(r, x) 
                 #quantile(unlist(layer.apply(r, function(rl) mean(rl[] == x, na.rm = TRUE))), c(0.1, 0.9))
@@ -179,38 +193,58 @@ add_legend <- function(levels, cmap = NULL) {
         }
         
         ascale = diff(par("usr")[1:2])
+        p1txt = -0.025 * ascale
+        p1tck = -0.01 * ascale
+        p1tit = -0.05 * ascale
+
+        p2txt = -0.085 * ascale
+        p2tck = -0.07 *ascale
+        p2tit = -0.11 * ascale
         
         if (j == 1) {
-            text(x, -0.06 * ascale, levels[i], xpd = NA)
-            lines(c(x, x),c(0, -0.02*ascale))
+            text(x, p1txt, levels[i], xpd = NA)
+            lines(c(x, x),c(0, p1tck))
         }
         if (i == 1) {
-            text(-0.03 * ascale, y, levels[j], xpd = NA, adj = 1)
-            lines(c(0, -0.02*ascale), c(y, y))
+            text(p1txt, y, levels[j], xpd = NA, srt = 90)
+            lines(c(0, p1tck), c(y, y))
         }
         if (i == 1 && j == 1 && l == 1) {
-            text(x+ nlevs, -0.18 * ascale, levels[k], xpd = NA)
+            text(x+ nlevs, p2txt, levels[k], xpd = NA)
             
-            lines(c(x-1, x + nlevs), rep(-0.12 *ascale, 2), xpd = NA)
-            lines(c(x + nlevs, x + nlevs), c(-0.12 *ascale, -0.14*ascale), xpd = NA)
+            lines(c(x-1, x + nlevs), rep(p2tck - p1tck, 2), xpd = NA)
+            lines(c(x + nlevs, x + nlevs), c(p2tck - p1tck, p2tck), xpd = NA)
         }       
         if (i == 1 && j == 1 && k == 1) {
-            text(-0.09 * ascale, y, levels[l], xpd = TRUE, adj = 1)
+            text(p2txt, y, levels[l], xpd = TRUE, srt = 90)
             
-            lines(rep(-0.05 *ascale, 2), c(y, y + nlevs), xpd = NA)
-            lines(c(-0.05 *ascale, -0.07*ascale), c(y, y), xpd = NA)
+            lines(rep(p2tck - p1tck, 2), c(y, y + nlevs), xpd = NA)
+            lines(c(p2tck - p1tck, p2tck), c(y, y), xpd = NA)
         }    
         if (i == 1 && j == 1 && k == 1 && l == 1) {
-            text(nlevs/2, -0.09 * ascale, 'Fuel', xpd = T)
-            text(nlevs^2/2, -0.21 * ascale, 'Weather', xpd = T)
+            text(nlevs/2  , p1tit , 'Fuel', xpd = T)
+            text(nlevs^2/2, p2tit, 'Weather', xpd = T)
+       }   
+        if (i == 1 && j == 1 && k == 1 && l == 1) {
+            text(p1tit, nlevs/2  , 'Moisture', xpd = T, srt = 90)
+            text(p2tit, nlevs^2/2, 'Human', xpd = T, srt = 90)
        }
     }
     par(mar = c(6, 6, 0, 0))
-    plot(c(0, (nlevs+1)^2), c(0, (nlevs+1)^2), type = 'n', xlab = '', ylab = '', axes = FALSE)
+    plot(c(0, (nlevs+1)^2-nlevs), c(0, (nlevs+1)^2-nlevs), type = 'n', xlab = '', ylab = '', axes = FALSE)
     
     lapply(1:nlevs, function(i) lapply(1:nlevs, function(j) 
         lapply(1:nlevs, function(k) lapply(1:nlevs, function(l) plot_leg_square(i,j, k, l)))))
 }
 
+png(paste0("figs/limitation_map-", region, '-', speedy, ".png"), 
+    height = 6*(pltHeight*2 + 2), width = 6, units = 'in', res = 300)
+layout(rbind(1:2, 3:4, 5, 6), height = c(pltHeight, pltHeight, 1, 1))
+par(mar = c(0, 0, 1.5, 0))
+mapply(plot_uncertain_corners, 1:4, c('Fuel', 'Moisture', 'Weather', 'Human'))
 add_legend(levels, control_qu)
+
+
+add_legend(levels)
+dev.off()
 
