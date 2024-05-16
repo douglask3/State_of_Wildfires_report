@@ -109,7 +109,7 @@ control_qu = mapply(get_control_range, controls, control_groups[-1],
 levels = find_levels_n(do.call(addLayer, control_qu)+1, nlevs-2, TRUE)-1
 levels = sort(c(levels, 0))
 
-plot_uncertain_corners <- function(control_i) {
+plot_uncertain_corners <- function(control_i, txt) {
     control_sample = rep(2, 4)
     control_sample[control_i] = 1
     map = do.call(addLayer, mapply(function(r, i) r[[i]], control_qu, control_sample))
@@ -127,7 +127,7 @@ plot_uncertain_corners <- function(control_i) {
     }
 
     plotStandardMap(cmap, pcols, limits = NULL, readyCut = TRUE)
-    
+    mtext(paste('Max.', txt, 'limitation'), side = 3, font = 2)
     cmap = map
     cmap = cut_results(cmap, levels)
     cmap = calc(cmap, find_superLevel)
@@ -137,8 +137,8 @@ plot_uncertain_corners <- function(control_i) {
 }
 
 layout(rbind(1:2, 3:4, 5))
-par(mar = rep(0, 4))
-lapply(1:4, plot_uncertain_corners)
+par(mar = c(0, 0, 1.5, 0))
+mapply(plot_uncertain_corners, 1:4, c('Fuel', 'Moisture', 'Weather', 'Human'))
 
 add_legend <- function(levels, cmap = NULL) {
     nlevs = length(levels) + 1
