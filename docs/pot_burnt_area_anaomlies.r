@@ -15,9 +15,9 @@ dir  = 'data/data/burnt_area/'
 regions = list('NW_Amazon', 'Greece', 'Canada')
 boxess = list(list(list(9, c(-70, -55, -8, 0)),list(10, c(-70, -55, -8, 0))),
              list(list(8, c(24, 27, 40, 42)),list(8, c(22, 25, 37, 39.5))),
-             list(list(5, c(-128, -105, 53, 62)), list(6, c(-80, -70, 47, 58)),
-                  list(7, c(-80, -70, 47, 58)), list(9, c(-125, -115, 57, 64))))
-speedy = TRUE
+             list(list(5, c(-128, -105, 53, 62)), list(6, c(-82, -70, 47, 58)),
+                  list(7, c(-82, -70, 47, 58)), list(9, c(-125, -108, 57, 64))))
+speedy = FALSE
 plot_FUN <- function(region, boxes) {
     eg_extent_file = paste0("data/data/driving_data/", region, 
                             "/nrt/period_2013_2023/burnt_area.nc")
@@ -51,7 +51,8 @@ plot_FUN <- function(region, boxes) {
     anom = last_year - clim
     anom = anom / (4*area(anom))
 
-    levels = find_levels_n(anom[[8]], 10, TRUE)
+    mnths = unique(sapply(boxes, function(i) i[[1]]))
+    levels = find_levels_n(anom[[mnths]], 10, TRUE)
   
     plot_month <- function(r, mn, addX1 = FALSE, addY2 = FALSE, addX3 = FALSE, addY4 = FALSE,
                            boxes, ...) {
@@ -78,7 +79,7 @@ plot_FUN <- function(region, boxes) {
     heights = c(0.15, rep(hght, 4), 0.5, 0.15)
     widths = c(0.15, rep(1, 3), 0.15)
     if (F) {
-    png(paste0("outputs/figs/mnthly_BA_anaom", region, '.png'), 
+    png(paste0("outputs/figs/mnthly_BA_anaom-", region, '-', speedy, '.png'), 
         height = 2.5*sum(heights), width = 2.5*sum(widths), res = 300, units = 'in')
         layout(lmat, heights = heights, widths = widths)
         par(mar = rep(0.5, 4), oma = c(0, 0, 0, 0))
@@ -90,41 +91,29 @@ plot_FUN <- function(region, boxes) {
                      extend_min = T, extend_max = T, transpose = TRUE, oneSideLabels = NA)
     dev.off()
     }
-
-    plot_box <- function(box, ...) {
-        r = anom[[box[[1]]]][[1]]
-        x = mean(box[[2]][1:2])
-        y = mean(box[[2]][3:4])
-        db = max(diff(box[[2]][1:2]), diff(box[[2]][3:4]))
-        #db = db * 0.6
-        x = x + c(-db, db)
-        y = y + c(-db, db)
-        #r = crop(r, c(x, y))
-        plot_month(r, box[[1]], speedy = FALSE, x_range = x, y_range = y,...)
-    }
     
     
-    nrow = ceiling(sqrt(length(boxes)))
-    ncol = ceiling(length(boxes)/nrow)
+    nrow = ceiling(sqrt(length(mnths)))
+    ncol = ceiling(length(mnths)/nrow)
     lmat = t(matrix(1:(nrow*ncol), nrow = ncol))
-    lmat[lmat > length(boxes)] = 0
+    lmat[lmat > length(mnths)] = 0
     lmat = cbind(0, rbind(0, lmat, max(lmat)+1, 0), 0)
     heights = c(0.15, rep(hght, nrow), 0.5, 0.15)
     widths = c(0.15, rep(1, ncol), 0.15)
-    browser()
-    png(paste0("outputs/figs/focal_BA_anaom", region, '.png'), 
+    
+    png(paste0("outputs/figs/focal_BA_anaom-", region, '-', speedy,  '.png'), 
         height = 3.5*sum(heights), width = 3.5*sum(widths), res = 300, units = 'in')
         par(mar = rep(0.5, 4), oma = c(0, 0, 0, 0))
         layout(lmat, heights = heights, widths = widths)
-        mapply(plot_box, boxes,
+        mapply(plot_month, anom[mnths], mnths,
                addX1 = c(rep(F, ncol * (nrow -1)), rep(T, ncol)), 
                addY2 = rep(c(T, rep(F, ncol-1)), nrow),
                addX3 = c(rep(T, ncol), rep(F, ncol * (nrow -1))), 
-               addY4 = rep(c(rep(F, ncol-1), T), nrow))
-        legendColBar(c(0.5, 0.7), c(0.1, 0.8), cols = cols, limits = levels, 
-                     extend_min = T, extend_max = T, transpose = TRUE, oneSideLabels = NA)
+               addY4 = rep(c(rep(F, ncol-1), T), nrow),
+               MoreArgs = list(boxes = boxes))
+        legendColBar(c(0.5, 0.7), c(0.0, 1.0), cols = cols, limits = levels, 
+                     extend_min = T, extend_max = T, transpose = TRUE, oneSideLabels = FALSE)
     dev.off()
-    browser()
 }
 
 mapply(plot_FUN, regions, boxess)
