@@ -41,7 +41,7 @@ def Potential_limitation(training_namelist, namelist,
                      *args, **kws)
 
 def above_percentile_mean(cube, cube_assess = None, percentile = 0.95):
-    
+    print("finding " + str(percentile) + " for year" + str(cube.coord('year').points))
     if cube_assess is None: cube_assess = cube
     area_cube = iris.analysis.cartography.area_weights(cube_assess)
     # Sort the cube by fractional burnt values in descending order
@@ -71,7 +71,7 @@ def above_percentile_mean(cube, cube_assess = None, percentile = 0.95):
     
     # Calculate the area of the grid cells above the threshold
     masked_area_cube = area_cube.copy()
-   
+    
     mean_cube = masked_cube.collapsed(['latitude', 'longitude'], iris.analysis.MEAN, weights=masked_area_cube)
     #set_trace()#0.00125249
     return(mean_cube)
@@ -100,6 +100,7 @@ def make_time_series(cube, name, figName, percentile = None, cube_assess = None,
         area_weighted_mean =  [cube[i].collapsed(['latitude', 'longitude'],
                                                  iris.analysis.MEAN, weights = grid_areas[i]) \
                                    for i in range(cube.shape[0])]
+        
         area_weighted_mean = iris.cube.CubeList(area_weighted_mean).merge_cube()
         out_dir = figName + '/mean/'
     
@@ -252,6 +253,7 @@ if __name__=="__main__":
     namelist = 'namelists/ConFire_Canada.txt'
     namelist = 'namelists/Greece.txt'
     namelist = 'namelists/tuning.txt'
+    namelist = 'namelists/isimip-fwi2.txt'
     namelist = 'namelists/isimip.txt'
     #namelist = 'namelists/SOW2023.txt'
     
