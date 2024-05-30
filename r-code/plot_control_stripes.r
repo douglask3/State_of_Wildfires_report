@@ -5,11 +5,11 @@ source("libs/find_levels.r")
 source("../rasterextrafuns/rasterPlotFunctions/R/make_col_vector.r")
 source("../rasterextrafuns/rasterPlotFunctions/R/mtext.units.r")
 regions = c('Canada', 'Greece', 'NW_Amazon')
-pcs = c(95, 90, 95)
+pcs = c(95, 95, 95)
 Anom_titles = c('Canada', 'Greece', 'South American Domain')
 xlims = list(c(3, 9)*30, c(6, 9)*30, c(6, 12)*30)
 
-dirs = paste0("outputs/ConFire_", regions, "-nrt-tuning10/figs/_12-frac_points_0.5-baseline-control_TS/pc-", pcs, "/")
+dirs = paste0("outputs/ConFire_", regions, "-nrt-tuning12/figs/_12-frac_points_0.5-baseline-control_TS/pc-", pcs, "/")
 
 files = list("points-Control.csv",
 	     "points-standard-Fuel.csv",
@@ -45,28 +45,53 @@ dcols = list(rev(c('#35000f', '#67001f','#b2182b','#d6604d','#f4a582','#fddbc7',
                    '#d9f0d3','#a6dba0','#5aae61','#1b7837','#00441b', '#002210')))
 
 levels_controls_regions = list(Canada = list(levels = c(0, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50),
-                                     dlevels = c(-5, -2, -1, -0.5, -0.2,-0.1, 
-                                                 0.1, 0.2, 0.5, 1, 2, 5)),
+                                     dlevels = c(-2, -1, -0.5, -0.2,-0.1, 0,
+                                                 0.1, 0.2, 0.5, 1, 2)),
                        Greece = list(levels = c(0, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50),
                                      dlevels = c(-2, -1, -0.5, -0.2, -0.1,0, 
                                                  0.1, 0.2, 0.5, 1, 2)),
                        NW_Amazon = list(levels = c(0, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50),
-                                        dlevels = c(-30, -10, -3, -1, -0.3, -0.1, 
+                                        dlevels = c(-30, -10, -3, -1, -0.3, -0.1, 0,
                                                     0.1, 0.3, 1, 3, 10, 30)))
 
 levels_BA_regions = list(Canada = list(levels_BA = c(0, 0.001, 0.002, 0.004, 0.006, 
                                                     0.008, 0.01, 0.02, 0.04, 0.06, 0.08),
-                                      dlevels_BA = c(-0.7, -0.3, -0.1, -0.05, -0.01, 
+                                      dlevels_BA = c(-0.7, -0.3, -0.1, -0.05, -0.01, 0,
                                                      0.01, 0.05, 0.1, 0.3, 0.7)),
                         Greece = list(levels_BA = c(0, 0.001, 0.002, 0.005, 0.01, 0.02, 
                                                     0.04, 0.06, 0.08, 0.1),
-                                      dlevels_BA = c(-0.3, -0.1, -0.05, -0.02, -0.01, 
+                                      dlevels_BA = c(-0.3, -0.1, -0.05, -0.02, -0.01, 0,
                                                      0.01, 0.02, 0.05, 0.1, 0.3)),
                         NW_Amazon = list(levels_BA = c(0, 0.0001, 0.001, 0.002, 0.005, 0.01, 
                                                        0.02, 0.05, 0.1),
-                                         dlevels_BA = c(-1, -0.5, -0.2, -0.1, -0.05, -0.02, 
+                                         dlevels_BA = c(-1, -0.5, -0.2, -0.1, -0.05, -0.02, 0,
                                                         0.02, 0.05, 0.1, 0.2, 0.5, 1)))
-levels_s2n = c(0, 0.6, 0.8, 1, 1.2, 1.4, 1.6, 1.8, 2, 2.2, 2.4)
+
+
+
+levels_controls_regions = list(Canada = list(levels = c(0, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50),
+                                     dlevels = c(-2, -1, -0.5, -0.2,-0.1, 0,
+                                                 0.1, 0.2, 0.5, 1, 2)),
+                       Greece = list(levels = c(0, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50),
+                                     dlevels = c(-2, -1, -0.5, -0.2, -0.1,0, 
+                                                 0.1, 0.2, 0.5, 1, 2)),
+                       NW_Amazon = list(levels = c(0, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50),
+                                        dlevels = c(-30, -10, -3, -1, -0.3, -0.1, 0,
+                                                    0.1, 0.3, 1, 3, 10, 30)))
+
+levels_BA_regions = list(Canada = list(levels_BA = c(0, 0.001, 0.002, 0.004, 0.006, 
+                                                    0.008, 0.01, 0.02, 0.04, 0.06, 0.08),
+                                      dlevels_BA = c(-0.5, -0.2, -0.1, -0.05, -0.01, 0,
+                                                     0.01, 0.05, 0.1, 0.2, 0.5)),
+                        Greece = list(levels_BA = c(0, 0.001, 0.002, 0.005, 0.01, 0.02, 
+                                                    0.04, 0.06, 0.08, 0.1),
+                                      dlevels_BA = c(-0.2, -0.1, -0.05, -0.02, -0.01, 0,
+                                                     0.01, 0.02, 0.05, 0.1, 0.2)),
+                        NW_Amazon = list(levels_BA = c(0, 0.0001, 0.001, 0.002, 0.005, 0.01, 
+                                                       0.02, 0.05, 0.1),
+                                         dlevels_BA = c(-0.5, -0.2, -0.1, -0.05, -0.02, 0,
+                                                        0.02, 0.05, 0.1, 0.2, 0.5)))
+levels_s2n = c(0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1)
 			 
 cut_results <- function(x, breaks) {
 	out = x
@@ -86,36 +111,61 @@ find_clim_av <- function(x)
 
 
 
-plot_strpes <- function(cdat, xlim, levels, cols, addAxis = TRUE, sort_clim = NULL) {
+plot_strpes <- function(cdat, xlim, levels, cols, addAxis = TRUE, sort_clim = NULL, annotate = TRUE) {
         cdat0 = cdat
+        
 	cdat = cut_results(cdat, levels)
         cdat[cdat == 0] = 1
 	plot(c(1, 360), ncol(cdat) * c(-1, 1), type = 'n', axes = FALSE, xlab = '', ylab = '', 
              yaxs = 'i', xlim = xlim)
-        
+        xs = logit(head(seq(0, 1, length.out = ncol(cdat) + 2)[-1], -1))
 	add_Day <- function(day) {
-		add_enemble <- function(ens) {
-			x = day + 0.5 * c(-1, 1)
-			y = c(ens, ens)
-			lines(x, y, col = cols[z[ens]], lwd = 2)
-			lines(x, -y, col = cols[z[ens]], lwd = 2)
-		}
-                if (is.null(sort_clim))  {
-                    z = rev(sort(cdat[day,]))
-                } else {
-                    z = rev(cdat[day, sort.int(sort_clim[day,], index.return=TRUE)[[2]]])
-                }
-		lapply(1:ncol(cdat), add_enemble)
+            x = day + 0.5 * c(-1, 1)
+	    add_enemble <- function(ens) {
+		
+		y = c(ens, ens)
+		lines(x, y, col = cols[z[ens]], lwd = 2)
+		lines(x, -y, col = cols[z[ens]], lwd = 2)
+	    }
+            if (is.null(sort_clim))  {
+                z = rev(sort(cdat[day,]))
+            } else {
+                z = rev(cdat[day, sort.int(sort_clim[day,], index.return=TRUE)[[2]]])
+            }
+	    lapply(1:ncol(cdat), add_enemble)
+            
+            if (any(cdat0[day,] < 0)) {
+                y = sort(cdat0[day,])
+                pnt0 = 1-logistic(predict(smooth.spline(xs~y), 0)[[2]])
+                lines(x, c(pnt0, pnt0)* ncol(cdat), lwd = 1)
+                lines(x, -c(pnt0, pnt0)* ncol(cdat), lwd = 1)
+            }
 	}
-
+        add_annotate <- function(day) {
+            if (any(seq(15, 350, 15) == day)) {
+                y = sort(cdat0[day,])    
+                x = day + 0.5 * c(-1, 1)            
+                yrange = predict(smooth.spline(y~xs), logit(c(0.1, 0.9)))[[2]]
+                text(day, 0.9 * ncol(cdat), signif(yrange[2], 2))
+                text(day, 0.1 * ncol(cdat), signif(yrange[1], 2))
+                if (any(levels == 0)) {
+                    y = sort(cdat0[day,])
+                    pnt0 = 1-logistic(predict(smooth.spline(xs~y), 0)[[2]])
+                    if (pnt0 > 0.5) adj = 1.2 else adj = -0.2
+                    text(mean(x), pnt0* ncol(cdat), round(pnt0*100, 1), 
+                         adj = c(0.5, adj), xpd = NA)
+                }
+            }
+        }
 	sapply(xlim[1]:xlim[2], add_Day)
+	if (annotate) sapply(xlim[1]:xlim[2], add_annotate)
 	if (addAxis) {
             axis(at = seq(15, 360-15, 30), labels = month.abb, side = 1, pos = 0)
 	    axis(at = c(0, 360), labels = c('', ''), side = 1, pos = 0, xpd = FALSE)
         }
 }
 
-logit <- function(x) log(x/(1+x))
+logit <- function(x) log(x/(1-x))
 logistic <- function(x) 1/(1+exp(-x))
 
 plot_cols <- function(Anom_title, dir, xlim,
@@ -142,17 +192,24 @@ plot_cols <- function(Anom_title, dir, xlim,
             dat = as.matrix(read.csv(paste0(dir, file), stringsAsFactors = FALSE))*100
         }
 	idat = apply(dat, 1, split_to_day)
-        
 	clim = apply(idat, 2, find_clim_av)
         
 	if (do_anom) {
+            print(file)
 	    if (length(file) == 1 && file == files[[1]]) {
                 #clim0 <<- log(tail(idat, 360)) - log(clim)
-                clim = 100*(tail(idat, 360) - clim)
+                clim = (tail(idat, 360) - clim)/clim
             } else if (file[1] == "residual") {
                 clim = tail(idat, 360)
             } else {
-                clim = 100*(tail(idat, 360) - clim)/clim
+                BA = as.matrix(read.csv(paste0(dir, files[1]), stringsAsFactors = FALSE))*100
+                idat_BA = apply(BA, 1, split_to_day)
+	        clim_BA = apply(idat_BA, 2, find_clim_av)
+
+                clim = ((tail(idat, 360) * clim_BA/clim) - clim_BA)    
+                clim = clim /abs(tail(idat_BA, 360) - clim_BA)
+                
+                #clim = (tail(idat, 360) - clim)/clim
             }
 	    #levels = quantile(abs(clim), seq(0, 1, length.out = ceiling(length(cols))/2))[-1]
 	    #levels = c(rev(-levels), levels)
@@ -171,8 +228,9 @@ plot_cols <- function(Anom_title, dir, xlim,
         clim[is.na(clim)] = 0
         if (is.null(levels)) levels = find_levels_n(clim, 9, TRUE)
         levels = unique(signif(levels), 2)
+        if ((levels[1] < 0) & (tail(levels, 1) >0)) levels = unique(sort(c(0, levels)))
         cols =  make_col_vector(cols, ncols = length(levels) + 1)
-	if (file == "points-standard-Moisture.csv") brows = TRUE else brows = FALSE
+        
 	plot_strpes(clim, xlim, levels, cols, ..., sort_clim = sort_clim)
 
         if (length(file) > 1) {
@@ -221,10 +279,10 @@ plot_for_region <- function(region, Anom_title, dir, xlim, levels_controls_regio
     }
 
     if (T) {
-        png(paste0("figs/control_stripes-2-", region, ".png"),
-            height = 7, width = 12, units = 'in', res = 300)
+        png(paste0("figs/control_stripes-3-", region, ".png"),
+            height = 7, width = 20, units = 'in', res = 300)
 
-            par(mfcol = c(6, 3), mar = c(0, 3.5, 0, 0), oma = c(2,2, 3.5, 4))
+            par(mfcol = c(6, 3), mar = c(0, 3.5, 0, 0), oma = c(2,2, 3.5, 8))
             levels = mapply(plt_colsR, files, cols, SIMPLIFY = FALSE)
             mapply(plt_colsR, files, cols, levels = levels, 
                    MoreArgs = list(do_last_year = TRUE))
@@ -237,34 +295,37 @@ plot_for_region <- function(region, Anom_title, dir, xlim, levels_controls_regio
     levels = levels_controls_region[[1]]
     dlevels = levels_controls_region[[2]]
     if (T) {
-        png(paste0("figs/control_stripes-2-JoeyStyle", region, ".png"), 
+        png(paste0("figs/control_stripes-3-JoeyStyle", region, ".png"), 
             height = 7, width = 12, units = 'in', res = 300)
 
             par(mfcol = c(6, 3), mar = c(0, 3.5, 0, 0), oma = c(2,2, 3.5, 4))
         
         for (do_last_year in c(FALSE, TRUE)) {
             plt_colsR(files[[1]], cols = cols[[1]], do_last_year = do_last_year,
-                      levels = levels_BA, addAxis = FALSE)
+                      levels = levels_BA, addAxis = FALSE, annotate = FALSE)
             add_xaxis(4, side = 3)
         
             mapply(plt_colsR, head(files[-1], -1), cols = head(cols[-1], -1), 
                    MoreArgs = list(levels = levels, 
-                                   do_last_year = do_last_year, addAxis = FALSE)) 
+                                   do_last_year = do_last_year, 
+                                   addAxis = FALSE, annotate = FALSE)) 
     
             plt_colsR(tail(files, 1)[[1]], cols = tail(cols, 1)[[1]],levels = levels_s2n, 
-                      do_last_year = do_last_year, do_anom = FALSE , addAxis = FALSE)
+                      do_last_year = do_last_year, do_anom = FALSE , 
+                      addAxis = FALSE, annotate = FALSE)
             add_xaxis(3)
         }
 
         plt_colsR(files[[1]], levels = dlevels_BA, cols = dcols[[1]],
-                  do_anom = TRUE , addAxis = FALSE)
+                  do_anom = TRUE , addAxis = FALSE,annotate = FALSE)
         add_xaxis(4, side = 3)
         mapply(plt_colsR, head(files[-1], -1), cols = head(dcols[-1], -1), 
                MoreArgs = list(levels = dlevels, 
-               do_anom = TRUE , addAxis = FALSE))
+               do_anom = TRUE , addAxis = FALSE, annotate = FALSE))
     
         plt_colsR(tail(files, 1)[[1]], cols = tail(cols, 1)[[1]],levels = levels_s2n, 
-                 do_last_year = do_last_year, do_anom = FALSE , addAxis = FALSE)
+                 do_last_year = do_last_year, do_anom = FALSE , 
+                 addAxis = FALSE, annotate = FALSE)
         add_xaxis(3)
         
         dev.off()
