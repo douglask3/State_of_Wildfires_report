@@ -1,4 +1,9 @@
+source("../rasterextrafuns/rasterPlotFunctions/R/make_col_vector.r")
 graphics.off()
+logit <- function(x) {
+    x[x<0.0000000001] = 0.0000000001
+    log(x/(1-x))
+}
 
 if (F) {
 burnt_area_data = paste0("data/data/driving_data/", region, "/isimp3a/obsclim/GSWP3-W5E5/period_2000_2019/burnt_area-2000-2023.nc")
@@ -29,29 +34,32 @@ percentile = mean(burnt_area_tot <= burnt_area_event)
 rnning_mean <- function(r) 
     filter(r, rep(1 / 10, 10), sides = 1)
 
-make_plot <- function(dir, file) {
+make_plot <- function(region, dir, pattern, file, burnt_area_event, percentiles) {
+    percentile = percentiles[1]
     openDat <- function(exp) {
         print(exp)
         dirs = list.dirs(dir, full.name = TRUE, recursive=TRUE)
         dirs = dirs[grep(paste0('-', exp), dirs)]
+        #browser()
         for (ptt in pattern) dirs = dirs[grep(paste0(ptt), dirs)]
         if (length(dirs) > 1) { 
             if (length(dirs) == 6) dirs = dirs[-1]
-            else dirs = dirs[!(grepl('mean', dirs) | grepl('pc-', dirs))]
-            if (length(dirs) > 1) if (length(dirs) == 6) dirs = dirs[-1]
+            #else dirs = dirs[!(grepl('mean', dirs) | grepl('pc-', dirs))]
+            # (length(dirs) > 1) if (length(dirs) == 6) dirs = dirs[-1]
         }
 
-        openDir <- function(dir) 
+        openDir <- function(dir) {   
             read.csv(paste0(dir, '/', file))
-        
+        }
         dat = lapply(dirs, openDir)
         return(dat)
     }
     dats = lapply(experiments, openDat)
+    
     scale = burnt_area_event/quantile(as.matrix(dats[[1]][[1]]), percentile)
     dats = lapply(dats, lapply, function(i)  i[,seq(2, dim(i)[2], by = 3)])
     dats = lapply(dats, lapply, function(i)  i * scale)
-
+    
     join_dats <- function(dat, id) 
         mapply(cbind, dats[[id]], dat, SIMPLIFY = FALSE)
     dats[4:6] = lapply(dats[4:6], join_dats, 3)
@@ -61,18 +69,21 @@ make_plot <- function(dir, file) {
     
     find_occurnaces <- function(pc) {
         print(pc)
-        event = log(quantile(as.numeric(as.matrix(dats[[1]][[1]])), pc))
+        event = logit(quantile(as.numeric(as.matrix(dats[[1]][[1]])), pc))
+        
         find_occurnace <- function(dat) {
             for_run <- function(x) {
-
                 find_pc <- function(r) {
-                    r = log(unique(sort(r)))
+                    r = logit(unique(sort(r)))
+                    
                     xr = seq(0, 1, length.out = length(r)+1)
                     xr = xr[-1] - diff(xr)/2
-                    xr = log(xr/(1-xr))
-                    xp = seq(-30, 30, length.out = 2500)
+                    #xr = log(xr/(1-xr))
+                    xp = seq(0, 1, length.out = 1000)
                     rp = predict(smooth.spline(r ~ xr, spar = 0.5), xp)[[2]]
                     rp = sort(rp)
+                    return(mean(event < rp))
+                    #browser()
                     #xp = xr
                     #rp = r
                     if (event > tail(rp, 1)) {
@@ -83,12 +94,13 @@ make_plot <- function(dir, file) {
                     }
                     
                     out = 1/(1+exp(-out))
+                    
                     if (is.na(out)) out = 0
                     
                     return(out)
                 }
                 out = apply(x, 2, find_pc)
-               
+                
                 return(rnning_mean(out))
             }
             lapply(dat, for_run)
@@ -145,7 +157,7 @@ make_plot <- function(dir, file) {
         for (i in 1:4) mapply(add_experiment, freq, years, cols)
         fqs = mapply(add_experiment, freq, years, cols, '00')
     }
-    png(paste0("futures_", region, ".png"), res = 300, height = 7, width = 7.2, units = 'in')
+    png(paste0("futures_2", region, ".png"), res = 300, height = 7, width = 7.2, units = 'in')
     par(mfrow = c(3, 2), mar = c(3, 3, 0, 0), oma = c(1, 1, 0, 0))
     fqss = mapply(add_Freq, freqs, percentiles, percentile_names, 
             c('', '', '% Likelihood of event', rep('', 3)), c(rep(F, 4), T, T))
@@ -168,20 +180,22 @@ cols = c('#000000', '#999999', '#DC267F00', '#7570b3', '#1b9e77', '#d95f02')
 
 percentiles = c(0.5, 0.9, 0.95, 0.99, 0.999)
 percentile_names = 1/(1-percentiles)
-percentiles = c(percentile, percentiles)
+percentiles = c(NaN, percentiles)
 percentile_names = c('2023 event', paste0('1-in-', round(percentile_names, 0)))
 
 
 
 start = c(2000, 2000, -999, 1994, 1994, 1994)
-
-plot_region_fqi <- function(control_name, col_hint, region, fi = 1) {
-    dir = paste0("outputs/ConFire_", region, "-tuning12/figs/")
-    pattern = c("_13-frac_points_0.5-")
+pattern = "_13-frac_points_0.5-"
+plot_region_fqi <- function(control_name, col_hint, region, pattern2, fi = 1) {
+    dir = paste0("outputs/ConFire_", region, "-tuning15/figs/")
+    
     file = paste0("points-", control_name, ".csv")
 
     load(paste0("outputs/obs_time_series/", region, "/outs.Rd"))
-    fqss = make_plot(dir, file)
+    #if (percentile == 1) percentile = 1-1/120
+    percentiles[1] = percentile
+    fqss = make_plot(region, dir, c(pattern, pattern2), file, burnt_area_event, percentiles)
     fqs = fqss[,fi]
 
     years = seq(2019, 2099, by = 10)
@@ -234,25 +248,52 @@ plot_region_fqi <- function(control_name, col_hint, region, fi = 1) {
     if (control_name == tail(controls, 1)) axis(1, at = years + 1)
     colsp = mapply(plot_for_year, pnts, years)
 
-    yrange4 = yrange/pnts[[1]][[1]]
-
+    if (pnts[[1]][[1]] !=0) scaler = pnts[[1]][[1]]  else scaler = 1
+    yrange4 = yrange/scaler
     labels = round(seq(yrange4[1], yrange4[2], length.out = 6), 1)
-    axis(2)
     
-    axis(4, at = labels *pnts[[1]][[1]], labels = labels)
-    if (control_name == controls[1]) mtext(side = 3, line = -1, region)
+    
+    axis(2, at = labels * scaler, labels = labels)
+    if (control_name == controls[1]) {
+        if (region == tail(regions, 1)) mtext(side = 4, 'Liklihood (%)', line = 3.5)
+        axis(4)
+        mtext(side = 3, line = -1, region)
+    }
     if (region == regions[1]) {
-        mtext(side = 2, line = 2, control_name)
+        if (control_name == "Control") name2 = 'Burnt Area'
+            else name2 = sub("standard-", "", control_name)
+        mtext(side = 2, line = 2, name2)
         legend('topleft', experiments[-(2:3)], col = paste0(cols[-(2:3)], 'BB'), pt.cex = 2, pch = 15, bty = 'n')
         legend('topleft', experiments[-(2:3)], col = cols[-(2:3)], pt.cex = 2, pch = 1, bty = 'n')
     }
+    colate_tstep <- function(pnt)
+        do.call(c, lapply(pnt, function(i) if (is.null(i)) return(NaN) else return(i)))
+    out = sapply(pnts, colate_tstep)
+    colnames(out) = years
+    
+    rname <- function(pnt, experiment) {
+        if (is.null(pnt) || length(pnt) == 1) return(experiment)
+        paste(experiment, 1:length(pnt))
+    }
+    rownames(out) = unlist(mapply(rname, pnts[[1]], experiments))
+    write.csv(out, paste('figs/future_table', region, control_name, '-', fi, '.csv', sep = '-'))
 }
-controls = c('Control', 'Fuel', 'Moisture', 'Ignition') 
+
+controls = c('Control', 'standard-Fuel', 'standard-Moisture', 'standard-Ignition') 
 cols_hint = c('NULL', '#00FF00', '#0000FF', '#FF0000')#, '#333333')
-png(paste0("figs/box_futures-", region, "-", fi, ".png"), 
-    res = 300, units = 'in', width = 8, height = 7)
-par(mfcol = c(4, 3), oma = c(2, 4, 2, 4), mar = c(1, 2, 0, 2))
-lapply(regions, function(region) mapply(plot_region_fqi, controls, cols_hint, MoreArgs = list(region)))
-mtext(side = 2, 'Liklihood (%)', outer = TRUE, line = 2.5)
-mtext(side = 4, line = 2, 'times more likely)', outer = TRUE, line = 2.5)
-dev.off()
+plot_fi <- function(fi) {
+    png(paste0("figs/box_futures3-", fi, "-.png"), 
+        res = 300, units = 'in', width = 8, height = 7)
+        par(mfcol = c(4, 3), oma = c(2, 4, 2, 4), mar = c(1, 2, 0, 2))
+        pnts = mapply(function(region, pattern2) 
+                        mapply(plot_region_fqi, controls, cols_hint, 
+                               MoreArgs = list(region, pattern2, fi = fi)), regions, 
+                                                c('pc-95', 'pc-90', 'pc-95'))
+
+        #mtext(side = 4, 'Liklihood (%)', outer = TRUE, line = 2.5)
+        mtext(side = 2, 'times more likely)', outer = TRUE, line = 2.5)
+    dev.off()
+}
+
+plot_fi(1)
+'plot_fi(5)
