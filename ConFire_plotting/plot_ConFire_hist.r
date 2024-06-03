@@ -4,7 +4,7 @@ library(modi)
 
 spar = 0.75
 
-runs = c('tuning12', 'tuning12', 'tuning15')
+runs = c('final', 'final', 'final')
 date_tests = c('2023-06', '2023-08', '2023-10')
 regions = c('Canada', 'Greece', 'NW_Amazon')
 region_names = c('Canada', 'Greece', 'Western Amazonia')

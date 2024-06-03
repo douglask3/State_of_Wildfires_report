@@ -1,4 +1,4 @@
-source("../rasterextrafuns/rasterPlotFunctions/R/make_col_vector.r")
+source("libs/make_col_vector.r")
 graphics.off()
 logit <- function(x) {
     x[x<0.0000000001] = 0.0000000001
@@ -153,9 +153,9 @@ percentile_names = c('2023 event', paste0('1-in-', round(percentile_names, 0)))
 start = c(2000, 2000, -999, 1994, 1994, 1994)
 pattern = "_13-frac_points_0.5-"
 plot_region_fqi <- function(control_name, col_hint, region, pattern2, fi = 1) {
-    dir = paste0("outputs/ConFire_", region, "-tuning15/figs/")
-    if (region == "Greece") dir = "outputs/ConFire_Greece-final1/figs/"
-    if (region == "Canada") dir = "outputs/ConFire_Canada-tuning12/figs/"
+    dir = paste0("outputs/ConFire_", region, "-final/figs/")
+    #if (region == "Greece") dir = "outputs/ConFire_Greece-final1/figs/"
+    #if (region == "Canada") dir = "outputs/ConFire_Canada-tuning12/figs/"
     
     file = paste0("points-", control_name, ".csv")
 
