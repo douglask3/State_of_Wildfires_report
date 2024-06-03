@@ -41,27 +41,25 @@ def dowload_vcf(temp_dir2, bbox):
 
 temp_dir1 = '../temp/'
 # Define latitude and longitude ranges for your region
-#bbox = [17.50, 33.0, 30.0, 43.0]
-#temp_dir2 = 'Greece-MODIS/'
-#dowload_vcf(temp_dir2, bbox)
+bbox = [17.50, 33.0, 30.0, 43.0]
+temp_dir2 = 'Greece-MODIS/'
+dowload_vcf(temp_dir2, bbox)
 
-#bbox = [-82.0, -55.0, -55.0, -5.0]
-#temp_dir2 = 'BoliviaChile-MODIS/'
-#dowload_vcf(temp_dir2, bbox)
+bbox = [-82.0, -55.0, -55.0, -5.0]
+temp_dir2 = 'BoliviaChile-MODIS/'
+dowload_vcf(temp_dir2, bbox)
 
+bbox = [-20.0, 50.0, -55.0, 55.0]
+temp_dir2 = 'MED-MODIS/'
+dowload_vcf(temp_dir2, bbox)
 
-#bbox = [-20.0, 50.0, -55.0, 55.0]
-#temp_dir2 = 'MED-MODIS/'
-#dowload_vcf(temp_dir2, bbox)
+bbox = [-85.0, -60.0, -30.0, 15.0]
+temp_dir2 = 'SouthAmerica-MODIS/'
+dowload_vcf(temp_dir2, bbox)
 
-#bbox = [-85.0, -60.0, -30.0, 15.0]
-#temp_dir2 = 'SouthAmerica-MODIS/'
-#dowload_vcf(temp_dir2, bbox)
-
-
-#bbox = [-12.0, 49.0, 3.0, 63.0]
-#temp_dir2 = 'UK-MODIS/'
-#dowload_vcf(temp_dir2, bbox)
+bbox = [-12.0, 49.0, 3.0, 63.0]
+temp_dir2 = 'UK-MODIS/'
+dowload_vcf(temp_dir2, bbox)
 
 
 bbox = [-77.5, -10.0, -56.0, 2.0]
