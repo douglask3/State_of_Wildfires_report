@@ -6,7 +6,6 @@
 - [Installation](#installation)
 - [Obtaining Driving Data](#obtaining-driving-data)
 - [Configuration Settings](#configuration-settings)
-- [Model Setup](#model-setup)
 - [Running the Models](#running-the-models)
 - [Results](#results)
 - [Contributing](#contributing)
@@ -91,25 +90,13 @@ Each parameter is set using `parameter_name:: parameter_value'. "parameter_name"
 
 
 
-## Model Setup
-Each model follows the same basic setup process. Here are the steps:
-
-1. Navigate to the model directory:
-    ```bash
-    cd models/model_name
-    ```
-2. Adjust the configuration file if necessary.
-3. Prepare the environment by running:
-    ```bash
-    setup_script.sh
-    ```
 
 ## Running the Models
 To run a model, execute the following command:
 
 ```bash
 python run_model.py --config config.yaml
-
+```
 
 
 #  Fogo local Analisado pela Máxima Entropia (FLAME)
