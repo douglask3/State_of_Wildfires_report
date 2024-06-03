@@ -70,7 +70,6 @@ Each parameter is set using `parameter_name:: parameter_value'. "parameter_name"
 |     |  `pname` is the parameter name used by the model. See the specific model for details. if `npame` starts with the string `link-`, then it is a parameter used in the link function. Again, see the specific link function for info. |   |   |
 |     |  `dist`. The prior can be based on a pymc prior distribution. If it is, you can use any in the pymc library: [https://www.pymc.io/projects/docs/en/stable/api/distributions.html](https://www.pymc.io/projects/docs/en/stable/api/distributions.html). To use one of these, enter a pymc distribution name in the entry `dist`. You then enter each input used by that distribution as a new dict item (e.g. `upper` and `lower` in the example). `np` is normally an optional field (though some models or link functions may require it) that says how many times you need this distribution. See model or link function for specifcs | | `{'pname': "Fmax", 'np': 1, 'dist': 'Uniform', 'lower': 0.00001, 'upper': 0.9999}`  |
 |                         |                                                         |            | `{'pname': "x0", 'np': 6, 'dist': 'Normal', 'mu': 0.0, 'sigma': 10.0}`                       |
-
 |                         |                                                               |            | `{'pname': "driver_Direction", 'value': [[1, 1], [1, 1], [1, 1, -1], [1, 1, 1], [1, 1, 1, 1], [1]]}`          |
 
 
