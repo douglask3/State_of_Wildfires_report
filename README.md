@@ -94,7 +94,7 @@ Each parameter is set using `parameter_name:: parameter_value'. "parameter_name"
 ## Running the Models
 Over the next few months, we will generalise the model's running so it works the same way for any more setups, and you define the name list at runtime. For now, though, we have basic model execution files for ConFire: one for near real-time studies (`run_ConFire-NRT.py`) and one for ISI-MIP-driven runs for attribution and future projections (`run_ConFire.py`). For each, open the file, under `__main__`, make sure the variable is set to you namelist, and the run:
 
-* for isismip
+* for isimip
 ```bash
 python run_ConFire.py
 ```
@@ -105,21 +105,29 @@ python run_ConFire-NRT.py
 ```
 
 ## Results
-The results will be saved in the `results/` directory. Each run will generate a summary file and detailed logs. You can interpret the results using the provided analysis scripts.
+The results will be saved in the `outputs/` directory, though this can be updated in the namelists. There are some model specific files that will get produced, but common across all models are:
 
 ## Contributing
-Contributions are welcome! Please read the [CONTRIBUTING.md](CONTRIBUTING.md) file for guidelines on how to contribute.
+Contributions are welcome! Please read the [CONTRIBUTING.md](README/CONTRIBUTING.md) file for guidelines on how to contribute.
 
 ## License
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the  GNU GENERAL PUBLIC LICENSE version 3 License. See the [LICENSE](LICENSE) file for details.
 
 ## Contact
-For any questions or issues, please contact [Dougas Kelley] at [doukel@ceh.ac.uk].
+Please contact [Dougas Kelley] at [doukel@ceh.ac.uk] for any questions or issues.
 
-# Note for State of Wildfire report
+## Note for State of Wildfires report
+
+### 2023/24
+
+To reproduce results in the State of Wildfire's report, make sure you have the version at tag SoW23_sub (or download the Zenodo archived code that can be found with the paper: https://doi.org/10.5194/essd-2024-218, along with dataset information). The results from this paper were obtained using the [Running the Models](#running-the-models) commands above. The namelists are already set within these files, but you may need to update paths in the following in the `namelists` directory:
+* `isimip.txt` - used for attribution and future projections
+* `isimip-evaluation.txt` used to evalute the configuration for attribution and future projections
+* `nrt.txt` used for 2023 fire season driver analysis
+* `nrt-evalution.txt` - used to evaluate the driver analysis configuation
 
 
-### Basic datasets provided
+
 
 ### Notes on constraining area
 
