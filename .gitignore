@@ -1,6 +1,7 @@
 *swp
+*.swo
 outputs/
 temp/
 data/
+*.png
 
-*__pycache__*
