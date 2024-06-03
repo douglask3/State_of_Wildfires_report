@@ -11,6 +11,7 @@
 - [Contributing](#contributing)
 - [License](#license)
 - [Contact](#contact)
+- [State of Wildfires report](#State-of-Wildfires-report)
 
 
 
@@ -116,7 +117,8 @@ This project is licensed under the  GNU GENERAL PUBLIC LICENSE version 3 License
 ## Contact
 Please contact [Dougas Kelley] at [doukel@ceh.ac.uk] for any questions or issues.
 
-## Note for State of Wildfires report
+## State of Wildfires report
+The State of Wildfires report has been a major driver of this development. Here's some info for anyone whose found their way here and wants to perform those runs again
 
 ### 2023/24
 
