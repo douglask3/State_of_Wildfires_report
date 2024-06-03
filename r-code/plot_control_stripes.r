@@ -6,7 +6,7 @@ source("../rasterextrafuns/rasterPlotFunctions/R/make_col_vector.r")
 source("../rasterextrafuns/rasterPlotFunctions/R/mtext.units.r")
 regions = c('Canada', 'Greece', 'NW_Amazon')
 pcs = c(95, 95, 95)
-Anom_titles = c('Canada', 'Greece', 'South American Domain')
+Anom_titles = c('Canada', 'Greece', 'Western Amazonia')
 xlims = list(c(3, 9)*30, c(6, 9)*30, c(6, 12)*30)
 
 dirs = paste0("outputs/ConFire_", regions, "-nrt-tuning12/figs/_12-frac_points_0.5-baseline-control_TS/pc-", pcs, "/")
@@ -68,29 +68,24 @@ levels_BA_regions = list(Canada = list(levels_BA = c(0, 0.001, 0.002, 0.004, 0.0
                                                         0.02, 0.05, 0.1, 0.2, 0.5, 1)))
 
 
-
+dlevels = c(-2, -1, -0.5, -0.2,-0.1, 0, 0.1, 0.2, 0.5, 1, 2)*100
 levels_controls_regions = list(Canada = list(levels = c(0, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50),
-                                     dlevels = c(-2, -1, -0.5, -0.2,-0.1, 0,
-                                                 0.1, 0.2, 0.5, 1, 2)),
+                                     dlevels = dlevels),
                        Greece = list(levels = c(0, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50),
-                                     dlevels = c(-2, -1, -0.5, -0.2, -0.1,0, 
-                                                 0.1, 0.2, 0.5, 1, 2)),
+                                     dlevels =dlevels),
                        NW_Amazon = list(levels = c(0, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50),
-                                        dlevels = c(-30, -10, -3, -1, -0.3, -0.1, 0,
-                                                    0.1, 0.3, 1, 3, 10, 30)))
+                                        dlevels = dlevels))
 
+dlevels_BA = c(-0.5, -0.2, -0.1, -0.05, -0.01, 0,  0.01, 0.05, 0.1, 0.2, 0.5) * 100
 levels_BA_regions = list(Canada = list(levels_BA = c(0, 0.001, 0.002, 0.004, 0.006, 
                                                     0.008, 0.01, 0.02, 0.04, 0.06, 0.08),
-                                      dlevels_BA = c(-0.5, -0.2, -0.1, -0.05, -0.01, 0,
-                                                     0.01, 0.05, 0.1, 0.2, 0.5)),
+                                      dlevels_BA = dlevels_BA),
                         Greece = list(levels_BA = c(0, 0.001, 0.002, 0.005, 0.01, 0.02, 
                                                     0.04, 0.06, 0.08, 0.1),
-                                      dlevels_BA = c(-0.2, -0.1, -0.05, -0.02, -0.01, 0,
-                                                     0.01, 0.02, 0.05, 0.1, 0.2)),
+                                      dlevels_BA = dlevels_BA),
                         NW_Amazon = list(levels_BA = c(0, 0.0001, 0.001, 0.002, 0.005, 0.01, 
                                                        0.02, 0.05, 0.1),
-                                         dlevels_BA = c(-0.5, -0.2, -0.1, -0.05, -0.02, 0,
-                                                        0.02, 0.05, 0.1, 0.2, 0.5)))
+                                         dlevels_BA = dlevels_BA))
 levels_s2n = c(0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1)
 			 
 cut_results <- function(x, breaks) {
@@ -198,7 +193,7 @@ plot_cols <- function(Anom_title, dir, xlim,
             print(file)
 	    if (length(file) == 1 && file == files[[1]]) {
                 #clim0 <<- log(tail(idat, 360)) - log(clim)
-                clim = (tail(idat, 360) - clim)/clim
+                clim = 100*(tail(idat, 360) - clim)/clim
             } else if (file[1] == "residual") {
                 clim = tail(idat, 360)
             } else {
@@ -207,7 +202,7 @@ plot_cols <- function(Anom_title, dir, xlim,
 	        clim_BA = apply(idat_BA, 2, find_clim_av)
 
                 clim = ((tail(idat, 360) * clim_BA/clim) - clim_BA)    
-                clim = clim /abs(tail(idat_BA, 360) - clim_BA)
+                clim = 100*clim /abs(tail(idat_BA, 360) - clim_BA)
                 
                 #clim = (tail(idat, 360) - clim)/clim
             }
@@ -227,15 +222,15 @@ plot_cols <- function(Anom_title, dir, xlim,
 	}
         clim[is.na(clim)] = 0
         if (is.null(levels)) levels = find_levels_n(clim, 9, TRUE)
-        levels = unique(signif(levels), 2)
         if ((levels[1] < 0) & (tail(levels, 1) >0)) levels = unique(sort(c(0, levels)))
+        levels = unique(signif(levels), 2)
         cols =  make_col_vector(cols, ncols = length(levels) + 1)
         
 	plot_strpes(clim, xlim, levels, cols, ..., sort_clim = sort_clim)
 
         if (length(file) > 1) {
             if (!do_anom && !do_last_year) {
-                if (file[1] == "residual") txt = 'Signal:Noise' else txt = 'Human'
+                if (file[1] == "residual") txt = 'Uncertainty\nmeasure' else txt = 'Human'
                 mtext(side = 2, line = 0, txt)
             }
         } else {
