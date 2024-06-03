@@ -1,3 +1,12 @@
+# Bayesian based fire models
+
+#  Fogo local Analisado pela Máxima Entropia (FLAME)
+
+# Controls on Fire (ConFire)
+
+# Note for State of Wildfire report
+
+
 # FLAME -  Fogo local Analisado pela Máxima Entropia
 
 ## Introduction
