@@ -31,7 +31,10 @@ def run_ConFire_nrt(namelist):
         
         control_direction = read_variables_from_namelist(params['other_params_file'])
         control_direction = control_direction['control_Direction']
-        control_names = read_variables_from_namelist(namelist)['control_names']
+        try:
+            control_names = read_variables_from_namelist(namelist)['control_names']
+        except:
+            control_names = None
         
         subset_function_args = read_variables_from_namelist(namelist)['subset_function_args_eval']
         
@@ -42,7 +45,10 @@ def run_ConFire_nrt(namelist):
 
 
 if __name__=="__main__":
-    namelist = 'namelists/nrt-tuining.txt'
-    
+    namelist = 'namelists/nrt.txt'
     run_ConFire_nrt(namelist)
-    set_trace()
+    namelist = 'namelists/nrt-evaluation.txt'
+    run_ConFire_nrt(namelist)
+    namelist = 'namelists/isimip-evaluation.txt'
+    run_ConFire_nrt(namelist)
+
