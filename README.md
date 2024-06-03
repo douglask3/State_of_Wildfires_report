@@ -48,14 +48,27 @@ Follow these steps to install the necessary software and dependencies:
     ```
 
 ## Obtaining Driving Data
-The driving data required for the models are listed [here](https://github.com/douglask3/Bayesian_fire_models/blob/main/README/Datasets). Once you have downloaded the dataset you want, them save it to `data/data/driving_data/` directory within the project folder, or update the path in the corrisponding configution file (see below) to its location.
+The driving data required for the models are listed [here](https://github.com/douglask3/Bayesian_fire_models/blob/main/README/Datasets). Once you have downloaded the dataset you want, save it to the `data/data/driving_data/` directory within the project folder or update the path in the corresponding configuration file (see below) to its location.
 
 ## Configuration Settings
-Configuration settings can be found in the `config.yaml` file. Here are the key settings you may need to adjust:
+Configuration settings can be found in the text files in `namelists\` dir. [namelists/nrt-evaluation.txt](https://github.com/douglask3/Bayesian_fire_models/blob/main/namelists/nrt-evaluation.txt) is quite a good simple example that works for [ConFire](https://github.com/douglask3/Bayesian_fire_models/blob/main/README/ConFire.md). There are some model speific parameters, so you'll have to check specific under [Model Setup](#model-setup). But this is common to all models.
 
-- `parameter1`: Description
-- `parameter2`: Description
-- `parameter3`: Description
+Each parameter is set using `parameter_name:: parameter_value'. "parameter_name" is a parameter or setting used by the framework. "parameter_value" covers most common Python objects (ints, floats, string, lists, common function or class objects) and some extra objects from sync or this repo. 
+
+
+
+| Parameter               | Description                                                   | Compulsory | Example                                                                                      |
+|-------------------------|---------------------------------------------------------------|------------|-----------------------------------------------------------------------------------------|
+| `regions`               | List of regions to model                                      | No - but required if using <<region>> wildcards.  | `['Greece', 'Canada', 'NW_Amazon']`         |
+| `model_title`           | Title of the model                                            | Yes        | `'ConFire_<<region>>-nrt-evaluation1'`                                                       |
+| `dir_training`          | Directory for training data                                   | Yes        | `"data/data/driving_data/<<region>>/nrt/period_2013_2023/"`                                  |
+| `y_filen`               | Filename for response variable                                | Yes        | `"burnt_area.nc"`                                                                            |
+| `CA_filen`              | Filename for control area data (optional)                     | No         | `None`                                                                                       |
+| `x_filen_list`          | List of filenames for predictor variables                     | Yes        | `["VOD-12monthMax.nc", "VOD-12Annual.nc", "Fuel-Moisture-Live.nc", ...]`                     |
+| `model_class`           | Class of the model                                            | Yes        | `ConFire`                                                                                    |
+| `priors`                | Priors for Bayesian inference                                 | Yes        | `{'pname': "link-sigma", 'np': 1, 'dist': 'HalfNormal', 'sigma': 0.5}`                       |
+
+
 
 ## Model Setup
 Each model follows the same basic setup process. Here are the steps:
