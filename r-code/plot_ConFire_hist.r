@@ -50,7 +50,7 @@ plot_region <- function(region , run, pc, date_test, region_name) {
     
         scale = extreme/quantile(dats[[1]], c(percentile))
         dats = lapply(dats, '*', scale)
-        
+         
         bins = range(unlist(dats))
         bins = seq(bins[1], bins[2], length.out = floor(sqrt(length(unlist(dats[[1]])))))
         bins0 = bins
