@@ -18,11 +18,19 @@
 
 
 ## Introduction
-This repository contains a series of Bayesian-based fire models. These models follow a common inference and sampling workflow to predict fire behaviour based on various driving data. . At the moment, we have two models that target burned area:
+This repository contains a series of Bayesian-based fire models. These models and probablity distribution link functions follow a common inference and sampling workflow to predict fire behaviour based on various driving data. 
+
+### Models 
+At the moment, we have two models that target burned area:
 *	[ConFire](https://github.com/douglask3/Bayesian_fire_models/blob/main/README/ConFire.md), has been tested and is working as expected.
 *	[FLAME](https://github.com/douglask3/Bayesian_fire_models/blob/main/README/FLAME.md), is also operational but is located in a separate repository. It needs to undergo testing in our current environment. You can find it at https://github.com/malu-barbosa/FLAME.
   
 Additionally, we are in the process of working on INFERNO, which is derived from JULES-ES-INFERNO ([Mangeon et al. 2016]( https://gmd.copernicus.org/articles/9/2685/2016/)) and working on a  fireMIP ensemble optimisation scheme. We are also extending these two models to cover other aspects of fire regimes beyond burned area.
+
+### Link functions
+
+*	[Zero Inflated logit function](https://github.com/douglask3/Bayesian_fire_models/tree/main/README), has been tested and is working as expected.
+*	[MaxEnt](https://github.com/douglask3/Bayesian_fire_models/blob/main/README/MaxEnt), is also operational but is located in a separate repository. It needs to undergo testing in our current environment. You can find it at https://github.com/malu-barbosa/FLAME.
 
 ## Features
 - Bayesian inference for fire modelling
