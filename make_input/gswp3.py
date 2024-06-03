@@ -52,7 +52,10 @@ def make_variables_for_year_range(year, process, dir, dataset_name, filenames,
         return out
     output_year = str(year[0]) + '_' + str(year[1])
     
-    temp_out = dir  + dataset_name + output_year + region_name
+    try:
+        temp_out = dir  + dataset_name + output_year + region_name
+    except: 
+        set_trace()
     print(temp_out)
     def open_variable(varname, MinusYr = False):
         filename = filenames[varname]
@@ -80,6 +83,7 @@ def make_variables_for_year_range(year, process, dir, dataset_name, filenames,
         sbs_args = [{'year_range': yeari}] + subset_function_argss
          
         out = None
+        
         out =  read_variable_from_netcdf_stack(filename, example_cube, dir,
                                                subset_function = sbs_funs, 
                                                subset_function_args = sbs_args)
@@ -119,7 +123,10 @@ def make_variables_for_year_range(year, process, dir, dataset_name, filenames,
     for var, fun in zip(process_standard, process_function):
         standard_Monthly_mean(var, fun) 
     
-    
+    temp_file = generate_temp_fname(temp_out, 'burnt_area')
+    if test_if_process('burnt_area', temp_file):
+        cal_cover(["burnt_area"], 'burnt_area')
+         
     temp_file = generate_temp_fname(temp_out, 'cover')
     if test_if_process('cover', temp_file):
         tree_vars = ["bdldcd", "bdlevgtemp", "bdlevgtrop", "ndldcd", "ndlevg", \
@@ -268,14 +275,15 @@ def process_clim_and_jules(process_jules, dir_jules, process_clim, dir_clim, yea
     def process(process, dir):
         [make_variables_for_year_range(year, process, dir, *args, **kw) for year in  years]
     process(process_jules, dir_jules)
-    process(process_clim, dir_clim)
+    #process(process_clim, dir_clim)
     
     
 def for_region(subset_functions, subset_function_argss, vcf_region_name, region_name = None):   
     years = [[2010, 2012], [1901, 1920], [2000, 2019], [2002, 2019]]
     dataset_name = 'isimp3a/obsclim/GSWP3-W5E5'
     dataset_name_control = dataset_name
-
+    if region_name is None:
+        region_name = subset_function_argss[0][next(iter(subset_function_argss[0]))]
     filenames = {"tas": "tas_global_daily_",
              "tas_range": "tas_range_global_daily_",
              "pr": "pr_global_daily_",
@@ -301,14 +309,24 @@ def for_region(subset_functions, subset_function_argss, vcf_region_name, region_
              "shrubdcd": "shrubdcd_global_annual_",
              "shrubevg": "shrubevg_global_annual_",
              "soil": "soil_global_annual_",
-             "total":  "total_global_annual_"}
-    
+             "total":  "total_global_annual_",
+             "burnt_area": "burntarea-total_global_monthly_",
+             "soil_moisture": "soilmoist_global_monthly_"}
+
     dir_clim = "/hpc//data/d00/hadea/isimip3a/InputData/climate/atmosphere/obsclim/GSWP3-W5E5/gswp3-w5e5_obsclimfill_"
+    
+    dir_jules = "/scratch/hadea/isimip3a/u-cc669_isimip3a_fire/GSWP3-W5E5_obsclim/jules-inferno-vn6p3_gswp3-w5e5_obsclim_histsoc_default_"
+    process_clim_and_jules(["burnt_area"], dir_jules, process_clim, dir_clim, years,
+                           dataset_name, filenames, subset_functions, subset_function_argss, 
+                           region_name)
+    
+    return()
     dir_jules = "/scratch/hadea/isimip3a/u-cc669_isimip3a_es/GSWP3-W5E5_obsclim/jules-es-vn6p3_gswp3-w5e5_obsclim_histsoc_default_pft-"  
     process_clim_and_jules(process_jules, dir_jules, process_clim, dir_clim, years,
                            dataset_name, filenames, subset_functions, subset_function_argss, 
                            region_name)  
-    
+     
+    set_trace()
     dir_clim = "/hpc//data/d00/hadea/isimip3a/InputData/climate/atmosphere/counterclim/GSWP3-W5E5/gswp3-w5e5_counterclim_"
     dir_jules = "/scratch/hadea/isimip3a/u-cc669_isimip3a_es/GSWP3-W5E5_counterclim/jules-es-vn6p3_gswp3-w5e5_counterclim_histsoc_default_pft-"  
     dataset_name = 'isimp3a/counterclim/GSWP3-W5E5'
@@ -366,8 +384,8 @@ def for_region(subset_functions, subset_function_argss, vcf_region_name, region_
                            dataset_name, filenames, subset_functions, subset_function_argss,
                            region_name)
     
-    if region_name is None:
-        region_name = subset_function_argss[0][next(iter(subset_function_argss[0]))]
+    #if region_name is None:
+    #    region_name = subset_function_argss[0][next(iter(subset_function_argss[0]))]
     obs_cover_dir = '/home/h02/dkelley/state_of_fires_report_20YY/data/data/driving_data/' + \
                     vcf_region_name + '/'
     
@@ -420,7 +438,7 @@ if __name__=="__main__":
     subset_function_argss_main =[{'lon_min': -77.5, 'lon_max': -56.0, 'lat_min': -10.0, 'lat_max': 2.0}]
     for_region(subset_functions_main, subset_function_argss_main, 'SouthAmerica-box_extended/isimp3a', region_name = 'NW_Amazon')
 
-    set_trace()
+    
     subset_functions_main= [constrain_natural_earth]
     countries = ['Greece', 'United Kingdom', 'Chile', 'Bolivia', 'Canada']
     vcf_region_name = ['Greece_extended/isimp3a', 'United_Kingdon_extended/isimp3a', 'BoliviaChile_extended/isimp3a', 'BoliviaChile_extended/isimp3a', 'Canada_extended/']
