@@ -92,10 +92,16 @@ Each parameter is set using `parameter_name:: parameter_value'. "parameter_name"
 
 
 ## Running the Models
-To run a model, execute the following command:
+Over the next few months, we will generalise the model's running so it works the same way for any more setups, and you define the name list at runtime. For now, though, we have basic model execution files for ConFire: one for near real-time studies (`run_ConFire-NRT.py`) and one for ISI-MIP-driven runs for attribution and future projections (`run_ConFire.py`). For each, open the file, under `__main__`, make sure the variable is set to you namelist, and the run:
 
+* for isismip
 ```bash
-python run_model.py --config config.yaml
+python run_ConFire.py
+```
+
+* for nrt
+```bash
+python run_ConFire-NRT.py
 ```
 
 ## Results
