@@ -1,4 +1,10 @@
-# Bayesian based fire models
+# Bayesian-based fire models
+This repo contains the development of a series of Bayesian-based fire modelling frameworks that follow the same basic workflow. At the moment, we have two models:
+•	ConFire, has been tested and is working as expected.
+•	FLAME, is also operational but is located in a separate repository. It needs to undergo testing in our current environment. You can find it at https://github.com/malu-barbosa/FLAME.
+Additionally, we are in the process of working on INFERNO, which is derived from JULES-ES-INFERNO ([Mangeon et al. 2016]( https://gmd.copernicus.org/articles/9/2685/2016/)) and working on a  fireMIP ensemble optimisation scheme.
+
+
 
 #  Fogo local Analisado pela Máxima Entropia (FLAME)
 
