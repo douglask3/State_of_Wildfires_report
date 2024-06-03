@@ -48,11 +48,7 @@ Follow these steps to install the necessary software and dependencies:
     ```
 
 ## Obtaining Driving Data
-The driving data required for the models can be obtained from [data source]. Follow these steps to download the data:
-
-1. Go to [data source website].
-2. Download the data set.
-3. Save the data in the `data/` directory within the project folder.
+The driving data required for the models are listed [here](https://github.com/douglask3/Bayesian_fire_models/blob/main/README/Datasets). Once you have downloaded the dataset you want, them save it to `data/data/driving_data/` directory within the project folder, or update the path in the corrisponding configution file (see below) to its location.
 
 ## Configuration Settings
 Configuration settings can be found in the `config.yaml` file. Here are the key settings you may need to adjust:
