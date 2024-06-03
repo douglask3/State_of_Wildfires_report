@@ -1,15 +1,15 @@
 graphics.off()
 library(stringr) 
-source("../LPX_equil/libs/legendColBar.r")
+source("libs/legendColBar.r")
 source("libs/find_levels.r")
-source("../rasterextrafuns/rasterPlotFunctions/R/make_col_vector.r")
-source("../rasterextrafuns/rasterPlotFunctions/R/mtext.units.r")
+source("libs/make_col_vector.r")
+source("libs/mtext.units.r")
 regions = c('Canada', 'Greece', 'NW_Amazon')
 pcs = c(95, 95, 95)
 Anom_titles = c('Canada', 'Greece', 'Western Amazonia')
 xlims = list(c(3, 9)*30, c(6, 9)*30, c(6, 12)*30)
 
-dirs = paste0("outputs/ConFire_", regions, "-nrt-tuning12/figs/_12-frac_points_0.5-baseline-control_TS/pc-", pcs, "/")
+dirs = paste0("outputs/ConFire_", regions, "-nrt-final/figs/_12-frac_points_0.5-baseline-control_TS/pc-", pcs, "/")
 
 files = list("points-Control.csv",
 	     "points-standard-Fuel.csv",
