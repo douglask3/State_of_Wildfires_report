@@ -12,13 +12,17 @@ graphics.off()
 
 cols = rev(c('#67001f','#b2182b','#d6604d','#f4a582','#fddbc7','#f7f7f7','#d1e5f0','#92c5de','#4393c3','#2166ac','#053061'))
 dir  = 'data/data/burnt_area/'
-regions = list('NW_Amazon', 'Greece', 'Canada')
-boxess = list(list(list(9, c(-70, -55, -8, 0)),list(10, c(-70, -55, -8, 0))),
+regions = rev(list('NW_Amazon', 'Greece', 'Canada'))
+boxess = rev(list(list(list(9, c(-70, -55, -8, 0)),list(10, c(-70, -55, -8, 0))),
              list(list(8, c(24, 27, 40, 42)),list(8, c(22, 25, 37, 39.5))),
-             list(list(5, c(-128, -105, 53, 62)), list(6, c(-82, -70, 47, 58)),
-                  list(7, c(-82, -70, 47, 58)), list(9, c(-125, -108, 57, 64))))
+             list(list(5, c(-123, -105, 53, 62)), list(6, c(-80, -70, 47, 58)),
+                  list(7, c(-80, -70, 47, 58)), list(9, c(-125, -110, 57, 64)))))
+
+levelss = list(c(0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10)/100,
+               c(0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2)/100,
+               c(0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2)/100)
 speedy = FALSE
-plot_FUN <- function(region, boxes) {
+plot_FUN <- function(region, levels, boxes) {
     eg_extent_file = paste0("data/data/driving_data/", region, 
                             "/nrt/period_2013_2023/burnt_area.nc")
         
@@ -52,14 +56,15 @@ plot_FUN <- function(region, boxes) {
     anom = anom / (4*area(anom))
 
     mnths = unique(sapply(boxes, function(i) i[[1]]))
-    levels = find_levels_n(anom[[mnths]], 10, TRUE)
-  
-    plot_month <- function(r, mn, addX1 = FALSE, addY2 = FALSE, addX3 = FALSE, addY4 = FALSE,
+    #levels = find_levels_n(anom[[mnths]], 10, TRUE)
+    levels = c(-rev(levels), levels)
+    plot_month <- function(r, mn, letter, addX1 = FALSE, addY2 = FALSE, addX3 = FALSE, addY4 = FALSE,
                            boxes, ...) {
         print(month.abb[mn])
         if (is.list(r)) r = r[[1]]
+        
         plotStandardMap(r, cols = cols, limits = levels, speedy = speedy, ...)
-        mtext(month.abb[mn], side = 1, line = -1.5, adj = 0.03)
+        mtext(paste0(letter, ') ', month.abb[mn]), side = 1, line = -1.5, adj = 0.03)
         
         if (addX1) axis(1)
         if (addX3) axis(3)
@@ -78,17 +83,19 @@ plot_FUN <- function(region, boxes) {
     lmat = cbind(0, rbind(0, t(lmat), 13, 0), 0)
     heights = c(0.15, rep(hght, 4), 0.5, 0.15)
     widths = c(0.15, rep(1, 3), 0.15)
-    if (F) {
+    if (T) {
     png(paste0("outputs/figs/mnthly_BA_anaom-", region, '-', speedy, '.png'), 
         height = 2.5*sum(heights), width = 2.5*sum(widths), res = 300, units = 'in')
         layout(lmat, heights = heights, widths = widths)
         par(mar = rep(0.5, 4), oma = c(0, 0, 0, 0))
-        mapply(plot_month, anom, 1:12,
+        mapply(plot_month, anom, 1:12, letters[1:12],
                c(rep(F, 9), rep(T, 3)), rep(c(T, F, F), 4),
                c(rep(T, 3), rep(F, 9)), rep(c(F, F, T), 4), 
                MoreArgs = list(boxes = boxes))
-        legendColBar(c(0.5, 0.7), c(0.1, 0.8), cols = cols, limits = levels, 
+        legendColBar(c(0.5, 0.7), c(0.1, 0.8), cols = cols, limits = levels*100, units = '%',
                      extend_min = T, extend_max = T, transpose = TRUE, oneSideLabels = NA)
+        mtext(side = 2, outer = TRUE, expression(paste( degree, " Latitude")), xpd = NA)
+        mtext(side = 1, outer = TRUE, expression(paste( degree, " Longitude")), xpd = NA)
     dev.off()
     }
     
@@ -101,19 +108,23 @@ plot_FUN <- function(region, boxes) {
     heights = c(0.15, rep(hght, nrow), 0.5, 0.15)
     widths = c(0.15, rep(1, ncol), 0.15)
     
-    png(paste0("outputs/figs/focal_BA_anaom-", region, '-', speedy,  '.png'), 
+    png(paste0("outputs/figs/focal_BA_anaom-2", region, '-', speedy,  '.png'), 
         height = 3.5*sum(heights), width = 3.5*sum(widths), res = 300, units = 'in')
         par(mar = rep(0.5, 4), oma = c(0, 0, 0, 0))
         layout(lmat, heights = heights, widths = widths)
-        mapply(plot_month, anom[mnths], mnths,
+        mapply(plot_month, anom[mnths], mnths, letters[np + (1:length(mnths))],
                addX1 = c(rep(F, ncol * (nrow -1)), rep(T, ncol)), 
                addY2 = rep(c(T, rep(F, ncol-1)), nrow),
                addX3 = c(rep(T, ncol), rep(F, ncol * (nrow -1))), 
                addY4 = rep(c(rep(F, ncol-1), T), nrow),
                MoreArgs = list(boxes = boxes))
-        legendColBar(c(0.5, 0.7), c(0.0, 1.0), cols = cols, limits = levels, 
-                     extend_min = T, extend_max = T, transpose = TRUE, oneSideLabels = FALSE)
+        legendColBar(c(0.5, 0.7), c(0.0, 1.0), cols = cols, limits = levels*100, units = '%',
+                     extend_min = T, extend_max = T, transpose = TRUE, 
+                     oneSideLabels = FALSE, tagTicks = FALSE)
+        mtext(side = 2, outer = TRUE, expression(paste( degree, " Latitude")), xpd = NA, line = -2, adj = 1-(0.15 + hght*nrow/2)/sum(heights))
+        mtext(side = 3, expression(paste( degree, " Longitude")), xpd = NA, line = -2.5)
     dev.off()
+    np <<- np + length(mnths)
 }
-
-mapply(plot_FUN, regions, boxess)
+np = 0
+mapply(plot_FUN, regions, levelss, boxess)
