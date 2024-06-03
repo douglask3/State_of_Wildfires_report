@@ -43,24 +43,34 @@ def plot_BayesModel_signifcance_maps(Obs, Sim, lmask, plot_n = 1, Nrows = 3, Nco
         return x
     X = flatten_to_dim0(Obs) 
     pv = flatten_to_dim0(Sim[1])    
-        
+    
     Y = [flatten_to_dim0(Sim[0][i]) for i in range(Sim[0].shape[0])]
     Y = np.array(Y)
 
     ax = plt.subplot(Nrows, Ncols, plot_n)
     Xf = X.flatten()
     pvf = pv.flatten()
-
-    none0 =  (Xf != 0)
+    
+    none0 =  (Xf != 0) & (pvf > 0.01)
     Xf0 = np.log10(Xf[none0])
-    pvf0 = 10**pvf[none0]
-
+    pvf0 = pvf[none0]#10**pvf[none0]
+    pvf0[pvf0 > 0.999] = 0.999
+    
+    #pvf0 = 10**pvf0
     plot_id = ax.hist2d(Xf0, pvf0, bins=100, cmap='afmhot_r', norm=mpl.colors.LogNorm())
+    y_min, y_max = plt.ylim()
+
+    # Define the padding (e.g., 10% of the data range)
+    padding = 0.02 * (y_max - y_min)
+
+    #  Set new y-axis limits with the padding
+    plt.ylim(y_min - padding, y_max + padding)
+
     plt.gcf().colorbar(plot_id[3], ax=ax)
     at = np.unique(np.round(np.arange(np.min(Xf0), np.max(Xf0))))
     plt.xticks(at, 10**at)
-    labels = np.array([0, 0.3, 0.5, 0.7, 0.8, 0.9, 0.95, 0.99])
-    plt.yticks(10**labels, labels)
+    #labels = np.array([0, 0.3, 0.5, 0.7, 0.8, 0.9, 0.95, 0.99])
+    #plt.yticks(10**labels, labels)
     
     try:
         Sim[1].data.mask[Sim[1].data == 0] = True
@@ -72,6 +82,7 @@ def plot_BayesModel_signifcance_maps(Obs, Sim, lmask, plot_n = 1, Nrows = 3, Nco
                          scale = 1, figure_filename = figure_filename + 'obs_liklihood')
     
     ax = plt.subplot(Nrows, Ncols, plot_n + 3)
+    
     BayesScatter(Obs, Sim[0], lmask,  0.000001, 0.000001, ax)
     
     pos = np.mean(X[np.newaxis, :, :] > Y, axis = 0)
@@ -106,14 +117,16 @@ def compare_to_obs_maps(filename_out, dir_outputs, Obs, Sim, lmask, levels, cmap
     figure_filename = fig_dir + filename_out + '-evaluation'
     figure_dir =  combine_path_and_make_dir(figure_filename)
     
-    plot_BayesModel_maps(Sim[0], levels, cmap, '', Obs, Nrows = 3, Ncols = 3,
+    #Sim[0].data = 100 * Sim[0].data
+   # Obs.data = Obs.data * 100
+    plot_BayesModel_maps(Sim[0], None, cmap, '', Obs, Nrows = 3, Ncols = 3, scale = 100,
                          figure_filename = figure_dir)
     plot_BayesModel_signifcance_maps(Obs, Sim, lmask, plot_n = 4, Nrows = 3, Ncols = 3,
                                      figure_filename = figure_dir)
     
-    plt.gcf().set_size_inches(12, 12)
+    plt.gcf().set_size_inches(14, 12)
     plt.gcf().tight_layout()
-    plt.savefig(figure_filename + '.png')
+    plt.savefig(figure_filename + '.png', pad_inches=0.1)
 
 
 def evaluate_MaxEnt_model_from_namelist(training_namelist = None, evaluate_namelist = None, 

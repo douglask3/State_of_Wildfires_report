@@ -150,7 +150,11 @@ def scatter_metric_overall_and_percentiles(X, pos, xlabel = 'Burnt Area',
 
 def BayesScatter(X, Y, lmask = None, logXmin = None, logYmin = None, ax = None):
     pc_size = 10
-    percentiles = np.arange(pc_size, 100, pc_size)    
+    percentiles = np.arange(pc_size, 100, pc_size) 
+    percentiles = np.array([1, 2, 5, 10, 25, 75, 90, 95, 99])
+    #import iris.plot as iplt
+    #import iris.quickplot as qplt 
+    #set_trace()  
     if lmask is  None: 
         Y = np.percentile(Y, q = percentiles, axis = 0).T       
     else:
@@ -158,7 +162,7 @@ def BayesScatter(X, Y, lmask = None, logXmin = None, logYmin = None, ax = None):
         Y = Y.collapsed('realization', iris.analysis.PERCENTILE, percent = percentiles)
         Y = np.array([Y[i].data.flatten()[lmask] for i in range(Y.shape[0])]).T
     
-    if len(X) > 1000:
+    if len(X) > 5000:
         select = np.random.choice(len(X), 1000)
         X = X[select]
         Y = Y[select, :]
@@ -169,7 +173,8 @@ def BayesScatter(X, Y, lmask = None, logXmin = None, logYmin = None, ax = None):
     
     ncols = int(Y.shape[1]/2)
     line_widths = np.linspace(0.2, 2, ncols)
-    alpha = 1.0/Y.shape[1]
+    
+    alpha = 1.0/(Y.shape[1])
 
     for i in range(ncols):        
         ax.vlines(X, ymin = Y[:,i], ymax = Y[:, -i-1],
@@ -178,9 +183,13 @@ def BayesScatter(X, Y, lmask = None, logXmin = None, logYmin = None, ax = None):
     
     vals = [min(np.min(X), np.min(Y)),  max(np.max(X), np.max(Y))]
     ax.plot(vals, vals, color = 'blue', linestyle = '--')
-    ax.scatter(X, Y[:, ncols + 1], s = 0.2, color = 'red')
+    #ax.scatter(X, Y[:, ncols + 1], s = 0.2, color = 'red')
     if logYmin is not None: ax.set_yscale('logit')
     if logXmin is not None: ax.set_xscale('logit')
+
+    labels = np.array([10**-5, 10**-4, 10**-3, 10**-2, 10**-1, 0.5, 1-10**-1])
+    plt.yticks(labels)
+    plt.xticks(labels)
 
     plt.xlabel("Observation")
     plt.ylabel("Simulation")
