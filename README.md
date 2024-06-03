@@ -59,14 +59,14 @@ Each parameter is set using `parameter_name:: parameter_value'. "parameter_name"
 
 | Parameter               | Description                                                   | Compulsory | Example                                                                                      |
 |-------------------------|---------------------------------------------------------------|------------|-----------------------------------------------------------------------------------------|
-| `regions`               | List of regions to model                                      | No - but required if using <<region>> wildcards.  | `['Greece', 'Canada', 'NW_Amazon']`         |
-| `model_title`           | Title of the model                                            | Yes        | `'ConFire_<<region>>-nrt-evaluation1'`                                                       |
-| `dir_training`          | Directory for training data                                   | Yes        | `"data/data/driving_data/<<region>>/nrt/period_2013_2023/"`                                  |
-| `y_filen`               | Filename for response variable                                | Yes        | `"burnt_area.nc"`                                                                            |
-| `CA_filen`              | Filename for control area data (optional)                     | No         | `None`                                                                                       |
+| `regions`               | List of regions to model - useful if running the exact same run over multiple  driving datasets  | No - but required if using `<<region>> wildcards.'  | `['Greece', 'Canada', 'NW_Amazon']`            |
+| `model_title`           | Title of the model. Can use `regions` to set up a new run for each region | Yes        | `'ConFire_<<region>>-nrt-evaluation1'`                                  |
+| `dir_training`          | Directory containing driving/target data for training         | Yes        | `"data/data/driving_data/<<region>>/nrt/period_2013_2023/"`                                  |
+| `y_filen`               | Netcdf filename for target variable, either within  `dir_training` or reative for pull path is starting with '.' or '~'  | Yes        | `"burnt_area.nc"`           |
+| `CA_filen` | Netcdf filename for area weights for model training - i.e. if you want to weigh some grid cells more than others.                     | No         | `None`                      |
 | `x_filen_list`          | List of filenames for predictor variables                     | Yes        | `["VOD-12monthMax.nc", "VOD-12Annual.nc", "Fuel-Moisture-Live.nc", ...]`                     |
-| `model_class`           | Class of the model                                            | Yes        | `ConFire`                                                                                    |
-| `priors`                | Priors for Bayesian inference                                 | Yes        | `{'pname': "link-sigma", 'np': 1, 'dist': 'HalfNormal', 'sigma': 0.5}`                       |
+| `model_class`           | The name of the fire model we are going to use. Coded up in `fire_model'.     | Yes        | `ConFire`                                                                                    |
+| `priors`                | Priors for Bayesian inference                                 | At least one. This is model and link function specific |  |
 
 
 
