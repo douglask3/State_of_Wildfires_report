@@ -14,15 +14,15 @@ graphics.off()
 region = 'Greece'
 boxes = list(list(8, c(20, 27, 30.5, 42), 'Greece'))
 
-region = 'Canada'
-boxes = list(list(5, c(-123, -105, 53, 62), 'Western Shield'),
-             list(6, c(-80, -70, 47, 58), 'Quebec'), 
-             list(7, c(-80, -70, 47, 58), 'Quebec'), 
-             list(9, c(-124, -110, 57, 64), 'Western Shield'))
+#region = 'Canada'
+#boxes = list(list(5, c(-123, -105, 53, 62), 'Western Shield'),
+#             list(6, c(-80, -70, 47, 58), 'Quebec'), 
+#             list(7, c(-80, -70, 47, 58), 'Quebec'), 
+#             list(9, c(-124, -110, 57, 64), 'Western Shield'))
 
-#region = 'NW_Amazon'
-#boxes = list(list( 9, c(-70, -55, -8, 0), 'Western Amazon'),
-#             list(10, c(-70, -55, -8, 0), 'Western Amazon'))
+region = 'NW_Amazon'
+boxes = list(list( 9, c(-70, -55, -8, 0), 'Western Amazon'),
+             list(10, c(-70, -55, -8, 0), 'Western Amazon'))
 
 dir = paste0('outputs/ConFire_', region, '-nrt-tuning10/samples/_12-frac_points_0.5/baseline-/')
 
@@ -153,10 +153,10 @@ run_for_box <- function(box) {
     pltHeight = nrow(control_increase[[1]])/ncol(control_increase[[1]])
     
     levels = find_levels_n(abs(do.call(addLayer, control_increase)),  nlevs-1, TRUE) 
-    heights = c(0.25, pltHeight, 0.07, pltHeight, 0.6, 0.1)  
-    lmat = cbind(0, rbind(0, c(1, 0, 2), 0, c(3, 0, 4), 5, 0), 0)
-    widths = c(0.1, 1, 0.07, 1, 0.1)
-    png(paste(c("figs/limitation_map", region, '-', box[[1]], box[[2]], ".png"), 
+    heights = c(0.25, pltHeight, 0.2, 0.15, pltHeight, 0.15, pltHeight, 0.6, 0.1)  
+    lmat = cbind(0, rbind(0, 1, 2, 0, 3, 0, 4, 5, 0), 0)
+    widths = c(0.25, 1, 0.25)
+    png(paste(c("figs/limitation_map-2", region, '-', box[[1]], box[[2]], ".png"), 
               collapse = '-'), 
         height = 2.5*sum(heights), width = 2.5*sum(widths), units = 'in', res = 300)
         layout(lmat, heights = heights, widths = widths)
@@ -193,10 +193,10 @@ run_for_box <- function(box) {
         apply(vobs, 1, addPoly)
         contour(is.na(cobs), levels = 0.5, drawlabels=FALSE, add = TRUE)
         axis(2)
-        axis(3)
+        #axis(3)
         lines(extent[c(1, 2, 2, 1, 1)], extent[c(3, 3, 4, 4, 3)])
-        mtext(side = 3, line = 2.2, 'Burnt area anomoly (%)')
-        legendColBar(c(0.95 - (0.10/pltHeight), 0.95), c(0, 1), 
+        mtext(side = 3, line = 0.5, 'Burnt area anomoly (%)')
+        legendColBar(c(0.2, 0.7), c(0, 1), 
                      cols_BA, levels_BA, F, T, T, transpose = T, oneSideLabels = F)
                 
         cols_controls = list(c('white', '#CCDDAA', '#225522'),
@@ -209,7 +209,7 @@ run_for_box <- function(box) {
         plot_direction <- function(direction = 1) {
             newPlot()
             title = paste0(c(c('increase', 'decrease')[direction], ' from controls'), collapse = '')
-            mtext(title, side = 1, line = 2.2)
+            mtext(title, side = 3, line = 0.5)
             if (direction == 2) cobs = 1 - cobs
             cobs[is.na(cobs)] = -1
             coords = xyFromCell(cobs, (1:length(cobs)))
@@ -223,8 +223,8 @@ run_for_box <- function(box) {
             mapply(plot_uncertain_corners, control_increase, 
                    c(-0.25, -0.25, 0.25, 0.25), c(-0.25, 0.25, -0.25, 0.25),
                 cols_controls, direction = direction)
-            axis(1)
-            axis(direction * 2)
+            axis(2)
+            if (direction == 2) axis(1)
             lines(extent[c(1, 2, 2, 1, 1)], extent[c(3, 3, 4, 4, 3)])
         }
         lapply(1:2, plot_direction)
@@ -233,25 +233,29 @@ run_for_box <- function(box) {
         legX = seq(0.2, 0.7, length.out = length(cols_controls[[1]]))
         addLegend <- function(y, cols, lab) {
             for (col in list('black', cols)) 
-                points(legX, rep(y, length(legX)), col = col, pch = 19, cex = 2)
-            text(x = 0.05, y = y, adj = 1, lab) 
+                points(legX, rep(y, length(legX)), col = col, pch = 19, cex = 2, xpd = NA)
+            text(x = 0.05, y = y, adj = 1, lab, xpd = NA) 
     
         }
         
-        plot(c(-0.2, 1.2), c(0, 1.1), axes = FALSE, type = 'n', xlab = '', ylab = '')
+        plot(c(0.05, 0.95), c(0, 1.1), axes = FALSE, type = 'n', xlab = '', ylab = '')
         mapply(addLegend, c(0.5, 0.35, 0.20, 0.05), cols_controls, 
                c("Fuel", "Moisture", "Weather", "Human"))
 
-        text(c(legX[1], head(legX, -1) + diff(legX[1:2])/2, tail(legX, 1)), 
+        text(c(legX[1], head(legX, -1) + diff(legX[1:2])/2, tail(legX, 1)), xpd = NA,
              rep(0.6, length(legX) + 1), c('0', levels*100, '+'), srt = 30, adj = 0)
         points(rep(0.85, length(conf_levels)), 
-               y = seq(0.05, 0.5, length.out = length(conf_levels)), 
+               y = seq(0.05, 0.5, length.out = length(conf_levels)), xpd = NA,
               pch = 19, cex = 2*(0.25 + 0.75*(1:length(conf_levels))/length(conf_levels)))
-        text(paste('>', conf_levels), x = 0.95, y = seq(0.05, 0.5, length.out = length(conf_levels)))
-        text('Confidence level', x = 0.9, y = 0.6)
+        text(paste('>', conf_levels), x = 0.95, y = seq(0.05, 0.5, length.out = length(conf_levels)), xpd = NA)
+        text('Confidence level', x = 0.9, y = 0.6, xpd = NA)
         
         mtext(side = 3, outer = TRUE, font = 2,
-              line = -1.25, paste(box[[3]], '-', month.name[box[[1]]]))
+              line = -2, paste(box[[3]], '-', month.name[box[[1]]]))
+
+        mtext(side = 2, outer = TRUE, expression(paste( degree, " Latitude")), 
+              xpd = NA, line = -2.75)#, adj = 1-(0.15 + hght*nrow/2)/sum(heights))
+        mtext(side = 3, expression(paste( degree, " Longitude")), xpd = NA, line = -3.5)
    dev.off()
 }
 lapply(boxes, run_for_box)
