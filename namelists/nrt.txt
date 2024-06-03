@@ -1,6 +1,6 @@
 ## model info
 regions:: ['Greece', 'Canada', 'NW_Amazon']
-model_title::  'ConFire_<<region>>-nrt-tuning12'
+model_title::  'ConFire_<<region>>-nrt-final'
 
 ## input data paths and filenames
 dir_training:: "data/data/driving_data/<<region>>/nrt/period_2013_2023/"
