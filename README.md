@@ -1,2 +1,2 @@
-# state_of_fires_report_20YY
+# State of Wildfire's report
 Share report for code etc for the SOFTYY report.
