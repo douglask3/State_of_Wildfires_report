@@ -3,7 +3,7 @@ Model description can be found here: [ConFire_info.pdf](https://github.com/dougl
 
 To run the model, there are some compulsory `priors` that you need to add to the namelists. `pname` needs to match these, but other parameters are examples:
 
-*  `priors:: {'pname': "controlID", 'value': [[1, 2], [0, 2, 3, 4, 5, 7, 8], [9, 10, 11, 12], [10, 11, 12]]}`
+* `priors:: {'pname': "controlID", 'value': [[1, 2], [0, 2, 3, 4, 5, 7, 8], [9, 10, 11, 12], [10, 11, 12]]}`
 
   This assigns the different driver inputs to different controls. `value` takes a list of lists. The number of out lists matches the number of controls ConFire will use. The numbers within each embedded list match the position of the variables in the `x_filen_list` namelist item ([see main readme](https://github.com/douglask3/Bayesian_fire_models/blob/main/README) that you want to include in each control.
 
