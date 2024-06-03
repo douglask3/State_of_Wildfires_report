@@ -6,6 +6,8 @@
 - [Installation](#installation)
 - [Obtaining Driving Data](#obtaining-driving-data)
 - [Configuration Settings](#configuration-settings)
+- [Model options](#Model-options)
+- [Link distribution options](#Link-distribution-options)
 - [Running the Models](#running-the-models)
 - [Results](#results)
 - [Contributing](#contributing)
@@ -17,8 +19,8 @@
 
 ## Introduction
 This repository contains a series of Bayesian-based fire models. These models follow a common inference and sampling workflow to predict fire behaviour based on various driving data. . At the moment, we have two models that target burned area:
-*	ConFire, has been tested and is working as expected.
-*	FLAME, is also operational but is located in a separate repository. It needs to undergo testing in our current environment. You can find it at https://github.com/malu-barbosa/FLAME.
+*	[ConFire](https://github.com/douglask3/Bayesian_fire_models/blob/main/README/ConFire.md), has been tested and is working as expected.
+*	[FLAME](https://github.com/douglask3/Bayesian_fire_models/blob/main/README/FLAME.md), is also operational but is located in a separate repository. It needs to undergo testing in our current environment. You can find it at https://github.com/malu-barbosa/FLAME.
   
 Additionally, we are in the process of working on INFERNO, which is derived from JULES-ES-INFERNO ([Mangeon et al. 2016]( https://gmd.copernicus.org/articles/9/2685/2016/)) and working on a  fireMIP ensemble optimisation scheme. We are also extending these two models to cover other aspects of fire regimes beyond burned area.
 
@@ -65,8 +67,8 @@ Each parameter is set using `parameter_name:: parameter_value'. "parameter_name"
 | `y_filen`               | Netcdf filename for target variable, either within  `dir_training` or relative for pull path is starting with '.' or '~'  | Yes        | `"burnt_area.nc"`           |
 | `CA_filen` | Netcdf filename for area weights for model training - i.e. if you want to weigh some grid cells more than others.                     | No         | `None`                      |
 | `x_filen_list`          | List of filenames for predictor variables                     | Yes        | `["VOD-12monthMax.nc", "VOD-12Annual.nc", "Fuel-Moisture-Live.nc", ...]`                     |
-| `model_class`           | The name of the fire model we are going to use. Coded up in `fire_model/'.     | Yes        | `ConFire`                                                              |
-| `link_func_class`       | The name of the link function/assumed error distribution. Coded up in `link_distribution/`         | Yes        | `zero_inflated_logit`                              |
+| `model_class`           | The name of the fire model we are going to use. Coded up in `fire_model/'.  See  [Model options](#Model-options)    | Yes        | `ConFire`                                                              |
+| `link_func_class`       | The name of the link function/assumed error distribution. Coded up in `link_distribution/`. See [Link distribution options](#Link-distribution-options)  | Yes        | `zero_inflated_logit`                              |
 | `priors`                | Priors for Bayesian inference. These use their own funky definition rather than a standard Python object but are defined using a dict, with the following fields that need filling out, depending on prior type: | At least one. This is model and link function specific. These are parameters used in either the model or link function | Some examples below: |
 |     |  `pname` is the parameter name used by the model. See the specific model for details. if `npame` starts with the string `link-`, then it is a parameter used in the link function. Again, see the specific link function for info. |   | `{'pname': "link-sigma", 'np': 1, 'dist': 'HalfNormal', 'sigma': 0.5}`  |
 |     |  `dist`. The prior can be based on a pymc prior distribution. If it is, you can use any in the pymc library: [https://www.pymc.io/projects/docs/en/stable/api/distributions.html](https://www.pymc.io/projects/docs/en/stable/api/distributions.html). To use one of these, enter a pymc distribution name in the entry `dist`. You then enter each input used by that distribution as a new dict item (e.g. `upper` and `lower` in the example). `np` is normally an optional field (though some models or link functions may require it) that says how many times you need this distribution. See model or link function for specifcs | | `{'pname': "Fmax", 'np': 1, 'dist': 'Uniform', 'lower': 0.00001, 'upper': 0.9999}`  |
@@ -81,7 +83,7 @@ Each parameter is set using `parameter_name:: parameter_value'. "parameter_name"
 |                         |                                                               |            | `{'year_range': [2013, 2017]}`                                                               |
 | `subset_function_args_eval` | This can replace the subset function argument when you are sampling the posterior. Useful for out-of-sample experiments.  | No        | `{'months_of_year': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}`                                 |
 |                         |                                                               |            | `{'year_range': [2018, 2023]}`                                                               |
-| `grab_old_trace`        | Whether to use old traces and sample from previous optimisation attempts. If `True`, then it will attempt to find old files that have a similar look to this configiration file. But its not fullproof so if in doubt, set to `False`                   | No         | `True`                                                                                       |
+| `grab_old_trace`        | Whether to use old traces and samples from previous optimisation attempts. If `True`, then it will attempt to find old files that have a similar look to this configuration file. But it's not foolproof so if in doubt, set to `False`                   | No         | `True`                                                                                       |
 | `dir_outputs`           | Directory for outputs                                         | Yes        | `'outputs/'`                                                                                 |
 | `sample_for_plot`       | Number of samples from the optimised trace for evaluation and plotting                                | Yes        | `100`                                                                                        |
 | `levels`                | colourmap levels for burnt area maps                                      | Yes        | `[0, 0.01, 0.03, 0.1, 0.3, 0.5, 1.0]`                                                        |
@@ -89,7 +91,14 @@ Each parameter is set using `parameter_name:: parameter_value'. "parameter_name"
 | `cmap`                  | Colormap for plots                                            | Yes        | `'OrRd'`                                                                                     |
 | `dcmap`                 | Differential colormap for plots                               | Yes        | `'RdBu_r'`                                                                                   |
 
+## Model options
+ConFire is working. FLAME works in the original repo: [https://github.com/malu-barbosa/FLAME](https://github.com/malu-barbosa/FLAME) but is untested here. Others are under develop,ent
 
+Available models:
+* [ConFire](https://github.com/douglask3/Bayesian_fire_models/blob/main/README/ConFire.md)
+* [FLAME](https://github.com/douglask3/Bayesian_fire_models/blob/main/README/FLAME.md)
+
+## Link distribution options 
 
 
 ## Running the Models
