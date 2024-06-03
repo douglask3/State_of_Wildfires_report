@@ -1,6 +1,6 @@
 ## model info
 regions:: ['Canada', 'NW_Amazon', 'Greece']
-model_title::  'ConFire_<<region>>-tuning15'
+model_title::  'ConFire_<<region>>-final'
 
 ## input data paths and filenames
 dir_training:: "data/data/driving_data/<<region>>/isimp3a/obsclim/GSWP3-W5E5/period_2000_2019/"
