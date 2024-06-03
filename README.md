@@ -66,9 +66,16 @@ Each parameter is set using `parameter_name:: parameter_value'. "parameter_name"
 | `CA_filen` | Netcdf filename for area weights for model training - i.e. if you want to weigh some grid cells more than others.                     | No         | `None`                      |
 | `x_filen_list`          | List of filenames for predictor variables                     | Yes        | `["VOD-12monthMax.nc", "VOD-12Annual.nc", "Fuel-Moisture-Live.nc", ...]`                     |
 | `model_class`           | The name of the fire model we are going to use. Coded up in `fire_model'.     | Yes        | `ConFire`                                                                                    |
-| `priors`                | Priors for Bayesian inference                                 | At least one. This is model and link function specific |  |
+| `priors`                | Priors for Bayesian inference. These use their own funky definition rather than a standard Python object, but are defined using a dict, with the following fields that need filling out, depending on prior type: | At least one. This is model and link function specific. These are parameters used in either the model or link function | Some examples below: |
+|     |  `pname` is the parameter name used by the model. See the specific model for details. if `npame` starts with the string `link-`, then it is a parameter used in the link function. Again, see the specific link function for info. |   |   |
+|     |  `dist`. The prior can be based on a pymc prior distribution. If it is, you can use any in the pymc library: [https://www.pymc.io/projects/docs/en/stable/api/distributions.html](https://www.pymc.io/projects/docs/en/stable/api/distributions.html). To use one of these, use the 
+ | `{'pname': "driver_Direction", 'value': [[1, 1], [1, 1], [1, 1, -1], [1, 1, 1], [1, 1, 1, 1], [1]]}`|
+|                         |                                                               |            | `{'pname': "Fmax", 'np': 1, 'dist': 'Uniform', 'lower': 0.00001, 'upper': 0.9999}`           |
+|                         |                                                               |            | `{'pname': "x0", 'np': 6, 'dist': 'Normal', 'mu': 0.0, 'sigma': 10.0}`                       |
 
 
+* `pname` is the parameter name used by the model. See the specific model for details. if `npame` starts with the string `link-`, then it is a parameter used in the link function. Again, see the specific link function for info.
+*
 
 ## Model Setup
 Each model follows the same basic setup process. Here are the steps:
