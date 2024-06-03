@@ -59,7 +59,12 @@ temp_dir1 = '../temp/'
 #dowload_vcf(temp_dir2, bbox)
 
 
-bbox = [-12.0, 49.0, 3.0, 63.0]
-temp_dir2 = 'UK-MODIS/'
+#bbox = [-12.0, 49.0, 3.0, 63.0]
+#temp_dir2 = 'UK-MODIS/'
+#dowload_vcf(temp_dir2, bbox)
+
+
+bbox = [-77.5, -10.0, -56.0, 2.0]
+temp_dir2 = 'South_America-box/'
 dowload_vcf(temp_dir2, bbox)
 
