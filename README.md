@@ -98,10 +98,17 @@ To run a model, execute the following command:
 python run_model.py --config config.yaml
 ```
 
+## Results
+The results will be saved in the `results/` directory. Each run will generate a summary file and detailed logs. You can interpret the results using the provided analysis scripts.
 
-#  Fogo local Analisado pela Máxima Entropia (FLAME)
+## Contributing
+Contributions are welcome! Please read the [CONTRIBUTING.md](CONTRIBUTING.md) file for guidelines on how to contribute.
 
-# Controls on Fire (ConFire)
+## License
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+## Contact
+For any questions or issues, please contact [Dougas Kelley] at [doukel@ceh.ac.uk].
 
 # Note for State of Wildfire report
 
