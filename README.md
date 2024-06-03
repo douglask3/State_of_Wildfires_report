@@ -11,8 +11,8 @@ In the follwing dirs:
 * **FWI_attribution_analysis_code** - Scripts used to recreate the figures for the FWI attribution (1 main figure and 2 supplementary figures)
 * **ConFire_plotting** - scripts for producing ConFire plots:
     * plot_control_stripes.r - Figure 14
- * plot_combinedControls.r - Figure's 15, 16, S13, S14
- * plot_ConFire_hist.r - Figure 18
- * plot_ConFire_ts.r - Figure 22, Table 7
- * plot-ConFire_futureFire.r - Future 23, S17-S23
+    * plot_combinedControls.r - Figure's 15, 16, S13, S14
+    * plot_ConFire_hist.r - Figure 18
+    * plot_ConFire_ts.r - Figure 22, Table 7
+    * plot-ConFire_futureFire.r - Future 23, S17-S23
 
