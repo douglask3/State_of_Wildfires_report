@@ -41,8 +41,10 @@ Follow these steps to install the necessary software and dependencies:
     cd Bayesian_fire_models
     ```
 3. Install the required packages:
+    
     ```bash
-    pip install -r requirements.txt
+    conda env create -f environment.yml
+    conda activate bayesian-fire-models
     ```
 
 ## Obtaining Driving Data
