@@ -5,36 +5,11 @@ logit <- function(x) {
     log(x/(1-x))
 }
 
-if (F) {
-burnt_area_data = paste0("data/data/driving_data/", region, "/isimp3a/obsclim/GSWP3-W5E5/period_2000_2019/burnt_area-2000-2023.nc")
-date_test = '2023-06'
-burnt_area = rast(burnt_area_data)
-date_test = substr(time(burnt_area), 1, 7) == date_test
-#burnt_area_event = burnt_area[[date_test]]
-gridArea = cellSize(burnt_area[[1]])
-vArea = values(gridArea)
-mean_95 <- function(i) {
-    #weighted.quantile(burnt_area[[i]][], gridArea[[i]], prob = 0.95, plot = FALSE)
-    
-    vr = values(burnt_area[[i]])
-    val = weighted.quantile(vr, vArea, prob = 0.95, plot = FALSE)
-    
-    test = vr >= val & !is.na(vr)
-    out = sum(vr[test] * vArea[test])/sum(vArea[test])
-    return(out)
-}
-
-burnt_area_tot = sapply(1:nlyr(burnt_area), mean_95)#function(i) sum((burnt_area[[i]] * gridArea)[], na.rm = TRUE)) / sum(gridArea[], na.rm = T)
-
-burnt_area_event = burnt_area_tot[date_test]
-burnt_area_tot = burnt_area_tot[sort(unlist(lapply(7:8, function(i) seq(i, nlyr(burnt_area), by = 12))))]
-percentile = mean(burnt_area_tot <= burnt_area_event)
-}
-
 rnning_mean <- function(r) 
     filter(r, rep(1 / 10, 10), sides = 1)
 
 make_plot <- function(region, dir, pattern, file, burnt_area_event, percentiles) {
+    
     percentile = percentiles[1]
     openDat <- function(exp) {
         print(exp)
@@ -69,11 +44,15 @@ make_plot <- function(region, dir, pattern, file, burnt_area_event, percentiles)
     
     find_occurnaces <- function(pc) {
         print(pc)
-        event = logit(quantile(as.numeric(as.matrix(dats[[1]][[1]])), pc))
+        #if (grepl('Control', file)) 
+            event = logit(quantile(as.numeric(as.matrix(dats[[1]][[1]])), pc))
+        #else browser()
         
         find_occurnace <- function(dat) {
             for_run <- function(x) {
                 find_pc <- function(r) {
+                    if (!grepl('Control', file)) return(0.01*mean(r/apply(dats[[1]][[1]], 1, mean)))
+                    r0 = r
                     r = logit(unique(sort(r)))
                     
                     xr = seq(0, 1, length.out = length(r)+1)
@@ -82,22 +61,8 @@ make_plot <- function(region, dir, pattern, file, burnt_area_event, percentiles)
                     xp = seq(0, 1, length.out = 1000)
                     rp = predict(smooth.spline(r ~ xr, spar = 0.5), xp)[[2]]
                     rp = sort(rp)
+                    
                     return(mean(event < rp))
-                    #browser()
-                    #xp = xr
-                    #rp = r
-                    if (event > tail(rp, 1)) {
-                        #out = tail(xp, 1) + xp[which(rp >= 2*tail(rp, 1) - event)[1]]
-                        out = -tail(xp, 1)
-                    } else {
-                        out = -xp[which(rp >= event)[1]]
-                    }
-                    
-                    out = 1/(1+exp(-out))
-                    
-                    if (is.na(out)) out = 0
-                    
-                    return(out)
                 }
                 out = apply(x, 2, find_pc)
                 
@@ -189,12 +154,15 @@ start = c(2000, 2000, -999, 1994, 1994, 1994)
 pattern = "_13-frac_points_0.5-"
 plot_region_fqi <- function(control_name, col_hint, region, pattern2, fi = 1) {
     dir = paste0("outputs/ConFire_", region, "-tuning15/figs/")
+    if (region == "Greece") dir = "outputs/ConFire_Greece-final1/figs/"
+    if (region == "Canada") dir = "outputs/ConFire_Canada-tuning12/figs/"
     
     file = paste0("points-", control_name, ".csv")
 
     load(paste0("outputs/obs_time_series/", region, "/outs.Rd"))
     #if (percentile == 1) percentile = 1-1/120
     percentiles[1] = percentile
+    
     fqss = make_plot(region, dir, c(pattern, pattern2), file, burnt_area_event, percentiles)
     fqs = fqss[,fi]
 
@@ -253,16 +221,21 @@ plot_region_fqi <- function(control_name, col_hint, region, pattern2, fi = 1) {
     labels = round(seq(yrange4[1], yrange4[2], length.out = 6), 1)
     
     
-    axis(2, at = labels * scaler, labels = labels)
+    
     if (control_name == controls[1]) {
         if (region == tail(regions, 1)) mtext(side = 4, 'Liklihood (%)', line = 3.5)
+        if (region == regions[1]) mtext(side = 2, 'times more likely', line = 2.5)
         axis(4)
-        mtext(side = 3, line = -1, region)
+        if (region == "NW_Amazon") regionT = "Western Amazonia" else regionT = region
+        mtext(side = 3, line = -1, regionT)
+        axis(2, at = labels * scaler, labels = labels)
+    } else {
+        axis(2)
     }
     if (region == regions[1]) {
         if (control_name == "Control") name2 = 'Burnt Area'
             else name2 = sub("standard-", "", control_name)
-        mtext(side = 2, line = 2, name2)
+        mtext(side = 2, line = 3.75, name2)
         legend('topleft', experiments[-(2:3)], col = paste0(cols[-(2:3)], 'BB'), pt.cex = 2, pch = 15, bty = 'n')
         legend('topleft', experiments[-(2:3)], col = cols[-(2:3)], pt.cex = 2, pch = 1, bty = 'n')
     }
@@ -279,21 +252,22 @@ plot_region_fqi <- function(control_name, col_hint, region, pattern2, fi = 1) {
     write.csv(out, paste('figs/future_table', region, control_name, '-', fi, '.csv', sep = '-'))
 }
 
-controls = c('Control', 'standard-Fuel', 'standard-Moisture', 'standard-Ignition') 
-cols_hint = c('NULL', '#00FF00', '#0000FF', '#FF0000')#, '#333333')
+controls = c('Control', 'standard-Fuel', 'standard-Moisture')#, 'standard-Ignition') 
+cols_hint = c('NULL', '#00FF00', '#0000FF')#, '#FF0000')#, '#333333')
 plot_fi <- function(fi) {
     png(paste0("figs/box_futures3-", fi, "-.png"), 
-        res = 300, units = 'in', width = 8, height = 7)
-        par(mfcol = c(4, 3), oma = c(2, 4, 2, 4), mar = c(1, 2, 0, 2))
+        res = 300, units = 'in', width = 8, height = 5.5)
+        par(mfcol = c(3, 3), oma = c(2, 4, 2, 4), mar = c(1, 2, 0, 2))
         pnts = mapply(function(region, pattern2) 
                         mapply(plot_region_fqi, controls, cols_hint, 
                                MoreArgs = list(region, pattern2, fi = fi)), regions, 
-                                                c('pc-95', 'pc-90', 'pc-95'))
+                                                c('pc-95', 'pc-95', 'pc-95'))
 
         #mtext(side = 4, 'Liklihood (%)', outer = TRUE, line = 2.5)
-        mtext(side = 2, 'times more likely)', outer = TRUE, line = 2.5)
+        #mtext(side = 2, 'times more likely', outer = TRUE, line = 2.5)
+        mtext(side = 2, 'Control Stength (%)', outer = TRUE, line = 0.5, adj = 0.33)
     dev.off()
 }
 
 plot_fi(1)
-'plot_fi(5)
+#plot_fi(5)
