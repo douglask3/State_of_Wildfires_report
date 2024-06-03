@@ -135,7 +135,7 @@ def make_time_series(cube, name, figName, percentile = None, cube_assess = None,
 
 def make_both_time_series(*args, **kw):
     #make_time_series(*args, **kw)
-    #make_time_series(*args, **kw, percentile = 90)
+    make_time_series(*args, **kw, percentile = 90)
     make_time_series(*args, **kw, percentile = 95) 
 
 def run_experiment(training_namelist, namelist, control_direction, control_names, 
@@ -164,12 +164,14 @@ def run_experiment(training_namelist, namelist, control_direction, control_names
                         sample_error = False,
                         *args, **kws)
     
+    
     evaluate_TS = make_both_time_series(Evaluate[0], 'Evaluate', figName, 
                                         cube_assess = Control[0])
     
     control_TS = make_both_time_series(Control[0], 'Control', figName, cube_assess = Control[0])
     
-    
+    if  control_names is None: return None
+
     for ltype, FUN in zip(['standard', 'potential'],
                           [Standard_limitation, Potential_limitation]):
         
@@ -208,7 +210,10 @@ def run_ConFire(namelist):
         
         control_direction = read_variables_from_namelist(params['other_params_file'])
         control_direction = control_direction['control_Direction']
-        control_names = read_variables_from_namelist(namelist)['control_names']
+        try:
+            control_names = read_variables_from_namelist(namelist)['control_names']
+        except:
+            control_names = None
     
         def find_replace_period_model(exp_list):
             exp_list_all = [item.replace('<<region>>', region) for item in exp_list \
@@ -231,6 +236,7 @@ def run_ConFire(namelist):
         experiments = run_info['experiment_experiment']
         periods = run_info['experiment_period']
         models = run_info['experiment_model']
+
         experiment_dirs = find_replace_period_model(experiment_dirs)
         experiment_names = find_replace_period_model(experiment_names)
         
@@ -254,7 +260,7 @@ if __name__=="__main__":
     namelist = 'namelists/Greece.txt'
     namelist = 'namelists/tuning.txt'
     namelist = 'namelists/isimip-fwi2.txt'
-    namelist = 'namelists/isimip.txt'
+    namelist = 'namelists/isimip3.txt'
     #namelist = 'namelists/SOW2023.txt'
     
     run_ConFire(namelist)
