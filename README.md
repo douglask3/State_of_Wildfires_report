@@ -1,8 +1,82 @@
 # Bayesian-based fire models
-This repo contains the development of a series of Bayesian-based fire modelling frameworks that follow the same basic workflow. At the moment, we have two models:
-•	ConFire, has been tested and is working as expected.
-•	FLAME, is also operational but is located in a separate repository. It needs to undergo testing in our current environment. You can find it at https://github.com/malu-barbosa/FLAME.
-Additionally, we are in the process of working on INFERNO, which is derived from JULES-ES-INFERNO ([Mangeon et al. 2016]( https://gmd.copernicus.org/articles/9/2685/2016/)) and working on a  fireMIP ensemble optimisation scheme.
+
+## Table of Contents
+- [Introduction](#introduction)
+- [Features](#features)
+- [Installation](#installation)
+- [Obtaining Driving Data](#obtaining-driving-data)
+- [Configuration Settings](#configuration-settings)
+- [Model Setup](#model-setup)
+- [Running the Models](#running-the-models)
+- [Results](#results)
+- [Contributing](#contributing)
+- [License](#license)
+- [Contact](#contact)
+
+
+
+## Introduction
+This repository contains a series of Bayesian-based fire models. These models follow a common inference and sampling workflow to predict fire behaviour based on various driving data. . At the moment, we have two models that target burned area:
+*	ConFire, has been tested and is working as expected.
+*	FLAME, is also operational but is located in a separate repository. It needs to undergo testing in our current environment. You can find it at https://github.com/malu-barbosa/FLAME.
+  
+Additionally, we are in the process of working on INFERNO, which is derived from JULES-ES-INFERNO ([Mangeon et al. 2016]( https://gmd.copernicus.org/articles/9/2685/2016/)) and working on a  fireMIP ensemble optimisation scheme. We are also extending these two models to cover other aspects of fire regimes beyond burned area.
+
+## Features
+- Bayesian inference for fire modelling
+- Flexible configuration settings
+- Different fire models for relating drivers to burnt area
+- Scalable to different data sets and scenarios
+- Detailed logging and result output
+
+## Installation
+Follow these steps to install the necessary software and dependencies:
+
+1. Clone the repository:
+    ```bash
+    git clone [https://github.com/yourusername/your-repo.git](https://github.com/douglask3/Bayesian_fire_models.git)
+    ```
+2. Navigate into the project directory:
+    ```bash
+    cd Bayesian_fire_models
+    ```
+3. Install the required packages:
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+## Obtaining Driving Data
+The driving data required for the models can be obtained from [data source]. Follow these steps to download the data:
+
+1. Go to [data source website].
+2. Download the data set.
+3. Save the data in the `data/` directory within the project folder.
+
+## Configuration Settings
+Configuration settings can be found in the `config.yaml` file. Here are the key settings you may need to adjust:
+
+- `parameter1`: Description
+- `parameter2`: Description
+- `parameter3`: Description
+
+## Model Setup
+Each model follows the same basic setup process. Here are the steps:
+
+1. Navigate to the model directory:
+    ```bash
+    cd models/model_name
+    ```
+2. Adjust the configuration file if necessary.
+3. Prepare the environment by running:
+    ```bash
+    setup_script.sh
+    ```
+
+## Running the Models
+To run a model, execute the following command:
+
+```bash
+python run_model.py --config config.yaml
 
 
 
