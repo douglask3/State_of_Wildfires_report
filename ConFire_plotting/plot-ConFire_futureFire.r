@@ -1,12 +1,12 @@
 library(raster)
-source("../gitProjectExtras/gitBasedProjects/R/sourceAllLibs.r")
-sourceAllLibs("../rasterextrafuns/rasterPlotFunctions/R/")
-sourceAllLibs("../rasterextrafuns/rasterExtras/R/")
-sourceAllLibs("../gitProjectExtras/gitBasedProjects/R/")
+#source("../gitProjectExtras/gitBasedProjects/R/sourceAllLibs.r")
+#sourceAllLibs("../rasterextrafuns/rasterPlotFunctions/R/")
+#sourceAllLibs("../rasterextrafuns/rasterExtras/R/")
+#sourceAllLibs("../gitProjectExtras/gitBasedProjects/R/")
 library(ncdf4)
-sourceAllLibs("../ConFIRE_attribute/libs/")
-source("../ConFIRE_attribute/libs/plotStandardMap.r")
-source("../LPX_equil/libs/legendColBar.r")
+#sourceAllLibs("../ConFIRE_attribute/libs/")
+#source("../ConFIRE_attribute/libs/plotStandardMap.r")
+#source("../LPX_equil/libs/legendColBar.r")
 source("libs/find_levels.r")
 graphics.off()
 
@@ -25,7 +25,7 @@ nsample = 10
 
 region = 'NW_Amazon'
 dir = paste0("outputs/ConFire_", region, "-tuning12/samples/_13-frac_points_0.5/")
-eg_rast = raster(paste0("outputs/ConFire_", region, "-tuning12/samples/_13-frac_points_0.5/baseline-/control/sample-pred0.nc"))
+eg_rast = raster(paste0("outputs/ConFire_", region, "-isimip-final/samples/_13-frac_points_0.5/baseline-/control/sample-pred0.nc"))
 plt_width = c('Canada' = 1, 'NW_Amazon' = 1, 'Greece' = 0.67)[region]
 plt_height = plt_width*nrow(eg_rast)/ncol(eg_rast)
 
