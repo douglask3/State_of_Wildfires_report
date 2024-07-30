@@ -110,7 +110,7 @@ plot_region <- function(region , run, pc, date_test, region_name, mn_sample) {
         cols = densCols(x,y, colramp = colorRampPalette(scols), bandwidth = 0.5)
         #cols = densCols(x,y, nbin = 128* 4, bandwidth = 0.1)
         
-        plot(x, y, type = 'n', xlab = '', ylab = '', axes = FALSE)
+        plot(x, y, type = 'n', xlab = '', ylab = '', axes = FALSE, ylim = quantile(y, c(0.01, 0.99)))
         axis(1)
         for (cex in seq(2, 0.2, by = -0.2)) points(y~x, pch = 20, col = cols, cex = 1)
         grid()
