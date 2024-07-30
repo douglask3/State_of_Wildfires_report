@@ -154,14 +154,23 @@ plot_region <- function(region , run, pc, date_test, region_name, mn_sample) {
     plot_experiments(c("counterfactual", "early_industrial"), extreme, 
                      c('#0000FF', '#000000'), scols = blues9, "Counter", "Early Industrial")
 }
-png("figs/factual_count_attribution.png", height = 6, width = 9, units = 'in', res = 300)
+
+plot_fun <- function() {
     par(mfcol = c(2, 3), oma = c(1, 3.25, 0, 0), mar = c(3, 1.5, 3, 0.5))
     mapply(plot_region, regions, runs, pcs, date_tests, region_names, mn_samples)
     mtext(side = 1, 'Mean monthly burned area fraction (%)', outer = TRUE)
     mtext(side = 2, 'Change in BA extent (%)', outer = TRUE, line = 2)
+}
+    
+
+png("figs/Figure_14_factual_count_attribution.png", height = 6, width = 9, units = 'in', res = 300)
+    plot_fun()
+dev.off()
+
+pdf("figs/Figure_14_factual_count_attribution.pdf", height = 6, width = 9)
+    plot_fun()
 dev.off()
 
 
-#plot_experiments(c("factual", "ss126_GFDL", "ss126_IPSL", "ss126_MPI", "ss126_MRI"), title = "ssp126")
-#plot_experiments(c("factual", "ss585_GFDL", "ss585_IPSL", "ss585_MPI", "ss585_MRI"), title = "ssp585")
+
                
