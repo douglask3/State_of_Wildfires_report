@@ -214,7 +214,7 @@ for histmember in histmembers:
                 hist = np.log(np.exp(hist)-1)
 
                 # Step 2: Detrend the sim and scale to obs
-                Endhist = fwi0_obs + (hist - delta_sim * t - fwi0_sim)
+                Endhist = fwi0_obs + (hist - delta_sim * 0 - fwi0_sim)
                 print(Endhist)
 
                 ####inverse Log (exponential) transform here####      
@@ -257,7 +257,7 @@ for histmember in histmembers:
                 histnat = np.log(np.exp(histnat)-1)
 
                 # Step 2: Detrend the sim and scale to obs
-                Endhist = fwi0_obs + (histnat - delta_sim * t - fwi0_sim)
+                Endhist = fwi0_obs + (histnat - delta_sim * 0 - fwi0_sim)
 
                 ####inverse Log (exponential) transform here####      
                 Endhist = np.log(np.exp(Endhist)+1)
