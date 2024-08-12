@@ -14,6 +14,7 @@ make_plot <- function(region, dir, pattern, file, burnt_area_event, percentiles)
     openDat <- function(exp) {
         print(exp)
         dirs = list.dirs(dir, full.name = TRUE, recursive=TRUE)
+        
         dirs = dirs[grep(paste0('-', exp), dirs)]
         #browser()
         for (ptt in pattern) dirs = dirs[grep(paste0(ptt), dirs)]
@@ -47,7 +48,7 @@ make_plot <- function(region, dir, pattern, file, burnt_area_event, percentiles)
         #if (grepl('Control', file)) 
             event = logit(quantile(as.numeric(as.matrix(dats[[1]][[1]])), pc))
         #else browser()
-        
+            browser() 
         find_occurnace <- function(dat) {
             for_run <- function(x) {
                 find_pc <- function(r) {
@@ -223,7 +224,7 @@ plot_region_fqi <- function(control_name, col_hint, region, pattern2, fi = 1) {
     
     
     if (control_name == controls[1]) {
-        if (region == tail(regions, 1)) mtext(side = 4, 'Liklihood (%)', line = 3.5)
+        if (region == tail(regions, 1)) mtext(side = 4, 'Likelihood (%)', line = 3.5)
         if (region == regions[1]) mtext(side = 2, 'times more likely', line = 2.5)
         axis(4)
         if (region == "NW_Amazon") regionT = "Western Amazonia" else regionT = region
@@ -233,7 +234,7 @@ plot_region_fqi <- function(control_name, col_hint, region, pattern2, fi = 1) {
         axis(2)
     }
     if (region == regions[1]) {
-        if (control_name == "Control") name2 = 'Burnt Area'
+        if (control_name == "Control") name2 = 'Burned Area'
             else name2 = sub("standard-", "", control_name)
         mtext(side = 2, line = 3.75, name2)
         legend('topleft', experiments[-(2:3)], col = paste0(cols[-(2:3)], 'BB'), pt.cex = 2, pch = 15, bty = 'n')
@@ -263,7 +264,7 @@ plot_fi <- function(fi) {
                                MoreArgs = list(region, pattern2, fi = fi)), regions, 
                                                 c('pc-95', 'pc-95', 'pc-95'))
 
-        #mtext(side = 4, 'Liklihood (%)', outer = TRUE, line = 2.5)
+        #mtext(side = 4, 'Likelihood (%)', outer = TRUE, line = 2.5)
         #mtext(side = 2, 'times more likely', outer = TRUE, line = 2.5)
         mtext(side = 2, 'Control Stength (%)', outer = TRUE, line = 0.5, adj = 0.33)
     dev.off()
