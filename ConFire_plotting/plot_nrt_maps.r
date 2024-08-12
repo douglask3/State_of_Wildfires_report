@@ -30,7 +30,7 @@ dcolss = list(rev(c('#b2182b','#d6604d','#f4a582','#fddbc7','#f7f7f7','#d1e5f0',
 cols_r = c('#f7f4f9','#e7e1ef','#d4b9da','#c994c7','#df65b0','#e7298a','#ce1256','#980043','#67001f')
 
 
-dir = paste0('outputs/ConFire_', region, '-nrt-tuning9/samples/_12-frac_points_0.5/baseline-/')
+dir = paste0('../Bayesian_fire_models/outputs/ConFire_', region, '-nrt-final/samples/_12-frac_points_0.5/baseline-/')
 
 runs = c('Burnt area' = 'control', 'Fuel' = 'Standard_0', 'Moisture' = 'Standard_1',    
          'Weather' = 'Standard_2',
@@ -56,7 +56,7 @@ legendColBar(c(0.1, 0.7), c(0.1, 0.8), cols = colss[[1]], limits = levels,
 
 obs_anom = mean(layer.apply(mnths, function(mn) obs[[tail(seq(mn, nlayers(obs), 12), 1)]])) - obs_clim
 plot.new()
-mtext('anomoly', side = 4)
+mtext('anomaly', side = 4)
 levels = find_levels(obs_anom*100, not0 = TRUE)
 plotStandardMap(obs_anom * 100, cols = dcolss[[1]], limits = levels)
 legendColBar(c(0.1, 0.7), c(0.1, 0.8), cols = dcolss[[1]], limits = levels, 
@@ -64,7 +64,7 @@ legendColBar(c(0.1, 0.7), c(0.1, 0.8), cols = dcolss[[1]], limits = levels,
 
 obs_rank = layer.apply(mnths, function(mn) sum(obs[[tail(seq(mn, nlayers(obs), 12), 1)]] > obs[[seq(mn, nlayers(obs), by = 12)]]))
 plot.new()
-mtext('anomoly', side = 4)
+mtext('anomaly', side = 4)
 levels = find_levels(obs_rank, seq(10, 90, 10), not0 = TRUE)
 plotStandardMap(obs_rank, cols = cols_r, limits = levels)
 legendColBar(c(0.1, 0.7), c(0.1, 0.8), cols = cols_r, limits = levels, 
@@ -155,7 +155,7 @@ plot_run  <- function(run, cols, dcols) {
     
     levels = find_levels(c(liki1[liki1<1], liki2[liki2 < 1]), seq(10, 90, 10), not0 = TRUE)
     plotStandardMap(liki1, cols = cols_l, limits =  levels)
-    mtext(side = 3, 'of anomolie')
+    mtext(side = 3, 'of anomaly')
     #legendColBar(c(0.1, 0.7), c(0.1, 0.8), cols = cols_l, limits = levels*100, 
     #                       extend_min = F, minLab = 0, extend_max = F, maxLab = 100)
     
@@ -169,9 +169,9 @@ plot_run  <- function(run, cols, dcols) {
         mtext(txt, side = side, line = -1, srt = srt)
     }
     mtext_pnew("annual average burnt area")
-    mtext_pnew("2023 anomoly")
+    mtext_pnew("2023 anomaly")
     mtext_pnew("Year rank")
-    mtext_pnew("likelihood of anomoly")
+    mtext_pnew("likelihood of anomaly")
     plot.new()
     mtext_pnew("10%", 3, 0)
     mtext_pnew("50%", 3, 0)
