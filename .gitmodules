@@ -1,7 +1,7 @@
 [submodule "ConFire"]
-	path = ConFire
+	path = modules/ConFire
 	url = https://github.com/douglask3/Bayesian_fire_models
 	branch = ConFire
 [submodule "geff"]
-	path = geff
+	path = modules/geff
 	url = https://github.com/ecmwf-projects/geff
