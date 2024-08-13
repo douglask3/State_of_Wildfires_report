@@ -7,7 +7,14 @@ In the follwing dirs:
 *  ***FRANCESCA/JOEY*** Global ECMWF Fire Forcast (GEFF) generated FWI in Figs 7, 8, 9, 16, S24, S25, S26.
 * **FWI_attribution_analysis_code**
   * Scripts used to recreate the figures for the FWI attribution (Figs 13, S40, S41, S42, S43)
-  * ***CHANTELLE*** fwi from era5 data generated using impacts toolbox in modules/impactstoolbox-0.1-alpha.zip (weblink here: [https://github.com/douglask3/State_of_Wildfires_report/blob/main/modules/impactstoolbox-0.1-alpha.zip](https://github.com/douglask3/State_of_Wildfires_report/blob/main/modules/impactstoolbox-0.1-alpha.zip))
+  * FWI from era5 data generated using impacts toolbox in modules/impactstoolbox-0.1-alpha.zip (weblink here: [https://github.com/douglask3/State_of_Wildfires_report/blob/main/modules/impactstoolbox-0.1-alpha.zip](https://github.com/douglask3/State_of_Wildfires_report/blob/main/modules/impactstoolbox-0.1-alpha.zip))
+  * The Impacts Toolbox can be run with the following:
+       * Edit dates, data source etc in myconfig.yml file
+       * Choose the indices to run in indices_toRun.csv. For example we used Fire Weather (FWI) in the State of Wildfire Report
+       * Run using controller.sh
+       * This runs calc_fire.py, which calls the calc_fwi.py code used in the State of Wildfire Report
+       * The calc_fwi.py code creates netCDF files of FWI from the input data (which can either be model or reanalysis data). These netCDF files then get used in the analysis code
+
 * **make_inputs** - code for generating input files used by ConFire. Resultant data can be found at [https://doi.org/10.5281/zenodo.11420743](https://doi.org/10.5281/zenodo.11420743).
   * isimip.py regrids isimip3a and 3b code and JULES model output into ConFire inputs. Original data can be downloaded from [https://data.ISIMIP.org/](https://data.ISIMIP.org/)
   * nrt.r regrid data obtained from cds ([https://cds.climate.copernicus.eu/](https://cds.climate.copernicus.eu/)) to provide nrt driving data for ConFire.
